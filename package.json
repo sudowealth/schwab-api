@@ -1,5 +1,5 @@
 {
-  "name": "schwab-api-client",
+  "name": "schwab-api",
   "version": "0.0.1",
   "type": "module",
   "description": "Schwab API Client Library",
@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sudowealth/schwab-api-client"
+    "url": "https://github.com/sudowealth/schwab-api"
   },
   "bugs": {
-    "url": "https://github.com/sudowealth/schwab-api-client/issues"
+    "url": "https://github.com/sudowealth/schwab-api/issues"
   },
-  "homepage": "https://github.com/sudowealth/schwab-api-client#readme",
+  "homepage": "https://github.com/sudowealth/schwab-api#readme",
   "main": "./dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",

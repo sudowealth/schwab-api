@@ -15,34 +15,34 @@ pnpm add schwab-api-client
 ## Usage
 
 ```typescript
-import { configureSchwabApi, trader } from "schwab-api-client";
+import { configureSchwabApi, trader } from 'schwab-api-client'
 
 // Configure the API (optional, defaults are provided)
 configureSchwabApi({
-  enableLogging: true,
-});
+	enableLogging: true,
+})
 
 async function main() {
-  const accessToken = "YOUR_ACCESS_TOKEN"; // Obtain this through your OAuth flow
+	const accessToken = 'YOUR_ACCESS_TOKEN' // Obtain this through your OAuth flow
 
-  try {
-    const accounts = await trader.accounts.getAccounts(accessToken);
-    console.log("Accounts:", accounts);
+	try {
+		const accounts = await trader.accounts.getAccounts(accessToken)
+		console.log('Accounts:', accounts)
 
-    // Example: Get orders for the first account
-    if (accounts.length > 0) {
-      const firstAccountHash = accounts[0].securitiesAccount.hashedAccountId;
-      const orders = await trader.orders.getOrders(accessToken, {
-        accountId: firstAccountHash,
-      });
-      console.log(`Orders for account ${firstAccountHash}:`, orders);
-    }
-  } catch (error) {
-    console.error("API Error:", error);
-  }
+		// Example: Get orders for the first account
+		if (accounts.length > 0) {
+			const firstAccountHash = accounts[0].securitiesAccount.hashedAccountId
+			const orders = await trader.orders.getOrders(accessToken, {
+				accountId: firstAccountHash,
+			})
+			console.log(`Orders for account ${firstAccountHash}:`, orders)
+		}
+	} catch (error) {
+		console.error('API Error:', error)
+	}
 }
 
-main();
+main()
 ```
 
 ## Features
