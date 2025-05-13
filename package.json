@@ -1,0 +1,86 @@
+{
+  "name": "schwab-api-client",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Schwab API Client Library",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./auth": {
+      "import": "./dist/auth/index.js",
+      "require": "./dist/auth/index.cjs",
+      "types": "./dist/auth/index.d.ts"
+    },
+    "./trader": {
+      "import": "./dist/trader/index.js",
+      "require": "./dist/trader/index.cjs",
+      "types": "./dist/trader/index.d.ts"
+    },
+    "./trader/accounts": {
+      "import": "./dist/trader/accounts/endpoints.js",
+      "require": "./dist/trader/accounts/endpoints.cjs",
+      "types": "./dist/trader/accounts/endpoints.d.ts"
+    },
+    "./trader/orders": {
+      "import": "./dist/trader/orders/endpoints.js",
+      "require": "./dist/trader/orders/endpoints.cjs",
+      "types": "./dist/trader/orders/endpoints.d.ts"
+    },
+    "./trader/transactions": {
+      "import": "./dist/trader/transactions/endpoints.js",
+      "require": "./dist/trader/transactions/endpoints.cjs",
+      "types": "./dist/trader/transactions/endpoints.d.ts"
+    },
+    "./trader/user-preference": {
+      "import": "./dist/trader/user-preference/endpoints.js",
+      "require": "./dist/trader/user-preference/endpoints.cjs",
+      "types": "./dist/trader/user-preference/endpoints.d.ts"
+    },
+    "./market-data": {
+      "import": "./dist/market-data/index.js",
+      "require": "./dist/market-data/index.cjs",
+      "types": "./dist/market-data/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs --out-dir dist && tsup src/core/index.ts --dts --format esm,cjs --out-dir dist/core && tsup src/auth/index.ts --dts --format esm,cjs --out-dir dist/auth && tsup src/trader/index.ts --dts --format esm,cjs --out-dir dist/trader && tsup src/trader/accounts/endpoints.ts --dts --format esm,cjs --out-dir dist/trader/accounts && tsup src/trader/orders/endpoints.ts --dts --format esm,cjs --out-dir dist/trader/orders && tsup src/trader/transactions/endpoints.ts --dts --format esm,cjs --out-dir dist/trader/transactions && tsup src/trader/user-preference/endpoints.ts --dts --format esm,cjs --out-dir dist/trader/user-preference && tsup src/market-data/index.ts --dts --format esm,cjs --out-dir dist/market-data",
+    "test": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "schwab",
+    "api",
+    "client",
+    "trader",
+    "market-data"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "zod": "^3.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

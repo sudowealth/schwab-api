@@ -1,0 +1,51 @@
+import { createEndpoint } from "../../core/http";
+import {
+  AccountsArraySchema,
+  AccountWrapper,
+  AccountsQueryParamsSchema,
+} from "./schema";
+import { z } from "zod";
+
+// Define request/response types for clarity, even if simple
+export type GetAccountsRequestPathParams = never; // No path params
+export type GetAccountsRequestQueryParams = z.infer<
+  typeof AccountsQueryParamsSchema
+>; // Use inferred type
+export type GetAccountsResponseBody = z.infer<typeof AccountsArraySchema>;
+
+export const getAccounts = createEndpoint<
+  GetAccountsRequestPathParams,
+  GetAccountsRequestQueryParams,
+  never,
+  GetAccountsResponseBody,
+  "GET",
+  any
+>({
+  method: "GET",
+  path: "/trader/v1/accounts",
+  querySchema: AccountsQueryParamsSchema, // Use the imported schema
+  responseSchema: AccountsArraySchema,
+  description: "Retrieves all accounts associated with the user.",
+});
+
+// Example: getAccountByNumber
+export type GetAccountByNumberRequestPathParams = {
+  accountNumber: string;
+};
+export type GetAccountByNumberRequestQueryParams = never; // No query params
+export type GetAccountByNumberResponseBody = z.infer<typeof AccountWrapper>;
+
+export const getAccountByNumber = createEndpoint<
+  GetAccountByNumberRequestPathParams,
+  GetAccountByNumberRequestQueryParams,
+  never,
+  GetAccountByNumberResponseBody,
+  "GET",
+  any
+>({
+  method: "GET",
+  path: "/trader/v1/accounts/:accountNumber",
+  pathSchema: z.object({ accountNumber: z.string() }),
+  responseSchema: AccountWrapper,
+  description: "Retrieves a specific account by its number.",
+});
