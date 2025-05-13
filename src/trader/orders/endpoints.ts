@@ -1,4 +1,4 @@
-import { OrdersArraySchema, OrdersQuerySchema } from 'schwab-api-client/schemas'
+import { OrdersArraySchema, OrdersQuerySchema } from '../../schemas'
 import { createEndpoint } from '../../core/http'
 import { z } from 'zod'
 

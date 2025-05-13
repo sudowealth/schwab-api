@@ -1,4 +1,4 @@
-import { ApiCurrencyType, assetType } from 'schwab-api-client/schemas'
+import { ApiCurrencyType, assetType } from '../../schemas'
 import { z } from 'zod'
 
 export const AccountAPIOptionDeliverable = z.object({
