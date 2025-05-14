@@ -14,21 +14,22 @@
     "url": "https://github.com/sudowealth/schwab-api/issues"
   },
   "homepage": "https://github.com/sudowealth/schwab-api#readme",
-  "main": "./dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./schemas": {
-      "types": "./dist/schemas/index.d.ts",
-      "default": "./dist/schemas/index.js"
+      "types": "./dist/src/schemas/index.d.ts",
+      "default": "./dist/src/schemas/index.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "test": "tsx --test --test-reporter spec --experimental-test-coverage test/*.test.ts",
     "test:watch": "tsx --test --test-reporter spec --watch test/*.test.ts",
     "format": "prettier . --write",
