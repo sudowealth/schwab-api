@@ -15,7 +15,7 @@ export const getOrders = createEndpoint<
 	any
 >({
 	method: 'GET',
-	path: '/orders',
+	path: '/trader/v1/orders',
 	pathSchema: z.object({}), // Empty schema for no path params
 	querySchema: OrdersQuerySchema,
 	responseSchema: OrdersArraySchema,

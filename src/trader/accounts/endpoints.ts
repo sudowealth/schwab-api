@@ -71,7 +71,7 @@ export const getAccountNumbers = createEndpoint<
 	any
 >({
 	method: 'GET',
-	path: '/accounts/accountNumbers',
+	path: '/trader/v1/accounts/accountNumbers',
 	responseSchema: AccountNumbersResponseSchema,
 	description: 'Get list of account numbers and their encrypted values.',
 })
