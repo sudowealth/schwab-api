@@ -339,30 +339,58 @@ function buildUrl(
 	let finalEndpointPath = endpointTemplate
 	if (pathParams) {
 		Object.entries(pathParams).forEach(([key, value]) => {
-			const placeholder = `{${key}}`
-			if (finalEndpointPath.includes(placeholder)) {
+			const curlyPlaceholder = `{${key}}`
+			const colonPlaceholderPattern = new RegExp(`:${key}(?=\\/|\\.|$)`, 'g') // Matches :key followed by /, ., or EOL
+
+			let replaced = false
+			if (finalEndpointPath.includes(curlyPlaceholder)) {
 				finalEndpointPath = finalEndpointPath.replace(
-					new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&'), 'g'), // Escape regex special chars
+					new RegExp(
+						curlyPlaceholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+						'g',
+					), // Restored original regex for escaping special characters
 					String(value),
 				)
-			} else {
-				if (config.enableLogging) {
-					console.warn(
-						`[buildUrl] Path parameter '${key}' provided but not found in template '${endpointTemplate}'`,
-					)
-				}
+				replaced = true
+			}
+
+			// Check and replace colon-style placeholders separately
+			// This ensures that if a template somehow had both (e.g. /path/:id/details/{id}), both could be processed.
+			if (colonPlaceholderPattern.test(finalEndpointPath)) {
+				finalEndpointPath = finalEndpointPath.replace(
+					colonPlaceholderPattern,
+					String(value),
+				)
+				replaced = true
+			}
+
+			if (!replaced && config.enableLogging) {
+				console.warn(
+					`[buildUrl] Path parameter '${key}' provided but not found using {${key}} or :${key}(?=/|\\.|$) in template '${endpointTemplate}'`,
+				)
 			}
 		})
 	}
 
 	// Check for unsubstituted placeholders after attempting substitution
-	// Regex to find patterns like {param_name}
-	const placeholderRegex = /\\{[^\\}]+\\}/g
-	if (placeholderRegex.test(finalEndpointPath)) {
+	// Regex to find patterns like {param_name} or :param_name (followed by common delimiters or EOL)
+	const unsubstitutedCurlyPlaceholderRegex = /\{[^\}]+\}/g
+	const unsubstitutedColonPlaceholderRegex = /:[a-zA-Z0-9_]+(?=\/|\.|_|$)/g // Corrected regex literal, ensuring only necessary escapes
+
+	const curlyMatches = finalEndpointPath.match(
+		unsubstitutedCurlyPlaceholderRegex,
+	)
+	const colonMatches = finalEndpointPath.match(
+		unsubstitutedColonPlaceholderRegex,
+	)
+
+	if (curlyMatches || colonMatches) {
+		const remainingCurly = curlyMatches ? curlyMatches.join(', ') : 'none'
+		const remainingColon = colonMatches ? colonMatches.join(', ') : 'none'
 		throw new SchwabApiError(
 			400,
 			undefined,
-			`[buildUrl] Unsubstituted placeholders remain in path: ${finalEndpointPath}. Check if all required path parameters were provided.`,
+			`[buildUrl] Unsubstituted placeholders remain in path: ${finalEndpointPath}. Check if all required path parameters were provided. Remaining (curly): ${remainingCurly}. Remaining (colon): ${remainingColon}.`,
 		)
 	}
 
