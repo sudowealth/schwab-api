@@ -1044,7 +1044,10 @@ export const OrdersQuerySchema = z.object({
 		.describe(
 			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. 'fromEnteredTime' must also be set.",
 		)
-		.default(new Date().toISOString()),
+		.default(() => {
+			const date = new Date()
+			return date.toISOString()
+		}),
 	status: status
 		.optional()
 		.describe(
