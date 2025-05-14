@@ -1019,21 +1019,39 @@ const TransferItem = z.object({
 
 // New: Schema for GET /accounts/{accountNumber}/orders query parameters
 export const OrdersQuerySchema = z.object({
-	maxResults: z.number().int().optional(),
+	maxResults: z
+		.number()
+		.int()
+		.default(3000)
+		.optional()
+		.describe(
+			'Specifies the maximum number of orders to return. Default is 3000.',
+		),
 	fromEnteredTime: z
 		.string()
 		.datetime({ offset: true, precision: 3 })
 		.describe(
 			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date. 'toEnteredTime' must also be set.",
-		),
+		)
+		.default(() => {
+			const date = new Date()
+			date.setDate(date.getDate() - 59)
+			return date.toISOString()
+		}),
 	toEnteredTime: z
 		.string()
 		.datetime({ offset: true, precision: 3 })
 		.describe(
 			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. 'fromEnteredTime' must also be set.",
+		)
+		.default(new Date().toISOString()),
+	status: status
+		.optional()
+		.describe(
+			'Specifies that only orders of this status should be returned. Default is all.',
 		),
-	status: status.optional(), // Using the existing 'status' enum schema
 })
+export type OrdersQuerySchema = z.infer<typeof OrdersQuerySchema>
 
 // New: Schema for path parameter {accountNumber}
 export const AccountNumberPathSchema = z.object({ accountNumber: z.string() })
