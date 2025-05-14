@@ -972,6 +972,7 @@ export const TransactionType = z.enum([
 	'MONEY_MARKET',
 	'SMA_ADJUSTMENT',
 ])
+export type TransactionType = z.infer<typeof TransactionType>
 
 const UserDetails = z.object({
 	cdDomainId: z.string(),
@@ -1016,45 +1017,13 @@ const TransferItem = z.object({
 	positionEffect: z.enum(['OPENING', 'CLOSING', 'AUTOMATIC', 'UNKNOWN']),
 })
 
-const UserPreferenceAccount = z.object({
-	accountNumber: z.string(),
-	primaryAccount: z.boolean().default(false),
-	type: z.string(),
-	nickName: z.string(),
-	accountColor: z.enum(['Green', 'Blue']),
-	displayAcctId: z.string(),
-	autoPositionEffect: z.boolean().default(false),
-})
-
-const StreamerInfo = z.object({
-	streamerSocketUrl: z.string(),
-	schwabClientCustomerId: z.string(),
-	schwabClientCorrelId: z.string(),
-	schwabClientChannel: z.string(),
-	schwabClientFunctionId: z.string(),
-})
-
-const Offer = z.object({
-	level2Permissions: z.boolean().default(false),
-	mktDataPermission: z.string(),
-})
-
-export const UserPreference = z.object({
-	accounts: z.array(UserPreferenceAccount),
-	streamerInfo: z.array(StreamerInfo),
-	offers: z.array(Offer),
-})
-export type UserPreference = z.infer<typeof UserPreference>
-
 // New: Schema for GET /accounts/{accountNumber}/orders query parameters
-export const OrdersQuerySchema = z
-	.object({
-		maxResults: z.number().int().optional(),
-		fromEnteredTime: z.string().datetime().optional(),
-		toEnteredTime: z.string().datetime().optional(),
-		status: status.optional(), // Using the existing 'status' enum schema
-	})
-	.optional()
+export const OrdersQuerySchema = z.object({
+	maxResults: z.number().int().optional(),
+	fromEnteredTime: z.string().datetime(),
+	toEnteredTime: z.string().datetime(),
+	status: status.optional(), // Using the existing 'status' enum schema
+})
 
 // New: Schema for path parameter {accountNumber}
 export const AccountNumberPathSchema = z.object({ accountNumber: z.string() })
@@ -1086,6 +1055,10 @@ export const Transaction = z.object({
 	]),
 	transferItems: z.array(TransferItem),
 })
+export type Transaction = z.infer<typeof Transaction>
+
+export const Transactions = z.array(Transaction)
+export type Transactions = z.infer<typeof Transactions>
 
 // New: Schema for the wrapper object returned by GET /accounts
 const AccountWrapper = z.object({

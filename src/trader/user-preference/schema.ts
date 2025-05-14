@@ -1,36 +1,31 @@
 import { z } from 'zod'
 
-export const UserPreferenceAccountSchema = z.object({
+const UserPreferenceAccount = z.object({
 	accountNumber: z.string(),
-	primaryAccount: z.boolean().default(false).optional(),
-	type: z.string().optional(),
-	nickName: z.string().optional(),
-	accountColor: z.enum(['Green', 'Blue']).optional(),
-	displayAcctId: z.string().optional(),
-	autoPositionEffect: z.boolean().default(false).optional(),
+	primaryAccount: z.boolean().default(false),
+	type: z.string(),
+	nickName: z.string(),
+	accountColor: z.enum(['Green', 'Blue']),
+	displayAcctId: z.string(),
+	autoPositionEffect: z.boolean().default(false),
 })
-export type UserPreferenceAccountSchema = z.infer<
-	typeof UserPreferenceAccountSchema
->
 
-export const StreamerInfoSchema = z.object({
-	streamerSocketUrl: z.string().optional(),
-	schwabClientCustomerId: z.string().optional(),
-	schwabClientCorrelId: z.string().optional(),
-	schwabClientChannel: z.string().optional(),
-	schwabClientFunctionId: z.string().optional(),
+const StreamerInfo = z.object({
+	streamerSocketUrl: z.string(),
+	schwabClientCustomerId: z.string(),
+	schwabClientCorrelId: z.string(),
+	schwabClientChannel: z.string(),
+	schwabClientFunctionId: z.string(),
 })
-export type StreamerInfoSchema = z.infer<typeof StreamerInfoSchema>
 
-export const OfferSchema = z.object({
-	level2Permissions: z.boolean().default(false).optional(),
-	mktDataPermission: z.string().optional(),
+const Offer = z.object({
+	level2Permissions: z.boolean().default(false),
+	mktDataPermission: z.string(),
 })
-export type OfferSchema = z.infer<typeof OfferSchema>
 
-export const UserPreferenceSchema = z.object({
-	accounts: z.array(UserPreferenceAccountSchema).optional(),
-	streamerInfo: z.array(StreamerInfoSchema).optional(),
-	offers: z.array(OfferSchema).optional(),
+export const UserPreference = z.object({
+	accounts: z.array(UserPreferenceAccount),
+	streamerInfo: z.array(StreamerInfo),
+	offers: z.array(Offer),
 })
-export type UserPreferenceSchema = z.infer<typeof UserPreferenceSchema>
+export type UserPreference = z.infer<typeof UserPreference>

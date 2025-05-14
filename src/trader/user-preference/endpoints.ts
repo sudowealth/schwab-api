@@ -1,10 +1,10 @@
+import { UserPreference } from './schema'
 import { createEndpoint } from '../../core/http'
-import { UserPreferenceSchema } from './schema'
 import { z } from 'zod'
 
 export type GetUserPreferenceRequestPathParams = never
 export type GetUserPreferenceRequestQueryParams = never
-export type GetUserPreferenceResponseBody = z.infer<typeof UserPreferenceSchema>
+export type GetUserPreferenceResponseBody = z.infer<typeof UserPreference>
 
 export const getUserPreference = createEndpoint<
 	GetUserPreferenceRequestPathParams,
@@ -16,6 +16,6 @@ export const getUserPreference = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/userPreference',
-	responseSchema: UserPreferenceSchema,
+	responseSchema: UserPreference,
 	description: 'Retrieves user preferences.',
 })

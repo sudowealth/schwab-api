@@ -48,3 +48,30 @@ export const getAccountByNumber = createEndpoint<
 	responseSchema: AccountWrapper,
 	description: 'Retrieves a specific account by its number.',
 })
+
+export type GetAccountNumbersRequestPathParams = never
+export type GetAccountNumbersRequestQueryParams = never
+export type GetAccountNumbersResponseBody = z.infer<
+	typeof AccountNumbersResponseSchema
+>
+
+export const AccountNumbersResponseSchema = z.array(
+	z.object({
+		accountNumber: z.string(),
+		hashValue: z.string(),
+	}),
+)
+
+export const getAccountNumbers = createEndpoint<
+	GetAccountNumbersRequestPathParams,
+	GetAccountNumbersRequestQueryParams,
+	never,
+	GetAccountNumbersResponseBody,
+	'GET',
+	any
+>({
+	method: 'GET',
+	path: '/accounts/accountNumbers',
+	responseSchema: AccountNumbersResponseSchema,
+	description: 'Get list of account numbers and their encrypted values.',
+})

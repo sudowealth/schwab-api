@@ -1,7 +1,10 @@
+import {
+	Transaction,
+	TransactionType,
+	Transactions,
+} from 'schwab-api-client/schemas'
 import { createEndpoint } from '../../core/http'
 import { z } from 'zod'
-
-const TransactionsArraySchema = z.array(z.any())
 
 export type GetTransactionsRequestPathParams = {
 	accountId: string // Hashed Account ID
@@ -9,18 +12,15 @@ export type GetTransactionsRequestPathParams = {
 export type GetTransactionsRequestQueryParams = {
 	startDate: string // ISO8601 Date Format YYYY-MM-DD
 	endDate: string // ISO8601 Date Format YYYY-MM-DD
-	types?: string // Example: TRADE,RECEIVE_AND_DELIVER
+	types?: TransactionType
 	symbol?: string
 }
-export type GetTransactionsResponseBody = z.infer<
-	typeof TransactionsArraySchema
->
 
 export const getTransactions = createEndpoint<
 	GetTransactionsRequestPathParams,
 	GetTransactionsRequestQueryParams,
 	never,
-	GetTransactionsResponseBody,
+	Transactions,
 	'GET',
 	any
 >({
@@ -30,10 +30,34 @@ export const getTransactions = createEndpoint<
 	querySchema: z.object({
 		startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // Basic YYYY-MM-DD validation
 		endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // Basic YYYY-MM-DD validation
-		types: z.string().optional(),
+		types: TransactionType.optional(),
 		symbol: z.string().optional(),
 	}),
-	responseSchema: TransactionsArraySchema,
+	responseSchema: Transactions,
 	description:
 		'Retrieves transactions for a specific account within a date range.',
+})
+
+export type GetTransactionByIdRequestPathParams = {
+	accountId: string // Hashed Account ID
+	transactionId: string // Transaction ID
+}
+
+export const getTransactionById = createEndpoint<
+	GetTransactionByIdRequestPathParams,
+	never, // No query params for this endpoint
+	never,
+	Transaction,
+	'GET',
+	any
+>({
+	method: 'GET',
+	path: '/trader/v1/accounts/:accountId/transactions/:transactionId',
+	pathSchema: z.object({
+		accountId: z.string(),
+		transactionId: z.number().int(),
+	}),
+	responseSchema: Transaction,
+	description:
+		'Retrieves a specific transaction by its ID for a given account.',
 })
