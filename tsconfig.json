@@ -2,14 +2,17 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"compilerOptions": {
 		"isolatedModules": true,
-		"module": "preserve",
+		"module": "ESNext",
 		"target": "ES2022",
 		"strict": true,
 		"skipLibCheck": true,
-		"allowImportingTsExtensions": true,
 		"noUncheckedIndexedAccess": true,
-		"noEmit": true
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"declaration": true,
+		"outDir": "./dist",
+		"rootDir": "./src"
 	},
-	"include": ["**/*.ts", "**/*.js"],
-	"exclude": ["node_modules", "dist"]
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules", "dist", "tests"]
 }
