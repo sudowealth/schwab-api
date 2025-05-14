@@ -1,16 +1,18 @@
-import { z } from 'zod'
 import { createEndpoint } from '../../core/http'
-import { Transaction, Transactions } from '../../schemas'
 import {
-	GetTransactionsRequestQueryParams,
 	GetTransactionsRequestPathParams,
+	GetTransactionsRequestQueryParams,
+	GetTransactionsResponseBody,
+	GetTransactionByIdRequestPathParams,
+	GetTransactionByIdRequestQueryParams,
+	GetTransactionByIdResponseBody,
 } from './schema'
 
 export const getTransactions = createEndpoint<
 	GetTransactionsRequestPathParams,
 	GetTransactionsRequestQueryParams,
 	never,
-	Transactions,
+	GetTransactionsResponseBody,
 	'GET',
 	any
 >({
@@ -18,31 +20,24 @@ export const getTransactions = createEndpoint<
 	path: '/trader/v1/accounts/:accountNumber/transactions',
 	pathSchema: GetTransactionsRequestPathParams,
 	querySchema: GetTransactionsRequestQueryParams,
-	responseSchema: Transactions,
+	responseSchema: GetTransactionsResponseBody,
 	description:
 		'Retrieves transactions for a specific account within a date range.',
 })
 
-export type GetTransactionByIdRequestPathParams = {
-	accountId: string // Hashed Account ID
-	transactionId: string // Transaction ID
-}
-
 export const getTransactionById = createEndpoint<
 	GetTransactionByIdRequestPathParams,
-	never, // No query params for this endpoint
+	GetTransactionByIdRequestQueryParams,
 	never,
-	Transaction,
+	GetTransactionByIdResponseBody,
 	'GET',
 	any
 >({
 	method: 'GET',
-	path: '/trader/v1/accounts/:accountId/transactions/:transactionId',
-	pathSchema: z.object({
-		accountId: z.string(),
-		transactionId: z.number().int(),
-	}),
-	responseSchema: Transaction,
+	path: '/trader/v1/accounts/:accountNumber/transactions/:transactionId',
+	pathSchema: GetTransactionByIdRequestPathParams,
+	querySchema: GetTransactionByIdRequestQueryParams,
+	responseSchema: GetTransactionByIdResponseBody,
 	description:
 		'Retrieves a specific transaction by its ID for a given account.',
 })

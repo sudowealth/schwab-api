@@ -1,17 +1,15 @@
 import { z } from 'zod'
 import { ApiCurrencyType, assetType } from '../../schemas'
 
-export const AccountAPIOptionDeliverable = z.object({
+const AccountAPIOptionDeliverable = z.object({
 	symbol: z.string(),
 	deliverableUnits: z.number(),
 	apiCurrencyType: ApiCurrencyType,
 	assetType: assetType,
 })
-export type AccountAPIOptionDeliverable = z.infer<
-	typeof AccountAPIOptionDeliverable
->
+type AccountAPIOptionDeliverable = z.infer<typeof AccountAPIOptionDeliverable>
 
-export const AccountsBaseInstrument = z.object({
+const AccountsBaseInstrument = z.object({
 	assetType: assetType,
 	cusip: z.string().optional(), // Made optional based on some TransactionInstrument variations
 	symbol: z.string(),
@@ -19,36 +17,36 @@ export const AccountsBaseInstrument = z.object({
 	instrumentId: z.number().int().optional(),
 	netChange: z.number().optional(),
 })
-export type AccountsBaseInstrument = z.infer<typeof AccountsBaseInstrument>
+type AccountsBaseInstrument = z.infer<typeof AccountsBaseInstrument>
 
-export const AccountCashEquivalent = AccountsBaseInstrument.extend({
+const AccountCashEquivalent = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.CASH_EQUIVALENT),
 	type: z
 		.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN'])
 		.optional(),
 	underlyingSymbol: z.string().optional(),
 })
-export type AccountCashEquivalent = z.infer<typeof AccountCashEquivalent>
+type AccountCashEquivalent = z.infer<typeof AccountCashEquivalent>
 
-export const AccountEquity = AccountsBaseInstrument.extend({
+const AccountEquity = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.EQUITY),
 })
-export type AccountEquity = z.infer<typeof AccountEquity>
+type AccountEquity = z.infer<typeof AccountEquity>
 
-export const AccountFixedIncome = AccountsBaseInstrument.extend({
+const AccountFixedIncome = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.FIXED_INCOME),
 	maturityDate: z.string().datetime().optional(),
 	factor: z.number().optional(),
 	variableRate: z.number().optional(),
 })
-export type AccountFixedIncome = z.infer<typeof AccountFixedIncome>
+type AccountFixedIncome = z.infer<typeof AccountFixedIncome>
 
-export const AccountMutualFund = AccountsBaseInstrument.extend({
+const AccountMutualFund = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.MUTUAL_FUND),
 })
-export type AccountMutualFund = z.infer<typeof AccountMutualFund>
+type AccountMutualFund = z.infer<typeof AccountMutualFund>
 
-export const AccountOption = AccountsBaseInstrument.extend({
+const AccountOption = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.OPTION),
 	optionDeliverables: z
 		.array(z.lazy(() => AccountAPIOptionDeliverable))
@@ -58,43 +56,41 @@ export const AccountOption = AccountsBaseInstrument.extend({
 	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']).optional(),
 	underlyingSymbol: z.string().optional(), // Added as it's common for options
 })
-export type AccountOption = z.infer<typeof AccountOption>
+type AccountOption = z.infer<typeof AccountOption>
 
-export const AccountFuture = AccountsBaseInstrument.extend({
+const AccountFuture = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.FUTURE),
 	expirationDate: z.string().datetime().optional(),
 	activeContract: z.boolean().default(false).optional(),
 })
-export type AccountFuture = z.infer<typeof AccountFuture>
+type AccountFuture = z.infer<typeof AccountFuture>
 
-export const AccountForex = AccountsBaseInstrument.extend({
+const AccountForex = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.FOREX),
 })
-export type AccountForex = z.infer<typeof AccountForex>
+type AccountForex = z.infer<typeof AccountForex>
 
-export const AccountIndex = AccountsBaseInstrument.extend({
+const AccountIndex = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.INDEX),
 })
-export type AccountIndex = z.infer<typeof AccountIndex>
+type AccountIndex = z.infer<typeof AccountIndex>
 
-export const AccountProduct = AccountsBaseInstrument.extend({
+const AccountProduct = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.PRODUCT), // Assuming PRODUCT is in AssetType enum
 })
-export type AccountProduct = z.infer<typeof AccountProduct>
+type AccountProduct = z.infer<typeof AccountProduct>
 
-export const AccountCurrency = AccountsBaseInstrument.extend({
+const AccountCurrency = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.CURRENCY),
 })
-export type AccountCurrency = z.infer<typeof AccountCurrency>
+type AccountCurrency = z.infer<typeof AccountCurrency>
 
-export const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
+const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.COLLECTIVE_INVESTMENT),
 })
-export type AccountCollectiveInvestment = z.infer<
-	typeof AccountCollectiveInvestment
->
+type AccountCollectiveInvestment = z.infer<typeof AccountCollectiveInvestment>
 
-export const AccountsInstrument = z.discriminatedUnion('assetType', [
+const AccountsInstrument = z.discriminatedUnion('assetType', [
 	AccountCashEquivalent,
 	AccountEquity,
 	AccountFixedIncome,
@@ -107,10 +103,10 @@ export const AccountsInstrument = z.discriminatedUnion('assetType', [
 	AccountCurrency,
 	AccountCollectiveInvestment,
 ])
-export type AccountsInstrument = z.infer<typeof AccountsInstrument>
+type AccountsInstrument = z.infer<typeof AccountsInstrument>
 
 // --- Position Schema ---
-export const Position = z.object({
+const Position = z.object({
 	shortQuantity: z.number().optional(),
 	averagePrice: z.number().optional(),
 	currentDayProfitLoss: z.number().optional(),
@@ -132,10 +128,10 @@ export const Position = z.object({
 	previousSessionShortQuantity: z.number().optional(),
 	currentDayCost: z.number().optional(),
 })
-export type Position = z.infer<typeof Position>
+type Position = z.infer<typeof Position>
 
 // --- Account Balance Schemas ---
-export const MarginInitialBalance = z.object({
+const MarginInitialBalance = z.object({
 	accruedInterest: z.number().optional(),
 	availableFundsNonMarginableTrade: z.number().optional(),
 	bondValue: z.number().optional(),
@@ -170,9 +166,9 @@ export const MarginInitialBalance = z.object({
 	shortBalance: z.number().optional(),
 	accountValue: z.number().optional(),
 })
-export type MarginInitialBalance = z.infer<typeof MarginInitialBalance>
+type MarginInitialBalance = z.infer<typeof MarginInitialBalance>
 
-export const MarginBalance = z.object({
+const MarginBalance = z.object({
 	availableFunds: z.number().optional(),
 	availableFundsNonMarginableTrade: z.number().optional(),
 	buyingPower: z.number().optional(),
@@ -193,9 +189,9 @@ export const MarginBalance = z.object({
 	stockBuyingPower: z.number().optional(),
 	optionBuyingPower: z.number().optional(),
 })
-export type MarginBalance = z.infer<typeof MarginBalance>
+type MarginBalance = z.infer<typeof MarginBalance>
 
-export const CashInitialBalance = z.object({
+const CashInitialBalance = z.object({
 	accruedInterest: z.number().optional(),
 	cashAvailableForTrading: z.number().optional(),
 	cashAvailableForWithdrawal: z.number().optional(),
@@ -215,9 +211,9 @@ export const CashInitialBalance = z.object({
 	pendingDeposits: z.number().optional(),
 	accountValue: z.number().optional(),
 })
-export type CashInitialBalance = z.infer<typeof CashInitialBalance>
+type CashInitialBalance = z.infer<typeof CashInitialBalance>
 
-export const CashBalance = z.object({
+const CashBalance = z.object({
 	cashAvailableForTrading: z.number().optional(),
 	cashAvailableForWithdrawal: z.number().optional(),
 	cashCall: z.number().optional(),
@@ -239,10 +235,10 @@ export const CashBalance = z.object({
 	bondValue: z.number().optional(),
 	shortOptionMarketValue: z.number().optional(),
 })
-export type CashBalance = z.infer<typeof CashBalance>
+type CashBalance = z.infer<typeof CashBalance>
 
 // --- Account Core Schemas ---
-export const SecuritiesAccountBase = z.object({
+const SecuritiesAccountBase = z.object({
 	type: z.string(), // Will be 'MARGIN' or 'CASH' in extending types
 	accountNumber: z.string(),
 	roundTrips: z.number().int().optional(),
@@ -251,17 +247,17 @@ export const SecuritiesAccountBase = z.object({
 	pfcbFlag: z.boolean().default(false).optional(),
 	positions: z.array(Position).default([]).optional(),
 })
-export type SecuritiesAccountBase = z.infer<typeof SecuritiesAccountBase>
+type SecuritiesAccountBase = z.infer<typeof SecuritiesAccountBase>
 
-export const MarginAccount = SecuritiesAccountBase.extend({
+const MarginAccount = SecuritiesAccountBase.extend({
 	type: z.literal('MARGIN'),
 	initialBalances: MarginInitialBalance.optional(),
 	currentBalances: MarginBalance.optional(),
 	projectedBalances: MarginBalance.optional(), // MCP used MarginBalance here
 })
-export type MarginAccount = z.infer<typeof MarginAccount>
+type MarginAccount = z.infer<typeof MarginAccount>
 
-export const CashAccount = SecuritiesAccountBase.extend({
+const CashAccount = SecuritiesAccountBase.extend({
 	type: z.literal('CASH'),
 	initialBalances: CashInitialBalance.optional(),
 	currentBalances: CashBalance.optional(),
@@ -273,35 +269,72 @@ export const CashAccount = SecuritiesAccountBase.extend({
 		})
 		.optional(),
 })
-export type CashAccount = z.infer<typeof CashAccount>
+type CashAccount = z.infer<typeof CashAccount>
 
-export const SecuritiesAccount = z.discriminatedUnion('type', [
+const SecuritiesAccount = z.discriminatedUnion('type', [
 	MarginAccount,
 	CashAccount,
 ])
-export type SecuritiesAccount = z.infer<typeof SecuritiesAccount>
+type SecuritiesAccount = z.infer<typeof SecuritiesAccount>
 
-// Wrapper for GET /accounts responses
-export const AccountWrapper = z.object({
-	securitiesAccount: SecuritiesAccount,
-	// MCP also had an aggregatedBalance here, can be added if needed by endpoints
-	// aggregatedBalance: z.object({
-	//   currentLiquidationValue: z.number().optional(),
-	//   liquidationValue: z.number().optional(),
-	// }).optional(),
+// --- Get Account By Number ---
+export const GetAccountByNumberRequestPathParams = z.object({
+	accountNumber: z.string(),
 })
-export type AccountWrapper = z.infer<typeof AccountWrapper>
+export type GetAccountByNumberRequestPathParams = z.infer<
+	typeof GetAccountByNumberRequestPathParams
+>
 
-// Schema for an array of accounts, typically for GET /accounts
-export const AccountsArraySchema = z.array(AccountWrapper) // MCP used AccountWrapper
-export type AccountsArraySchema = z.infer<typeof AccountsArraySchema>
-
-// For queries like GET /accounts?fields=positions
-export const AccountsQueryParamsSchema = z
+export const GetAccountByNumberRequestQueryParams = z
 	.object({
-		fields: z.enum(['positions', 'balances']).optional(),
+		fields: z.enum(['positions']).optional(),
 	})
 	.optional()
-export type AccountsQueryParamsSchema = z.infer<
-	typeof AccountsQueryParamsSchema
+export type GetAccountByNumberRequestQueryParams = z.infer<
+	typeof GetAccountByNumberRequestQueryParams
+>
+
+export const GetAccountByNumberResponseBody = z.object({
+	securitiesAccount: SecuritiesAccount,
+})
+export type GetAccountByNumberResponseBody = z.infer<
+	typeof GetAccountByNumberResponseBody
+>
+
+// --- Get Accounts ---
+export const GetAccountsRequestQueryParams = z
+	.object({
+		fields: z.enum(['positions']).optional(),
+	})
+	.optional()
+export type GetAccountsRequestQueryParams = z.infer<
+	typeof GetAccountsRequestQueryParams
+>
+
+export const GetAccountsRequestPathParams = z.never()
+export type GetAccountsRequestPathParams = z.infer<
+	typeof GetAccountsRequestPathParams
+>
+export const GetAccountsResponseBody = z.array(GetAccountByNumberResponseBody) // MCP used AccountWrapper
+export type GetAccountsResponseBody = z.infer<typeof GetAccountsResponseBody>
+
+// --- Get Account Numbers ---
+export const GetAccountNumbersRequestPathParams = z.never()
+export type GetAccountNumbersRequestPathParams = z.infer<
+	typeof GetAccountNumbersRequestPathParams
+>
+
+export const GetAccountNumbersRequestQueryParams = z.never()
+export type GetAccountNumbersRequestQueryParams = z.infer<
+	typeof GetAccountNumbersRequestQueryParams
+>
+
+export const GetAccountNumbersResponseBody = z.array(
+	z.object({
+		accountNumber: z.string(),
+		hashValue: z.string(),
+	}),
+)
+export type GetAccountNumbersResponseBody = z.infer<
+	typeof GetAccountNumbersResponseBody
 >

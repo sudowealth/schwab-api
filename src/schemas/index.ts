@@ -1,7 +1,8 @@
 import { z } from 'zod'
-import { TransactionType } from '../trader/transactions/schema'
-export * as account from '../trader/accounts/schema'
-export * as transaction from '../trader/transactions/schema'
+import { assetType } from '../trader/transactions/schema'
+export * from '../trader/accounts/schema'
+export * from '../trader/orders/schema'
+export * from '../trader/transactions/schema'
 
 export const AccountNumberHash = z.object({
 	accountNumber: z.string(),
@@ -75,20 +76,6 @@ const complexOrderStrategyType = z.enum([
 	'MUTUAL_FUND_SWAP',
 	'CUSTOM',
 ])
-const requestedDestination = z.enum([
-	'INET',
-	'ECN_ARCA',
-	'CBOE',
-	'AMEX',
-	'PHLX',
-	'ISE',
-	'BOX',
-	'NYSE',
-	'NASDAQ',
-	'BATS',
-	'C2',
-	'AUTO',
-])
 const stopPriceLinkBasis = z.enum([
 	'MANUAL',
 	'BASE',
@@ -101,7 +88,6 @@ const stopPriceLinkBasis = z.enum([
 	'AVERAGE',
 ])
 const stopPriceLinkType = z.enum(['VALUE', 'PERCENT', 'TICK'])
-const stopPriceOffsetnumber = z.number()
 const stopType = z.enum(['STANDARD', 'BID', 'ASK', 'LAST', 'MARK'])
 const priceLinkBasis = z.enum([
 	'MANUAL',
@@ -182,19 +168,6 @@ const instruction = z.enum([
 	'SELL_TO_CLOSE',
 	'EXCHANGE',
 	'SELL_SHORT_EXEMPT',
-])
-export const assetType = z.enum([
-	'EQUITY',
-	'MUTUAL_FUND',
-	'OPTION',
-	'FUTURE',
-	'FOREX',
-	'INDEX',
-	'CASH_EQUIVALENT',
-	'FIXED_INCOME',
-	'PRODUCT',
-	'CURRENCY',
-	'COLLECTIVE_INVESTMENT',
 ])
 const apiOrderStatus = z.enum([
 	'AWAITING_PARENT_ORDER',
@@ -539,12 +512,6 @@ export const AccountsQueryParamsSchema = z
 	})
 	.optional()
 
-const DateParam = z.object({
-	date: z.string().datetime({
-		message: "Valid ISO-8601 format is : yyyy-MM-dd'T'HH:mm:ss.SSSZ",
-	}),
-})
-
 const ExecutionLeg = z.object({
 	legId: z.number().int(),
 	price: z.number(),
@@ -572,80 +539,6 @@ const OrderLegCollection = z.object({
 	quantityType: quantityType,
 	divCapGains: divCapGains,
 	toSymbol: z.string(),
-})
-
-// Order status enum
-enum OrderStatus {
-	FILLED = 'FILLED',
-	WORKING = 'WORKING',
-	CANCELED = 'CANCELED',
-	REJECTED = 'REJECTED',
-	EXPIRED = 'EXPIRED',
-	QUEUED = 'QUEUED',
-	PENDING = 'PENDING',
-}
-
-// Order side enum
-enum OrderSide {
-	BUY = 'BUY',
-	SELL = 'SELL',
-	BUY_TO_COVER = 'BUY_TO_COVER',
-	SELL_SHORT = 'SELL_SHORT',
-}
-
-// Order type enum
-enum OrderType {
-	MARKET = 'MARKET',
-	LIMIT = 'LIMIT',
-	STOP = 'STOP',
-	STOP_LIMIT = 'STOP_LIMIT',
-}
-
-// Duration type enum
-enum OrderDuration {
-	DAY = 'DAY',
-	GOOD_TILL_CANCEL = 'GOOD_TILL_CANCEL',
-	FILL_OR_KILL = 'FILL_OR_KILL',
-	IMMEDIATE_OR_CANCEL = 'IMMEDIATE_OR_CANCEL',
-}
-
-export const Order = z.object({
-	session: session,
-	duration: duration,
-	orderType: orderType,
-	cancelTime: z.string().datetime(),
-	complexOrderStrategyType: complexOrderStrategyType,
-	quantity: z.number(),
-	filledQuantity: z.number(),
-	remainingQuantity: z.number(),
-	requestedDestination: requestedDestination,
-	destinationLinkName: z.string(),
-	releaseTime: z.string().datetime(),
-	stopPrice: z.number(),
-	stopPriceLinkBasis: stopPriceLinkBasis,
-	stopPriceLinkType: stopPriceLinkType,
-	stopPriceOffset: z.number(),
-	stopType: stopType,
-	priceLinkBasis: priceLinkBasis,
-	priceLinkType: priceLinkType,
-	price: z.number(),
-	taxLotMethod: taxLotMethod,
-	orderLegCollection: z.array(OrderLegCollection),
-	activationPrice: z.number(),
-	specialInstruction: specialInstruction,
-	orderStrategyType: orderStrategyType,
-	orderId: z.number().int(),
-	cancelable: z.boolean().default(false),
-	editable: z.boolean().default(false),
-	status: status,
-	enteredTime: z.string().datetime(),
-	closeTime: z.string().datetime(),
-	tag: z.string(),
-	accountNumber: z.number().int(),
-	orderActivityCollection: z.array(OrderActivity),
-	replacingOrderCollection: z.array(z.object({})), // Placeholder for unknown structure
-	childOrderStrategies: z.array(z.object({})), // Placeholder for unknown structure
-	statusDescription: z.string(),
 })
 
 export const OrderRequest = z.object({
@@ -757,7 +650,7 @@ const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
 	assetType: z.literal('COLLECTIVE_INVESTMENT'),
 })
 
-const AccountsInstrument = z.discriminatedUnion('assetType', [
+export const AccountsInstrument = z.discriminatedUnion('assetType', [
 	AccountCashEquivalent,
 	AccountEquity,
 	AccountFixedIncome,
@@ -771,184 +664,6 @@ const AccountsInstrument = z.discriminatedUnion('assetType', [
 	AccountCollectiveInvestment,
 ])
 
-// Recreate TransactionBaseInstrument
-const TransactionBaseInstrument = z.object({
-	assetType: assetType,
-	cusip: z.string(), // Removed optional
-	symbol: z.string(), // Removed optional
-	description: z.string(), // Description often optional
-	instrumentId: z.number().int().optional(), // Removed optional, kept int ($int64)
-	netChange: z.number().optional(),
-})
-
-// Define Transaction Instrument Types
-const TransactionCashEquivalent = TransactionBaseInstrument.extend({
-	assetType: z.literal('CASH_EQUIVALENT'),
-	symbol: z.string(), // Required per spec
-	description: z.string(), // Required per spec
-	type: z.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN']),
-})
-
-const CollectiveInvestment = TransactionBaseInstrument.extend({
-	assetType: z.literal('COLLECTIVE_INVESTMENT'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
-	instrumentId: z.any(), // [...] definition unclear
-	type: z.any(), // [...] definition unclear
-})
-
-const Currency = TransactionBaseInstrument.extend({
-	assetType: z.literal('CURRENCY'),
-	symbol: z.string(), // Required per spec
-})
-
-const TransactionEquity = TransactionBaseInstrument.extend({
-	assetType: z.literal('EQUITY'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
-	type: z.enum([
-		'COMMON_STOCK',
-		'PREFERRED_STOCK',
-		'DEPOSITORY_RECEIPT',
-		'PREFERRED_DEPOSITORY_RECEIPT',
-		'RESTRICTED_STOCK',
-		'COMPONENT_UNIT',
-		'RIGHT',
-		'WARRANT',
-		'CONVERTIBLE_PREFERRED_STOCK',
-		'CONVERTIBLE_STOCK',
-		'LIMITED_PARTNERSHIP',
-		'WHEN_ISSUED',
-		'UNKNOWN',
-	]),
-})
-
-const TransactionFixedIncome = TransactionBaseInstrument.extend({
-	assetType: z.literal('FIXED_INCOME'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
-	type: z.enum([
-		'BOND_UNIT',
-		'CERTIFICATE_OF_DEPOSIT',
-		'CONVERTIBLE_BOND',
-		'COLLATERALIZED_MORTGAGE_OBLIGATION',
-		'CORPORATE_BOND',
-		'GOVERNMENT_MORTGAGE',
-		'GNMA_BONDS',
-		'MUNICIPAL_ASSESSMENT_DISTRICT',
-		'MUNICIPAL_BOND',
-		'OTHER_GOVERNMENT',
-		'SHORT_TERM_PAPER',
-		'US_TREASURY_BOND',
-		'US_TREASURY_BILL',
-		'US_TREASURY_NOTE',
-		'US_TREASURY_ZERO_COUPON',
-		'AGENCY_BOND',
-		'WHEN_AS_AND_IF_ISSUED_BOND',
-		'ASSET_BACKED_SECURITY',
-		'UNKNOWN',
-	]),
-	maturityDate: z.string().datetime(),
-	factor: z.number(), // Not marked required
-	multiplier: z.number(), // Not marked required
-	variableRate: z.number(), // Not marked required
-})
-
-const Forex = TransactionBaseInstrument.extend({
-	assetType: z.literal('FOREX'),
-	symbol: z.string(), // Required per spec
-	type: z.enum(['STANDARD', 'NBBO', 'UNKNOWN']),
-	baseCurrency: z.lazy(() => Currency), // Assuming Currency is defined
-	counterCurrency: z.lazy(() => Currency),
-})
-
-// Define Future and Index based on interpretation (ignoring incorrect oneOf)
-const Future = TransactionBaseInstrument.extend({
-	assetType: z.literal('FUTURE'), // Assuming FUTURE based on name
-	symbol: z.string(), // Required per spec
-	activeContract: z.boolean().default(false),
-	type: z.enum(['STANDARD', 'UNKNOWN']),
-	expirationDate: z.string().datetime(),
-	lastTradingDate: z.string().datetime(), // Assuming optional
-	firstNoticeDate: z.string().datetime(), // Assuming optional
-	multiplier: z.number(),
-})
-
-const Index = TransactionBaseInstrument.extend({
-	assetType: z.literal('INDEX'), // Assuming INDEX based on name
-	symbol: z.string(), // Required per spec
-	activeContract: z.boolean().default(false),
-	type: z.string(), // Enum Array [ 3 ] unclear
-})
-
-const TransactionMutualFund = TransactionBaseInstrument.extend({
-	assetType: z.literal('MUTUAL_FUND'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
-	fundFamilyName: z.string(), // Not marked required
-	fundFamilySymbol: z.string(), // Not marked required
-	fundGroup: z.string(), // Not marked required
-	type: z.enum([
-		'NOT_APPLICABLE',
-		'OPEN_END_NON_TAXABLE',
-		'OPEN_END_TAXABLE',
-		'NO_LOAD_NON_TAXABLE',
-		'NO_LOAD_TAXABLE',
-		'UNKNOWN',
-	]),
-	exchangeCutoffTime: z.string().datetime(), // Not marked required
-	purchaseCutoffTime: z.string().datetime(), // Not marked required
-	redemptionCutoffTime: z.string().datetime(), // Not marked required
-})
-
-const TransactionAPIOptionDeliverable = z.object({
-	rootSymbol: z.string(),
-	strikePercent: z.number().int(),
-	deliverableNumber: z.number().int(),
-	deliverableUnits: z.number(),
-	deliverable: z.any(), // Changed to z.any() for now
-	assetType: assetType,
-})
-
-const TransactionOption = TransactionBaseInstrument.extend({
-	assetType: z.literal('OPTION'), // Corrected to z.literal for discriminated union
-	cusip: z.string(),
-	symbol: z.string(),
-	description: z.string(),
-	instrumentId: z.number().int().optional(),
-	netChange: z.number().optional(),
-	expirationDate: z.string().datetime(),
-	optionDeliverables: z.array(TransactionAPIOptionDeliverable),
-	optionPremiumMultiplier: z.number().int(),
-	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']),
-	strikePrice: z.number(),
-	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']),
-	underlyingSymbol: z.string(),
-	underlyingCusip: z.string(),
-	deliverable: z.any(), // Changed to z.any() for now
-})
-
-const Product = TransactionBaseInstrument.extend({
-	assetType: z.literal('PRODUCT'),
-	symbol: z.string(), // Required per spec
-	type: z.enum(['TBD', 'UNKNOWN']),
-})
-
-// Replace placeholder with the correct discriminated union
-const TransactionInstrument = z.discriminatedUnion('assetType', [
-	TransactionCashEquivalent,
-	CollectiveInvestment,
-	Currency,
-	TransactionEquity,
-	TransactionFixedIncome,
-	Forex,
-	Future,
-	Index,
-	TransactionMutualFund,
-	TransactionOption,
-	Product,
-])
-
 export const ApiCurrencyType = z.enum(['USD', 'CAD', 'EUR', 'JPY'])
 
 const AccountAPIOptionDeliverable = z.object({
@@ -958,122 +673,8 @@ const AccountAPIOptionDeliverable = z.object({
 	assetType: assetType, // Removed optional
 })
 
-const UserDetails = z.object({
-	cdDomainId: z.string(),
-	login: z.string(),
-	type: z.enum([
-		'ADVISOR_USER',
-		'BROKER_USER',
-		'CLIENT_USER',
-		'SYSTEM_USER',
-		'UNKNOWN',
-	]),
-	userId: z.number().int(), // ($int64)
-	systemUserName: z.string(),
-	firstName: z.string(),
-	lastName: z.string(),
-	brokerRepCode: z.string(),
-})
-
-const TransferItem = z.object({
-	instrument: TransactionInstrument, // References the placeholder TransactionInstrument
-	amount: z.number(),
-	cost: z.number(),
-	price: z.number(),
-	feeType: z.enum([
-		'COMMISSION',
-		'SEC_FEE',
-		'STR_FEE',
-		'R_FEE',
-		'CDSC_FEE',
-		'OPT_REG_FEE',
-		'ADDITIONAL_FEE',
-		'MISCELLANEOUS_FEE',
-		'FUTURES_EXCHANGE_FEE',
-		'LOW_PROCEEDS_COMMISSION',
-		'BASE_CHARGE',
-		'GENERAL_CHARGE',
-		'GST_FEE',
-		'TAF_FEE',
-		'INDEX_OPTION_FEE',
-		'UNKNOWN',
-	]),
-	positionEffect: z.enum(['OPENING', 'CLOSING', 'AUTOMATIC', 'UNKNOWN']),
-})
-
-// New: Schema for GET /accounts/{accountNumber}/orders query parameters
-export const OrdersQuerySchema = z.object({
-	maxResults: z
-		.number()
-		.int()
-		.default(3000)
-		.optional()
-		.describe(
-			'Specifies the maximum number of orders to return. Default is 3000.',
-		),
-	fromEnteredTime: z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.describe(
-			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date. 'toEnteredTime' must also be set.",
-		)
-		.default(() => {
-			const date = new Date()
-			date.setDate(date.getDate() - 59)
-			return date.toISOString()
-		}),
-	toEnteredTime: z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.describe(
-			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. 'fromEnteredTime' must also be set.",
-		)
-		.default(() => {
-			const date = new Date()
-			return date.toISOString()
-		}),
-	status: status
-		.optional()
-		.describe(
-			'Specifies that only orders of this status should be returned. Default is all.',
-		),
-})
-export type OrdersQuerySchema = z.infer<typeof OrdersQuerySchema>
-
 // New: Schema for path parameter {accountNumber}
 export const AccountNumberPathSchema = z.object({ accountNumber: z.string() })
-
-// New: Schema for Array of Order
-export const OrdersArraySchema = z.array(Order)
-
-// Define Transaction after its dependencies UserDetails and TransferItem
-export const Transaction = z.object({
-	activityId: z.number().int(),
-	time: z.string().datetime(),
-	user: UserDetails,
-	description: z.string(),
-	accountNumber: z.string(),
-	type: TransactionType,
-	status: z.enum(['VALID', 'INVALID', 'PENDING', 'UNKNOWN']),
-	subAccount: z.enum(['CASH', 'MARGIN', 'SHORT', 'DIV', 'INCOME', 'UNKNOWN']),
-	tradeDate: z.string().datetime(),
-	settlementDate: z.string().datetime(),
-	positionId: z.number().int(),
-	orderId: z.number().int(),
-	netAmount: z.number(),
-	activityType: z.enum([
-		'ACTIVITY_CORRECTION',
-		'EXECUTION',
-		'ORDER_ACTION',
-		'TRANSFER',
-		'UNKNOWN',
-	]),
-	transferItems: z.array(TransferItem),
-})
-export type Transaction = z.infer<typeof Transaction>
-
-export const Transactions = z.array(Transaction)
-export type Transactions = z.infer<typeof Transactions>
 
 // New: Schema for the wrapper object returned by GET /accounts
 const AccountWrapper = z.object({

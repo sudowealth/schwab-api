@@ -1,10 +1,9 @@
-import { z } from 'zod'
 import { createEndpoint } from '../../core/http'
-import { OrdersArraySchema, OrdersQuerySchema } from '../../schemas'
-
-export type GetOrdersRequestPathParams = {} // No path params
-export type GetOrdersRequestQueryParams = z.infer<typeof OrdersQuerySchema>
-export type GetOrdersResponseBody = z.infer<typeof OrdersArraySchema>
+import {
+	GetOrdersRequestQueryParams,
+	GetOrdersRequestPathParams,
+	GetOrdersResponseBody,
+} from './schema'
 
 export const getOrders = createEndpoint<
 	GetOrdersRequestPathParams,
@@ -16,8 +15,8 @@ export const getOrders = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/orders',
-	pathSchema: z.object({}), // Empty schema for no path params
-	querySchema: OrdersQuerySchema,
-	responseSchema: OrdersArraySchema,
+	pathSchema: GetOrdersRequestPathParams,
+	querySchema: GetOrdersRequestQueryParams,
+	responseSchema: GetOrdersResponseBody,
 	description: 'Get all orders for all accounts.',
 })

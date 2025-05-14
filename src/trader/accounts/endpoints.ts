@@ -1,16 +1,15 @@
-import { z } from 'zod'
 import { createEndpoint } from '../../core/http'
 import {
-	AccountsArraySchema,
-	AccountWrapper,
-	AccountsQueryParamsSchema,
+	GetAccountsRequestPathParams,
+	GetAccountsRequestQueryParams,
+	GetAccountsResponseBody,
+	GetAccountByNumberRequestPathParams,
+	GetAccountByNumberRequestQueryParams,
+	GetAccountByNumberResponseBody,
+	GetAccountNumbersRequestPathParams,
+	GetAccountNumbersRequestQueryParams,
+	GetAccountNumbersResponseBody,
 } from './schema'
-
-export type GetAccountsRequestPathParams = never // No path params
-export type GetAccountsRequestQueryParams = z.infer<
-	typeof AccountsQueryParamsSchema
->
-export type GetAccountsResponseBody = z.infer<typeof AccountsArraySchema>
 
 export const getAccounts = createEndpoint<
 	GetAccountsRequestPathParams,
@@ -22,17 +21,11 @@ export const getAccounts = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/accounts',
-	querySchema: AccountsQueryParamsSchema,
-	responseSchema: AccountsArraySchema,
+	pathSchema: GetAccountsRequestPathParams,
+	querySchema: GetAccountsRequestQueryParams,
+	responseSchema: GetAccountsResponseBody,
 	description: 'Retrieves all accounts associated with the user.',
 })
-
-// Example: getAccountByNumber
-export type GetAccountByNumberRequestPathParams = {
-	accountNumber: string
-}
-export type GetAccountByNumberRequestQueryParams = never // No query params
-export type GetAccountByNumberResponseBody = z.infer<typeof AccountWrapper>
 
 export const getAccountByNumber = createEndpoint<
 	GetAccountByNumberRequestPathParams,
@@ -44,23 +37,11 @@ export const getAccountByNumber = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/accounts/:accountNumber',
-	pathSchema: z.object({ accountNumber: z.string() }),
-	responseSchema: AccountWrapper,
+	pathSchema: GetAccountByNumberRequestPathParams,
+	querySchema: GetAccountByNumberRequestQueryParams,
+	responseSchema: GetAccountByNumberResponseBody,
 	description: 'Retrieves a specific account by its number.',
 })
-
-export type GetAccountNumbersRequestPathParams = never
-export type GetAccountNumbersRequestQueryParams = never
-export type GetAccountNumbersResponseBody = z.infer<
-	typeof AccountNumbersResponseSchema
->
-
-export const AccountNumbersResponseSchema = z.array(
-	z.object({
-		accountNumber: z.string(),
-		hashValue: z.string(),
-	}),
-)
 
 export const getAccountNumbers = createEndpoint<
 	GetAccountNumbersRequestPathParams,
@@ -72,6 +53,8 @@ export const getAccountNumbers = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/accounts/accountNumbers',
-	responseSchema: AccountNumbersResponseSchema,
+	pathSchema: GetAccountNumbersRequestPathParams,
+	querySchema: GetAccountNumbersRequestQueryParams,
+	responseSchema: GetAccountNumbersResponseBody,
 	description: 'Get list of account numbers and their encrypted values.',
 })
