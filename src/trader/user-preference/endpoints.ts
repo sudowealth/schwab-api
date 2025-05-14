@@ -1,6 +1,6 @@
-import { UserPreference } from './schema'
+import { type z } from 'zod'
 import { createEndpoint } from '../../core/http'
-import { z } from 'zod'
+import { UserPreference } from './schema'
 
 export type GetUserPreferenceRequestPathParams = never
 export type GetUserPreferenceRequestQueryParams = never

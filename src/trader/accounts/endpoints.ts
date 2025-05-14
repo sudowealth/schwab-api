@@ -1,10 +1,10 @@
+import { z } from 'zod'
 import { createEndpoint } from '../../core/http'
 import {
 	AccountsArraySchema,
 	AccountWrapper,
 	AccountsQueryParamsSchema,
 } from './schema'
-import { z } from 'zod'
 
 export type GetAccountsRequestPathParams = never // No path params
 export type GetAccountsRequestQueryParams = z.infer<

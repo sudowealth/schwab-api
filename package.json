@@ -1,8 +1,8 @@
 {
   "name": "@sudowealth/schwab-api",
-  "version": "0.0.7",
+  "version": "0.0.0-semantically-released",
+  "description": "Type safe Schwab API client",
   "type": "module",
-  "description": "Schwab API Client Library",
   "publishConfig": {
     "access": "public"
   },
@@ -31,8 +31,10 @@
     "build": "tsc",
     "test": "tsx --test --test-reporter spec --experimental-test-coverage test/*.test.ts",
     "test:watch": "tsx --test --test-reporter spec --watch test/*.test.ts",
-    "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write ."
+    "format": "prettier . --write",
+    "lint": "eslint .",
+    "typecheck": "tsc",
+    "validate": "run-p -l format lint typecheck"
   },
   "keywords": [
     "schwab",
@@ -41,11 +43,11 @@
     "trader",
     "market-data"
   ],
-  "author": "Daniel Yeoman",
-  "license": "MIT",
   "devDependencies": {
+    "@epic-web/config": "^1.20.1",
     "@types/node": "^20.10.4",
     "eslint": "^9.26.0",
+    "npm-run-all": "^4.1.5",
     "prettier": "^3.1.1",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3",
@@ -57,20 +59,7 @@
   "files": [
     "dist"
   ],
-  "prettier": {
-    "semi": false,
-    "useTabs": true,
-    "singleQuote": true,
-    "proseWrap": "always",
-    "overrides": [
-      {
-        "files": [
-          "**/*.json"
-        ],
-        "options": {
-          "useTabs": false
-        }
-      }
-    ]
-  }
+  "prettier": "@epic-web/config/prettier",
+  "author": "Daniel Yeoman",
+  "license": "MIT"
 }

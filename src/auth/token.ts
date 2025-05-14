@@ -1,6 +1,6 @@
-import { SCHWAB_OAUTH_BASE } from './urls'
 import { SchwabApiError } from '../core/errors'
 import { getSchwabApiConfig } from '../core/http'
+import { SCHWAB_OAUTH_BASE } from './urls'
 
 export interface ExchangeCodeForTokenOptions {
 	clientId: string

@@ -1,6 +1,6 @@
-import { OrdersArraySchema, OrdersQuerySchema } from '../../schemas'
-import { createEndpoint } from '../../core/http'
 import { z } from 'zod'
+import { createEndpoint } from '../../core/http'
+import { OrdersArraySchema, OrdersQuerySchema } from '../../schemas'
 
 export type GetOrdersRequestPathParams = {} // No path params
 export type GetOrdersRequestQueryParams = z.infer<typeof OrdersQuerySchema>

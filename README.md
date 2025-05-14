@@ -1,21 +1,27 @@
-# schwab-api-client
+## ⚠️ Unofficial and Incomplete Library ⚠️
 
-A TypeScript client library for interacting with Schwab APIs.
+**This is an unofficial, community-developed TypeScript client library for
+interacting with Schwab APIs. It has not been approved, endorsed, or certified
+by Charles Schwab. It is provided as-is, and its functionality may be incomplete
+or unstable. Use at your own risk, especially when dealing with financial data
+or transactions.**
+
+---
 
 ## Installation
 
 ```bash
-npm install schwab-api-client
+npm install schwab-api
 # or
-yarn add schwab-api-client
+yarn add schwab-api
 # or
-pnpm add schwab-api-client
+pnpm add schwab-api
 ```
 
 ## Usage
 
 ```typescript
-import { configureSchwabApi, trader } from 'schwab-api-client'
+import { configureSchwabApi, trader } from 'schwab-api'
 
 // Configure the API (optional, defaults are provided)
 configureSchwabApi({
@@ -61,8 +67,8 @@ main()
 
 ## Contributing
 
-(Details to be added)
+TBD
 
 ## License
 
-ISC
+MIT

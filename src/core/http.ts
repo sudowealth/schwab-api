@@ -1,4 +1,4 @@
-import { ZodType, ZodTypeDef } from 'zod'
+import { type ZodType, type ZodTypeDef } from 'zod'
 import { SchwabApiError } from './errors'
 
 export type HttpMethod =
