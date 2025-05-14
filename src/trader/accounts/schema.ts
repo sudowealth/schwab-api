@@ -1,5 +1,7 @@
 import { z } from 'zod'
-import { ApiCurrencyType, assetType } from '../../schemas'
+import { assetType } from '../transactions/schema'
+
+const ApiCurrencyType = z.enum(['USD', 'CAD', 'EUR', 'JPY'])
 
 const AccountAPIOptionDeliverable = z.object({
 	symbol: z.string(),

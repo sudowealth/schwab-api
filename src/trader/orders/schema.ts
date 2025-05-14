@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { AccountsInstrument } from '../../schemas'
+import { assetType } from '../transactions/schema'
 
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
 const duration = z.enum([
@@ -12,7 +12,8 @@ const duration = z.enum([
 	'NEXT_END_OF_MONTH',
 	'UNKNOWN',
 ])
-const orderType = z.enum([
+
+const orderTypeRequest = z.enum([
 	'MARKET',
 	'LIMIT',
 	'STOP',
@@ -27,8 +28,10 @@ const orderType = z.enum([
 	'NET_CREDIT',
 	'NET_ZERO',
 	'LIMIT_ON_CLOSE',
-	'UNKNOWN',
 ])
+
+const orderType = z.enum([...orderTypeRequest.options, 'UNKNOWN'])
+
 const complexOrderStrategyType = z.enum([
 	'NONE',
 	'COVERED',
@@ -168,6 +171,94 @@ const status = z.enum([
 	'UNKNOWN',
 ])
 
+const AccountsBaseInstrument = z.object({
+	assetType: assetType,
+	cusip: z.string(),
+	symbol: z.string(),
+	description: z.string(),
+	instrumentId: z.number().int().optional(), // Assuming int based on spec ($int64)
+	netChange: z.number().optional(),
+})
+
+// // Define placeholder schemas for the individual account instrument types
+const AccountCashEquivalent = AccountsBaseInstrument.extend({
+	assetType: z.literal('CASH_EQUIVALENT'),
+	type: z.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN']),
+	underlyingSymbol: z.string(),
+})
+
+const AccountEquity = AccountsBaseInstrument.extend({
+	assetType: z.literal('EQUITY'),
+})
+
+const AccountFixedIncome = AccountsBaseInstrument.extend({
+	assetType: z.literal('FIXED_INCOME'),
+	maturityDate: z.string().datetime(),
+	factor: z.number(),
+	variableRate: z.number(),
+})
+
+const AccountMutualFund = AccountsBaseInstrument.extend({
+	assetType: z.literal('MUTUAL_FUND'),
+})
+
+const ApiCurrencyType = z.enum(['USD', 'CAD', 'EUR', 'JPY'])
+
+const AccountAPIOptionDeliverable = z.object({
+	symbol: z.string(), // Removed optional, kept string
+	deliverableUnits: z.number(), // Removed optional
+	apiCurrencyType: ApiCurrencyType, // Removed optional
+	assetType: assetType, // Removed optional
+})
+
+const AccountOption = AccountsBaseInstrument.extend({
+	assetType: z.literal('OPTION'),
+	optionDeliverables: z.array(z.lazy(() => AccountAPIOptionDeliverable)),
+	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']),
+	optionMultiplier: z.number().int(),
+	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']),
+})
+
+const AccountFuture = AccountsBaseInstrument.extend({
+	assetType: z.literal('FUTURE'),
+	expirationDate: z.string().datetime().optional(),
+	activeContract: z.boolean().default(false),
+})
+
+const AccountForex = AccountsBaseInstrument.extend({
+	assetType: z.literal('FOREX'),
+})
+
+const AccountIndex = AccountsBaseInstrument.extend({
+	assetType: z.literal('INDEX'),
+})
+
+const AccountProduct = AccountsBaseInstrument.extend({
+	assetType: z.literal('PRODUCT'),
+})
+
+const AccountCurrency = AccountsBaseInstrument.extend({
+	assetType: z.literal('CURRENCY'),
+})
+
+const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
+	assetType: z.literal('COLLECTIVE_INVESTMENT'),
+})
+
+export const AccountsInstrument = z.discriminatedUnion('assetType', [
+	AccountCashEquivalent,
+	AccountEquity,
+	AccountFixedIncome,
+	AccountMutualFund,
+	AccountOption,
+	AccountFuture,
+	AccountForex,
+	AccountIndex,
+	AccountProduct,
+	AccountCurrency,
+	AccountCollectiveInvestment,
+])
+
 const ExecutionLeg = z.object({
 	legId: z.number().int(),
 	price: z.number(),
@@ -195,6 +286,43 @@ const OrderLegCollection = z.object({
 	quantityType: quantityType,
 	divCapGains: divCapGains,
 	toSymbol: z.string(),
+})
+
+const OrderRequest = z.object({
+	session: session,
+	duration: duration,
+	orderType: orderTypeRequest,
+	cancelTime: z.string().datetime(),
+	complexOrderStrategyType: complexOrderStrategyType,
+	quantity: z.number(),
+	filledQuantity: z.number(), // Typically not part of a request, but included per spec
+	remainingQuantity: z.number(), // Typically not part of a request, but included per spec
+	destinationLinkName: z.string(),
+	releaseTime: z.string().datetime(),
+	stopPrice: z.number(),
+	stopPriceLinkBasis: stopPriceLinkBasis,
+	stopPriceLinkType: stopPriceLinkType,
+	stopPriceOffset: z.number(),
+	stopType: stopType,
+	priceLinkBasis: priceLinkBasis,
+	priceLinkType: priceLinkType,
+	price: z.number(),
+	taxLotMethod: taxLotMethod,
+	orderLegCollection: z.array(OrderLegCollection),
+	activationPrice: z.number(),
+	specialInstruction: specialInstruction,
+	orderStrategyType: orderStrategyType,
+	orderId: z.number().int(), // Optional for new orders
+	cancelable: z.boolean().default(false), // Typically not part of a request
+	editable: z.boolean().default(false), // Typically not part of a request
+	status: status, // Typically not part of a request
+	enteredTime: z.string().datetime(), // Typically set by server
+	closeTime: z.string().datetime(), // Typically set by server
+	accountNumber: z.string(), // Must match path param, but often optional in body?
+	orderActivityCollection: z.array(OrderActivity), // Typically not part of a request
+	replacingOrderCollection: z.array(z.object({})), // Placeholder
+	childOrderStrategies: z.array(z.object({})), // Placeholder
+	statusDescription: z.string(), // Typically not part of a request
 })
 
 const Order = z.object({
@@ -278,3 +406,73 @@ export const GetOrdersRequestQueryParams = z.object({
 export type GetOrdersRequestQueryParams = z.infer<
 	typeof GetOrdersRequestQueryParams
 >
+
+export const GetOrdersByAccountRequestPathParams = z.object({
+	accountNumber: z.string().describe('The encrypted ID of the account'),
+})
+export type GetOrdersByAccountRequestPathParams = z.infer<
+	typeof GetOrdersByAccountRequestPathParams
+>
+
+export const GetOrdersByAccountRequestQueryParams = z.object({
+	maxResults: z
+		.number()
+		.int()
+		.default(3000)
+		.optional()
+		.describe('The max number of orders to retrieve. Default is 3000.'),
+	fromEnteredTime: z
+		.string()
+		.datetime({ offset: true, precision: 3 })
+		.default(() => {
+			const date = new Date()
+			date.setDate(date.getDate() - 30)
+			return date.toISOString()
+		})
+		.describe(
+			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example fromEnteredTime is '2024-03-29T00:00:00.000Z'. 'toEnteredTime' must also be set.",
+		),
+	toEnteredTime: z
+		.string()
+		.datetime({ offset: true, precision: 3 })
+		.default(() => {
+			const date = new Date()
+			return date.toISOString()
+		})
+		.describe(
+			"Specifies that no orders entered after this time should be returned.Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example toEnteredTime is '2024-04-28T23:59:59.000Z'. 'fromEnteredTime' must also be set.",
+		),
+	status: status
+		.optional()
+		.describe(
+			'Specifies that only orders of this status should be returned. Available values : AWAITING_PARENT_ORDER, AWAITING_CONDITION, AWAITING_STOP_CONDITION, AWAITING_MANUAL_REVIEW, ACCEPTED, AWAITING_UR_OUT, PENDING_ACTIVATION, QUEUED, WORKING, REJECTED, PENDING_CANCEL, CANCELED, PENDING_REPLACE, REPLACED, FILLED, EXPIRED, NEW, AWAITING_RELEASE_TIME, PENDING_ACKNOWLEDGEMENT, PENDING_RECALL, UNKNOWN',
+		),
+})
+export type GetOrdersByAccountRequestQueryParams = z.infer<
+	typeof GetOrdersByAccountRequestQueryParams
+>
+
+export const PlaceOrderRequestBody = OrderRequest
+export type PlaceOrderRequestBody = z.infer<typeof PlaceOrderRequestBody>
+
+export const PlaceOrderResponseBody = z.object({}).passthrough()
+export type PlaceOrderResponseBody = z.infer<typeof PlaceOrderResponseBody>
+
+export const GetOrderByOrderIdRequestPathParams = z.object({
+	accountNumber: z.string().describe('The encrypted ID of the account'),
+	orderId: z.number().int().describe('The ID of the order being retrieved.'),
+})
+export type GetOrderByOrderIdRequestPathParams = z.infer<
+	typeof GetOrderByOrderIdRequestPathParams
+>
+
+export const GetOrderByOrderIdResponseBody = Order
+export type GetOrderByOrderIdResponseBody = z.infer<
+	typeof GetOrderByOrderIdResponseBody
+>
+
+export const CancelOrderResponseBody = z.object({}).passthrough()
+export type CancelOrderResponseBody = z.infer<typeof CancelOrderResponseBody>
+
+export const ReplaceOrderResponseBody = z.object({}).passthrough()
+export type ReplaceOrderResponseBody = z.infer<typeof ReplaceOrderResponseBody>
