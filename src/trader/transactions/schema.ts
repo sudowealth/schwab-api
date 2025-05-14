@@ -322,7 +322,7 @@ export const GetTransactionsRequestQueryParams = z.object({
 			return date.toISOString()
 		})
 		.describe(
-			"Specifies that no transactions entered before this time should be returned. The 'endDate' must also be set.",
+			'Specifies that no transactions entered before this time should be returned. Maximum date range is 1 year.',
 		),
 	endDate: z
 		.string()
@@ -335,7 +335,7 @@ export const GetTransactionsRequestQueryParams = z.object({
 			return date.toISOString()
 		})
 		.describe(
-			"Specifies that no transactions entered after this time should be returned. The 'startDate' must also be set.",
+			'Specifies that no transactions entered after this time should be returned. Maximum date range is 1 year.',
 		),
 	types: TransactionType.default(TransactionType.Enum.TRADE).describe(
 		'Specifies that only transactions of this status should be returned. Available values : TRADE, RECEIVE_AND_DELIVER, DIVIDEND_OR_INTEREST, ACH_RECEIPT, ACH_DISBURSEMENT, CASH_RECEIPT, CASH_DISBURSEMENT, ELECTRONIC_FUND, WIRE_OUT, WIRE_IN, JOURNAL, MEMORANDUM, MARGIN_CALL, MONEY_MARKET, SMA_ADJUSTMENT',
