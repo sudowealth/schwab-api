@@ -316,6 +316,11 @@ export const GetTransactionsRequestQueryParams = z.object({
 			iso8601DateTimeFormat,
 			"Valid ISO-8601 format is yyyy-MM-dd'T'HH:mm:ss.SSSZ. Example: 2024-03-28T21:10:42.000Z",
 		)
+		.default(() => {
+			const date = new Date()
+			date.setDate(date.getDate() - 59)
+			return date.toISOString()
+		})
 		.describe(
 			"Specifies that no transactions entered before this time should be returned. The 'endDate' must also be set.",
 		),
@@ -325,11 +330,15 @@ export const GetTransactionsRequestQueryParams = z.object({
 			iso8601DateTimeFormat,
 			"Valid ISO-8601 format is yyyy-MM-dd'T'HH:mm:ss.SSSZ. Example: 2024-05-10T21:10:42.000Z",
 		)
+		.default(() => {
+			const date = new Date()
+			return date.toISOString()
+		})
 		.describe(
 			"Specifies that no transactions entered after this time should be returned. The 'startDate' must also be set.",
 		),
-	types: TransactionType.describe(
-		'Specifies that only transactions of this status should be returned.',
+	types: TransactionType.default(TransactionType.Enum.TRADE).describe(
+		'Specifies that only transactions of this status should be returned. Available values : TRADE, RECEIVE_AND_DELIVER, DIVIDEND_OR_INTEREST, ACH_RECEIPT, ACH_DISBURSEMENT, CASH_RECEIPT, CASH_DISBURSEMENT, ELECTRONIC_FUND, WIRE_OUT, WIRE_IN, JOURNAL, MEMORANDUM, MARGIN_CALL, MONEY_MARKET, SMA_ADJUSTMENT',
 	),
 	symbol: z
 		.string()
