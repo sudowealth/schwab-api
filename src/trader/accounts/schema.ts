@@ -311,24 +311,10 @@ export type GetAccountsRequestQueryParams = z.infer<
 	typeof GetAccountsRequestQueryParams
 >
 
-export const GetAccountsRequestPathParams = z.never()
-export type GetAccountsRequestPathParams = z.infer<
-	typeof GetAccountsRequestPathParams
->
 export const GetAccountsResponseBody = z.array(GetAccountByNumberResponseBody) // MCP used AccountWrapper
 export type GetAccountsResponseBody = z.infer<typeof GetAccountsResponseBody>
 
 // --- Get Account Numbers ---
-export const GetAccountNumbersRequestPathParams = z.never()
-export type GetAccountNumbersRequestPathParams = z.infer<
-	typeof GetAccountNumbersRequestPathParams
->
-
-export const GetAccountNumbersRequestQueryParams = z.never()
-export type GetAccountNumbersRequestQueryParams = z.infer<
-	typeof GetAccountNumbersRequestQueryParams
->
-
 export const GetAccountNumbersResponseBody = z.array(
 	z.object({
 		accountNumber: z.string(),

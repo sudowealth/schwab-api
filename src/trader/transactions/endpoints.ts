@@ -4,7 +4,6 @@ import {
 	GetTransactionsRequestQueryParams,
 	GetTransactionsResponseBody,
 	GetTransactionByIdRequestPathParams,
-	GetTransactionByIdRequestQueryParams,
 	GetTransactionByIdResponseBody,
 } from './schema'
 
@@ -27,7 +26,7 @@ export const getTransactions = createEndpoint<
 
 export const getTransactionById = createEndpoint<
 	GetTransactionByIdRequestPathParams,
-	GetTransactionByIdRequestQueryParams,
+	never,
 	never,
 	GetTransactionByIdResponseBody,
 	'GET',
@@ -36,7 +35,6 @@ export const getTransactionById = createEndpoint<
 	method: 'GET',
 	path: '/trader/v1/accounts/:accountNumber/transactions/:transactionId',
 	pathSchema: GetTransactionByIdRequestPathParams,
-	querySchema: GetTransactionByIdRequestQueryParams,
 	responseSchema: GetTransactionByIdResponseBody,
 	description:
 		'Retrieves a specific transaction by its ID for a given account.',

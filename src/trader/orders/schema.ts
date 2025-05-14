@@ -278,8 +278,3 @@ export const GetOrdersRequestQueryParams = z.object({
 export type GetOrdersRequestQueryParams = z.infer<
 	typeof GetOrdersRequestQueryParams
 >
-
-export const GetOrdersRequestPathParams = z.never()
-export type GetOrdersRequestPathParams = z.infer<
-	typeof GetOrdersRequestPathParams
->

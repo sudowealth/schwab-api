@@ -296,11 +296,6 @@ export type GetTransactionByIdRequestPathParams = z.infer<
 	typeof GetTransactionByIdRequestPathParams
 >
 
-export const GetTransactionByIdRequestQueryParams = z.never()
-export type GetTransactionByIdRequestQueryParams = z.infer<
-	typeof GetTransactionByIdRequestQueryParams
->
-
 // --- Get Transactions ---
 export const GetTransactionsResponseBody = z.array(
 	GetTransactionByIdResponseBody,

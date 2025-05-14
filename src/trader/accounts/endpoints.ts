@@ -1,18 +1,15 @@
 import { createEndpoint } from '../../core/http'
 import {
-	GetAccountsRequestPathParams,
 	GetAccountsRequestQueryParams,
 	GetAccountsResponseBody,
 	GetAccountByNumberRequestPathParams,
 	GetAccountByNumberRequestQueryParams,
 	GetAccountByNumberResponseBody,
-	GetAccountNumbersRequestPathParams,
-	GetAccountNumbersRequestQueryParams,
 	GetAccountNumbersResponseBody,
 } from './schema'
 
 export const getAccounts = createEndpoint<
-	GetAccountsRequestPathParams,
+	never,
 	GetAccountsRequestQueryParams,
 	never,
 	GetAccountsResponseBody,
@@ -21,7 +18,6 @@ export const getAccounts = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/accounts',
-	pathSchema: GetAccountsRequestPathParams,
 	querySchema: GetAccountsRequestQueryParams,
 	responseSchema: GetAccountsResponseBody,
 	description: 'Retrieves all accounts associated with the user.',
@@ -44,8 +40,8 @@ export const getAccountByNumber = createEndpoint<
 })
 
 export const getAccountNumbers = createEndpoint<
-	GetAccountNumbersRequestPathParams,
-	GetAccountNumbersRequestQueryParams,
+	never,
+	never,
 	never,
 	GetAccountNumbersResponseBody,
 	'GET',
@@ -53,8 +49,6 @@ export const getAccountNumbers = createEndpoint<
 >({
 	method: 'GET',
 	path: '/trader/v1/accounts/accountNumbers',
-	pathSchema: GetAccountNumbersRequestPathParams,
-	querySchema: GetAccountNumbersRequestQueryParams,
 	responseSchema: GetAccountNumbersResponseBody,
 	description: 'Get list of account numbers and their encrypted values.',
 })

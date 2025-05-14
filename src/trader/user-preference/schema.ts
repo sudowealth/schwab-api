@@ -31,16 +31,6 @@ const UserPreference = z.object({
 type UserPreference = z.infer<typeof UserPreference>
 
 // --- Get User Preference ---
-export const GetUserPreferenceRequestPathParams = z.never()
-export type GetUserPreferenceRequestPathParams = z.infer<
-	typeof GetUserPreferenceRequestPathParams
->
-
-export const GetUserPreferenceRequestQueryParams = z.never()
-export type GetUserPreferenceRequestQueryParams = z.infer<
-	typeof GetUserPreferenceRequestQueryParams
->
-
 export const GetUserPreferenceResponseBody = UserPreference
 export type GetUserPreferenceResponseBody = z.infer<
 	typeof GetUserPreferenceResponseBody
