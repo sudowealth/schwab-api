@@ -1,8 +1,4 @@
-import {
-	Transaction,
-	TransactionType,
-	Transactions,
-} from 'schwab-api-client/schemas'
+import { Transaction, TransactionType, Transactions } from '../../schemas'
 import { createEndpoint } from '../../core/http'
 import { z } from 'zod'
 
