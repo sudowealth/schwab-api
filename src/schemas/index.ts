@@ -1020,8 +1020,18 @@ const TransferItem = z.object({
 // New: Schema for GET /accounts/{accountNumber}/orders query parameters
 export const OrdersQuerySchema = z.object({
 	maxResults: z.number().int().optional(),
-	fromEnteredTime: z.string().datetime(),
-	toEnteredTime: z.string().datetime(),
+	fromEnteredTime: z
+		.string()
+		.datetime({ offset: true, precision: 3 })
+		.describe(
+			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date. 'toEnteredTime' must also be set.",
+		),
+	toEnteredTime: z
+		.string()
+		.datetime({ offset: true, precision: 3 })
+		.describe(
+			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. 'fromEnteredTime' must also be set.",
+		),
 	status: status.optional(), // Using the existing 'status' enum schema
 })
 

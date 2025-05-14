@@ -1,6 +1,6 @@
 {
   "name": "@sudowealth/schwab-api",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "description": "Schwab API Client Library",
   "publishConfig": {
