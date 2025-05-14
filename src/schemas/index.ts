@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { TransactionType } from '../trader/transactions/schema'
+export * as account from '../trader/accounts/schema'
+export * as transaction from '../trader/transactions/schema'
 
 export const AccountNumberHash = z.object({
 	accountNumber: z.string(),
@@ -954,25 +957,6 @@ const AccountAPIOptionDeliverable = z.object({
 	apiCurrencyType: ApiCurrencyType, // Removed optional
 	assetType: assetType, // Removed optional
 })
-
-export const TransactionType = z.enum([
-	'TRADE',
-	'RECEIVE_AND_DELIVER',
-	'DIVIDEND_OR_INTEREST',
-	'ACH_RECEIPT',
-	'ACH_DISBURSEMENT',
-	'CASH_RECEIPT',
-	'CASH_DISBURSEMENT',
-	'ELECTRONIC_FUND',
-	'WIRE_OUT',
-	'WIRE_IN',
-	'JOURNAL',
-	'MEMORANDUM',
-	'MARGIN_CALL',
-	'MONEY_MARKET',
-	'SMA_ADJUSTMENT',
-])
-export type TransactionType = z.infer<typeof TransactionType>
 
 const UserDetails = z.object({
 	cdDomainId: z.string(),
