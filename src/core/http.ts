@@ -270,6 +270,8 @@ export async function schwabFetch<
 
 		if (!response.ok) {
 			let errorBody
+			// Clone the response before attempting to read its body
+			const responseClone = response.clone()
 			try {
 				errorBody = await response.json()
 
@@ -286,7 +288,8 @@ export async function schwabFetch<
 					`Could not parse error response body as JSON for ${method} ${endpointTemplate}`,
 					e,
 				)
-				errorBody = await response.text()
+				// Use the cloned response for the fallback attempt
+				errorBody = await responseClone.text()
 			}
 
 			throw createSchwabApiError(
