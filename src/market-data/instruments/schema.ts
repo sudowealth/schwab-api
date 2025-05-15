@@ -234,7 +234,7 @@ export type InstrumentSchema = z.infer<typeof InstrumentSchema>
 // Request Query Parameters Schema
 export const GetInstrumentsRequestQueryParamsSchema = z.object({
 	symbol: z.string().describe('Symbol of a security'),
-	projection: InstrumentProjectionEnum.describe('Search by'),
+	projection: InstrumentProjectionEnum.describe(`Search by: ${InstrumentProjectionEnum.options.join(', ')}`),
 })
 export type GetInstrumentsRequestQueryParamsSchema = z.infer<
 	typeof GetInstrumentsRequestQueryParamsSchema
