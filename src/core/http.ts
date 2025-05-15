@@ -404,7 +404,10 @@ export function buildUrl(
 			let replaced = false
 			if (finalEndpointPath.includes(curlyPlaceholder)) {
 				// Properly escape the curly braces for regex replacement
-				const escapedPlaceholder = curlyPlaceholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+				const escapedPlaceholder = curlyPlaceholder.replace(
+					/[.*+?^${}()|[\]\\]/g,
+					'\\$&',
+				)
 				finalEndpointPath = finalEndpointPath.replace(
 					new RegExp(escapedPlaceholder, 'g'),
 					String(value),

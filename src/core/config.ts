@@ -53,7 +53,7 @@ const DEFAULT_API_CONFIG: SchwabApiConfig = {
 	environment: 'PRODUCTION',
 	enableLogging: false,
 	logLevel: 'info',
-	apiVersion: 'V1',
+	apiVersion: 'v1',
 	timeout: TIMEOUTS.DEFAULT_REQUEST,
 }
 

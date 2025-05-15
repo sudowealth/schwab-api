@@ -8,8 +8,7 @@ export function getOAuthBaseUrl(): string {
 	const config = getEffectiveConfig()
 	const baseUrl = config.baseUrl
 	const apiVersion = config.apiVersion
-
-	return `${baseUrl}/${apiVersion}${OAUTH_ENDPOINTS.AUTHORIZE.split('/')[0]}`
+	return `${baseUrl}/${apiVersion}`
 }
 
 /**

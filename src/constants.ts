@@ -11,8 +11,8 @@ export const API_URLS = {
 
 // API Versions
 export const API_VERSIONS = {
-	V1: 'v1',
-	V2: 'v2',
+	v1: 'v1',
+	v2: 'v2',
 }
 
 // OAuth endpoints
@@ -23,7 +23,7 @@ export const OAUTH_ENDPOINTS = {
 }
 
 // Market Data endpoints
-const MARKET_DATA_BASE_PATH = `/marketdata/${API_VERSIONS.V1}`
+const MARKET_DATA_BASE_PATH = `/marketdata/${API_VERSIONS.v1}`
 const INSTRUMENT_BASE_PATH = `${MARKET_DATA_BASE_PATH}/instruments`
 const MARKET_HOURS_BASE_PATH = `${MARKET_DATA_BASE_PATH}/markets`
 export const MARKET_DATA = {
@@ -52,7 +52,7 @@ export const MARKET_DATA = {
 }
 
 // Trading endpoints
-const TRADER_BASE_PATH = `/trader/${API_VERSIONS.V1}`
+const TRADER_BASE_PATH = `/trader/${API_VERSIONS.v1}`
 const ACCOUNT_BASE_PATH = `${TRADER_BASE_PATH}/accounts/{accountNumber}`
 const ACCOUNT_ORDERS_BASE_PATH = `${ACCOUNT_BASE_PATH}/orders`
 const ACCOUNT_TRANSACTIONS_BASE_PATH = `${ACCOUNT_BASE_PATH}/transactions`

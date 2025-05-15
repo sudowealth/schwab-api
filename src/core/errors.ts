@@ -93,7 +93,7 @@ export function createSchwabApiError(
 const ErrorSourceSchema = z.object({
 	pointer: z.array(z.string()).optional(),
 	parameter: z.string().optional(),
-	header: z.string().optional()
+	header: z.string().optional(),
 })
 
 const ErrorSchema = z.object({
@@ -101,10 +101,10 @@ const ErrorSchema = z.object({
 	status: z.enum(['400', '401', '404', '500']),
 	title: z.string(),
 	detail: z.string(),
-	source: ErrorSourceSchema.optional()
+	source: ErrorSourceSchema.optional(),
 })
 
 export const ErrorResponseSchema = z.object({
-	errors: z.array(ErrorSchema)
+	errors: z.array(ErrorSchema),
 })
 export type ErrorResponseSchema = z.infer<typeof ErrorResponseSchema>
