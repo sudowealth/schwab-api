@@ -22,6 +22,29 @@ export type PriceHistoryFrequencyTypeEnum = z.infer<
 	typeof PriceHistoryFrequencyTypeEnum
 >
 
+// Enum for frequency query parameter
+export const FrequencyEnum = z.union([
+	z.literal(1),
+	z.literal(5),
+	z.literal(10),
+	z.literal(15),
+	z.literal(30),
+])
+
+// Enum for period query parameter
+export const PeriodEnum = z.union([
+	z.literal(1),
+	z.literal(2),
+	z.literal(3),
+	z.literal(4),
+	z.literal(5),
+	z.literal(6),
+	z.literal(10),
+	z.literal(15),
+	z.literal(20),
+])
+export type PeriodEnum = z.infer<typeof PeriodEnum>
+
 // Schema for Request Query Parameters of GET /pricehistory
 export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 	symbol: z
@@ -30,17 +53,13 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 	periodType: PriceHistoryPeriodTypeEnum.optional().describe(
 		'The chart period being requested. Available values: day, month, year, ytd',
 	),
-	period: z
-		.number()
-		.int()
-		.optional()
-		.describe(
-			'The number of chart period types. \n' +
-				'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
-				'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
-				'- If periodType is year - valid values are 1, 2, 3, 5, 10, 15, 20 (default 1). \n' +
-				'- If periodType is ytd - valid values are 1 (default 1).',
-		),
+	period: PeriodEnum.optional().describe(
+		'The number of chart period types. \n' +
+			'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
+			'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
+			'- If periodType is year - valid values are 1, 2, 3, 5, 10, 15, 20 (default 1). \n' +
+			'- If periodType is ytd - valid values are 1 (default 1).',
+	),
 	frequencyType: PriceHistoryFrequencyTypeEnum.optional().describe(
 		'The time frequencyType. \n' +
 			'- If periodType is day - default is minute. \n' +
@@ -49,10 +68,8 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 			'- If periodType is ytd - default is weekly. \n' +
 			'Available values: minute, daily, weekly, monthly',
 	),
-	frequency: z
-		.number()
-		.int()
-		.optional()
+	frequency: FrequencyEnum.optional()
+		.default(1)
 		.describe(
 			'The time frequency duration. Default value is 1 if not specified. \n' +
 				'- If frequencyType is minute - valid values are 1, 5, 10, 15, 30. \n' +

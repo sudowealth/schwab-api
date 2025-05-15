@@ -26,8 +26,14 @@ export const MoversSortEnum = z.enum([
 export type MoversSortEnum = z.infer<typeof MoversSortEnum>
 
 // Enum for frequency query parameter (numeric values)
-const MoversFrequencyEnumBase = z.enum(['0', '1', '5', '10', '30', '60'])
-export const MoversFrequencyEnum = MoversFrequencyEnumBase.transform(Number)
+export const MoversFrequencyEnum = z.union([
+	z.literal(0),
+	z.literal(1),
+	z.literal(5),
+	z.literal(10),
+	z.literal(30),
+	z.literal(60),
+])
 export type MoversFrequencyEnum = z.infer<typeof MoversFrequencyEnum>
 
 // Enum for direction field in ScreenerSchema
@@ -66,9 +72,9 @@ export const GetMoversRequestQueryParamsSchema = z.object({
 		`Sort by a particular attribute. Available values: ${MoversSortEnum.options.join(', ')}`,
 	),
 	frequency: MoversFrequencyEnum.optional()
-		.default('0') // Default value '0' (string) before transform
+		.default(0)
 		.describe(
-			`To return movers with the specified directions of up or down. Available values: ${MoversFrequencyEnumBase.options.join(', ')}`,
+			`To return movers with the specified directions of up or down. Available values: ${MoversFrequencyEnum.options.map((opt) => opt.value).join(', ')}`,
 		),
 })
 export type GetMoversRequestQueryParamsSchema = z.infer<
