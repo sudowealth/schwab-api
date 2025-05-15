@@ -1,4 +1,4 @@
-import  { type Middleware } from './compose'
+import { type Middleware } from './compose'
 
 export function withRateLimit(
 	maxRequests: number = 120,

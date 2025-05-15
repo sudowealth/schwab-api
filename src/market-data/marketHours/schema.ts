@@ -47,7 +47,9 @@ export const GetMarketHoursRequestQueryParamsSchema = z.object({
 	markets: z
 		.union([MarketHoursMarketQueryEnum, z.array(MarketHoursMarketQueryEnum)])
 		.transform((val) => (Array.isArray(val) ? val : [val]))
-		.describe(`List of markets. Available values: ${MarketHoursMarketQueryEnum.options.join(', ')}`),
+		.describe(
+			`List of markets. Available values: ${MarketHoursMarketQueryEnum.options.join(', ')}`,
+		),
 	date: z
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
@@ -65,8 +67,8 @@ export const GetMarketHoursResponseBodySchema = z.record(
 	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
 	z.record(
 		z.string(), // Second level key (e.g., "EQ") - product code
-		MarketHoursDataSchema // Market hours data
-	)
+		MarketHoursDataSchema, // Market hours data
+	),
 )
 export type GetMarketHoursResponseBodySchema = z.infer<
 	typeof GetMarketHoursResponseBodySchema
@@ -101,8 +103,8 @@ export const GetMarketHoursByMarketIdResponseBodySchema = z.record(
 	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
 	z.record(
 		z.string(), // Second level key (e.g., "EQ") - product code
-		MarketHoursDataSchema // Market hours data
-	)
+		MarketHoursDataSchema, // Market hours data
+	),
 )
 export type GetMarketHoursByMarketIdResponseBodySchema = z.infer<
 	typeof GetMarketHoursByMarketIdResponseBodySchema

@@ -21,7 +21,7 @@ export function compose(...mws: Middleware[]) {
 
 		// Use type assertion to handle the complex typing needed for the reducer
 		type RequestHandler = (req: Request) => Promise<Response>
-		
+
 		// Build middleware chain from right to left (last to first)
 		const handler = mws.reduceRight<RequestHandler>(
 			(nextHandler, middleware) => {
@@ -30,7 +30,7 @@ export function compose(...mws: Middleware[]) {
 					return middleware(req, nextHandler)
 				}
 			},
-			fetchHandler // Initial value is the fetch handler (end of chain)
+			fetchHandler, // Initial value is the fetch handler (end of chain)
 		)
 
 		// Execute the composed handler chain with the initial request

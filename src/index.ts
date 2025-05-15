@@ -4,8 +4,11 @@ export * as auth from './auth'
 export * as marketData from './market-data'
 export * as trader from './trader'
 export * as schemas from './schemas'
-export { configureSchwabApi as configureBaseApi, SANDBOX_API_CONFIG } from './core/http'
-export { SchwabApiError, isSchwabApiError, SchwabAuthError } from './core/errors'
+export {
+	SchwabApiError,
+	isSchwabApiError,
+	SchwabAuthError,
+} from './core/errors'
 
 // OAuth Helper exports
 export { createAuthClient } from './auth/auth-client'

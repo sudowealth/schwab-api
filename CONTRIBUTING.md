@@ -1,6 +1,7 @@
 # Contributing to schwab-api
 
-Thank you for your interest in contributing to the schwab-api library! This document provides guidelines for contributing to this project.
+Thank you for your interest in contributing to the schwab-api library! This
+document provides guidelines for contributing to this project.
 
 ## Table of Contents
 
@@ -38,7 +39,8 @@ Thank you for your interest in contributing to the schwab-api library! This docu
 
 ## Development Workflow
 
-Our development workflow follows a branch-based approach with automated releases:
+Our development workflow follows a branch-based approach with automated
+releases:
 
 ### Branch Structure
 
@@ -47,7 +49,9 @@ Our development workflow follows a branch-based approach with automated releases
 - `feature/*` - Feature branches (created by contributors)
 - `fix/*` - Bug fix branches (created by contributors)
 
-Note that **only** the `main` and `beta` branches trigger automated releases. All other branches, including those with names like `next` or `alpha`, will not trigger releases.
+Note that **only** the `main` and `beta` branches trigger automated releases.
+All other branches, including those with names like `next` or `alpha`, will not
+trigger releases.
 
 ### 1. Create a Feature/Fix Branch
 
@@ -74,11 +78,13 @@ npm run validate  # Runs linting, type checking, and formatting
 npm run test      # Runs tests
 ```
 
-For more detailed information on running tests and writing new ones, see [TESTING.md](./TESTING.md).
+For more detailed information on running tests and writing new ones, see
+[TESTING.md](./TESTING.md).
 
 ## Commit Messages
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org/) to automate version management and releases.
+This project uses [Conventional Commits](https://www.conventionalcommits.org/)
+to automate version management and releases.
 
 ### Commit Message Format
 
@@ -103,7 +109,8 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) t
 
 ### Breaking Changes
 
-For breaking changes, add `BREAKING CHANGE:` in the footer or append `!` to the type:
+For breaking changes, add `BREAKING CHANGE:` in the footer or append `!` to the
+type:
 
 ```
 feat!: remove deprecated API
@@ -114,6 +121,7 @@ feat!: remove deprecated API
 ### Creating a Pull Request
 
 1. Ensure your branch is up to date with the latest `main`:
+
    ```bash
    git checkout main
    git pull upstream main
@@ -122,11 +130,13 @@ feat!: remove deprecated API
    ```
 
 2. Push your branch to your fork:
+
    ```bash
    git push origin your-branch-name
    ```
 
-3. Create a Pull Request on GitHub against the `main` branch of the original repository
+3. Create a Pull Request on GitHub against the `main` branch of the original
+   repository
 
 ### PR Guidelines
 
@@ -139,7 +149,8 @@ feat!: remove deprecated API
 
 ## Release Process
 
-This project uses semantic-release for automated versioning and publishing. We have configured this project to only release from two branches:
+This project uses semantic-release for automated versioning and publishing. We
+have configured this project to only release from two branches:
 
 - `main` branch - Used for production releases
 - `beta` branch - Used for beta/pre-release versions
@@ -152,7 +163,9 @@ As a contributor, you only need to:
 2. Use proper conventional commit messages
 3. Ensure your code passes all tests and reviews
 
-The maintainers will handle the release process. Your changes will be included in:
+The maintainers will handle the release process. Your changes will be included
+in:
+
 - The next beta release when merged to the `beta` branch by maintainers
 - The next production release when merged to the `main` branch
 
@@ -166,17 +179,22 @@ npm install @sudowealth/schwab-api@beta
 
 ### Security Note
 
-Never submit PRs directly to the `beta` branch. These branches are protected and automatically trigger releases when changes are merged.
+Never submit PRs directly to the `beta` branch. These branches are protected and
+automatically trigger releases when changes are merged.
 
 ## Code of Conduct
 
 ### Our Pledge
 
-We are committed to making participation in this project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
+We are committed to making participation in this project a harassment-free
+experience for everyone, regardless of age, body size, disability, ethnicity,
+gender identity and expression, level of experience, nationality, personal
+appearance, race, religion, or sexual identity and orientation.
 
 ### Our Standards
 
-Examples of behavior that contributes to creating a positive environment include:
+Examples of behavior that contributes to creating a positive environment
+include:
 
 - Using welcoming and inclusive language
 - Being respectful of differing viewpoints and experiences
@@ -186,8 +204,11 @@ Examples of behavior that contributes to creating a positive environment include
 
 ### Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainers. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported by contacting the project maintainers. All complaints will be reviewed
+and investigated promptly and fairly.
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the project's MIT license.
+By contributing to this project, you agree that your contributions will be
+licensed under the project's MIT license.

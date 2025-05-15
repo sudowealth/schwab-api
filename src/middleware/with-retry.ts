@@ -1,4 +1,4 @@
-import  { type Middleware } from './compose'
+import { type Middleware } from './compose'
 
 const DEFAULT_MAX_RETRIES = 3
 const DEFAULT_BASE_MS = 1000

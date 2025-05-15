@@ -52,7 +52,9 @@ export type ScreenerSchema = z.infer<typeof ScreenerSchema>
 
 // Schema for Request Path Parameters of GET /movers/:symbolId
 export const GetMoversRequestPathParamsSchema = z.object({
-	symbolId: MoversSymbolIdEnum.describe(`Index Symbol. Available values: ${MoversSymbolIdEnum.options.join(', ')}`),
+	symbolId: MoversSymbolIdEnum.describe(
+		`Index Symbol. Available values: ${MoversSymbolIdEnum.options.join(', ')}`,
+	),
 })
 export type GetMoversRequestPathParamsSchema = z.infer<
 	typeof GetMoversRequestPathParamsSchema
@@ -60,10 +62,14 @@ export type GetMoversRequestPathParamsSchema = z.infer<
 
 // Schema for Request Query Parameters of GET /movers/:symbolId
 export const GetMoversRequestQueryParamsSchema = z.object({
-	sort: MoversSortEnum.optional().describe(`Sort by a particular attribute. Available values: ${MoversSortEnum.options.join(', ')}`),
+	sort: MoversSortEnum.optional().describe(
+		`Sort by a particular attribute. Available values: ${MoversSortEnum.options.join(', ')}`,
+	),
 	frequency: MoversFrequencyEnum.optional()
 		.default('0') // Default value '0' (string) before transform
-		.describe(`To return movers with the specified directions of up or down. Available values: ${MoversFrequencyEnumBase.options.join(', ')}`),
+		.describe(
+			`To return movers with the specified directions of up or down. Available values: ${MoversFrequencyEnumBase.options.join(', ')}`,
+		),
 })
 export type GetMoversRequestQueryParamsSchema = z.infer<
 	typeof GetMoversRequestQueryParamsSchema

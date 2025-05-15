@@ -1,3 +1,5 @@
+import { TRADER } from '../../constants'
+import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
 import { GetUserPreferenceResponseBody } from './schema'
 
@@ -7,10 +9,11 @@ export const getUserPreference = createEndpoint<
 	never,
 	GetUserPreferenceResponseBody,
 	'GET',
-	any
+	ErrorResponseSchema
 >({
 	method: 'GET',
-	path: '/trader/v1/userPreference',
+	path: TRADER.USER_PREFERENCES.GET_USER_PREFERENCES,
 	responseSchema: GetUserPreferenceResponseBody,
+	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves user preferences.',
 })
