@@ -1,5 +1,16 @@
 import { type ZodType, type ZodTypeDef } from 'zod'
+import { type Middleware, compose } from '../middleware/compose'
 import { SchwabApiError } from './errors'
+
+// Global fetch handler that can be set by the configure-api module
+let globalSchwabFetch: (req: Request) => Promise<Response> = fetch
+
+// Export setGlobalSchwabFetch for internal use by configure-api
+export function setGlobalSchwabFetch(fetchFn: (req: Request) => Promise<Response>): void {
+  globalSchwabFetch = fetchFn
+}
+
+export { type Middleware, compose }
 
 export type HttpMethod =
 	| 'GET'
@@ -212,7 +223,7 @@ export async function schwabFetch<P, Q, B, R, M extends HttpMethod>(
 	}
 
 	try {
-		const response = await fetch(url.toString(), requestInit)
+		const response = await globalSchwabFetch(new Request(url.toString(), requestInit))
 
 		if (config.enableLogging) {
 			console.log(
@@ -319,7 +330,7 @@ export function createEndpoint<
 	}
 }
 
-// Specific function for public endpoints (kept from schwab-api-client, ensures accessToken is null)
+// Specific function for public endpoints (kept from schwab-api, ensures accessToken is null)
 export function createPublicEndpoint<P, Q, B, R, M extends HttpMethod>(
 	meta: Omit<EndpointMetadata<P, Q, B, R, M>, 'isPublic'> & { isPublic: true },
 ): (opts?: SchwabFetchRequestOptions<P, Q, B>) => Promise<R> {

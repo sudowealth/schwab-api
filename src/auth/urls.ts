@@ -1,4 +1,6 @@
 export const SCHWAB_OAUTH_BASE = 'https://api.schwabapi.com/v1/oauth'
+export const AUTH_URL = `${SCHWAB_OAUTH_BASE}/authorize`
+export const TOKEN_URL = `${SCHWAB_OAUTH_BASE}/token`
 
 export interface BuildAuthorizeUrlOptions {
 	clientId: string

@@ -1,3 +1,5 @@
+export { SchwabAuthError } from '../auth/errors'
+
 export class SchwabApiError extends Error {
 	status: number
 	body?: unknown // Body could be parsed JSON error details or raw text

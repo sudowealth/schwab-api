@@ -1,2 +1,5 @@
 export * from './urls'
 export * from './token'
+export * from './types'
+export * from './errors'
+export { createAuthClient } from './auth-client'

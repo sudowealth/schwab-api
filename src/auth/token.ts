@@ -20,7 +20,19 @@ export interface SchwabTokenResponse {
 	token_type: string
 }
 
-export async function exchangeCodeForToken(
+export interface RefreshTokenOptions {
+	clientId: string
+	clientSecret: string
+	refreshToken: string
+	tokenUrl?: string // default from config/SCHWAB_OAUTH_BASE + '/token'
+	fetch?: typeof fetch // Optional fetch override
+}
+
+/**
+ * Internal function to exchange an authorization code for a token
+ * @internal
+ */
+async function _exchangeCodeForToken(
 	opts: ExchangeCodeForTokenOptions,
 ): Promise<SchwabTokenResponse> {
 	const config = getSchwabApiConfig()
@@ -61,7 +73,6 @@ export async function exchangeCodeForToken(
 				console.error('[Schwab API Client] Token exchange failed:', data)
 			}
 			const status = typeof response.status === 'number' ? response.status : 400
-			// Corrected SchwabApiError constructor for failed response
 			throw new SchwabApiError(
 				status,
 				data,
@@ -77,7 +88,6 @@ export async function exchangeCodeForToken(
 			console.error('[Schwab API Client] Error during token exchange:', error)
 		}
 		if (error instanceof SchwabApiError) throw error
-		// Corrected SchwabApiError constructor for other errors
 		throw new SchwabApiError(
 			500,
 			error instanceof Error
@@ -88,15 +98,11 @@ export async function exchangeCodeForToken(
 	}
 }
 
-export interface RefreshTokenOptions {
-	clientId: string
-	clientSecret: string
-	refreshToken: string
-	tokenUrl?: string // default from config/SCHWAB_OAUTH_BASE + '/token'
-	fetch?: typeof fetch // Optional fetch override
-}
-
-export async function refreshToken(
+/**
+ * Internal function to refresh an access token using a refresh token
+ * @internal
+ */
+async function _refreshToken(
 	opts: RefreshTokenOptions,
 ): Promise<SchwabTokenResponse> {
 	const config = getSchwabApiConfig()
@@ -134,7 +140,6 @@ export async function refreshToken(
 				console.error('[Schwab API Client] Token refresh failed:', data)
 			}
 			const status = typeof response.status === 'number' ? response.status : 400
-			// Corrected SchwabApiError constructor for failed response
 			throw new SchwabApiError(
 				status,
 				data,
@@ -151,7 +156,6 @@ export async function refreshToken(
 			console.error('[Schwab API Client] Error during token refresh:', error)
 		}
 		if (error instanceof SchwabApiError) throw error
-		// Corrected SchwabApiError constructor for other errors
 		throw new SchwabApiError(
 			500,
 			error instanceof Error
@@ -161,3 +165,7 @@ export async function refreshToken(
 		)
 	}
 }
+
+// Re-export the same functions with new names for internal use
+export const exchangeCodeForToken = _exchangeCodeForToken
+export const refreshToken = _refreshToken
