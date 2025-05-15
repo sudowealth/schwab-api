@@ -260,8 +260,9 @@ export type GetInstrumentByCusipRequestPathParamsSchema = z.infer<
 >
 
 // Response Body Schema for /instruments/{cusip_id}
-// This endpoint returns a single instrument, which matches our existing InstrumentSchema
-export const GetInstrumentByCusipResponseBodySchema = InstrumentSchema
+// This endpoint returns an object with an "instruments" array, similar to /instruments,
+// typically containing a single instrument matching the CUSIP.
+export const GetInstrumentByCusipResponseBodySchema = InstrumentsResponseSchema
 export type GetInstrumentByCusipResponseBodySchema = z.infer<
 	typeof GetInstrumentByCusipResponseBodySchema
 >

@@ -46,13 +46,18 @@ export const ScreenerSchema = z.object({
 		.string()
 		.optional()
 		.describe('Security info of most moved with in an index'), // Description in screenshot is for screener, making field optional
-	change: z
+	netChange: z
 		.number()
 		.describe('percent or value changed, by default its percent changed'),
-	direction: MoversDirectionEnum.describe('Enum: [ up, down ]'),
-	last: z.number().describe('what was last quoted price'),
+	direction: MoversDirectionEnum.optional().describe('Enum: [ up, down ]'), // Made optional as it's not in the provided response
+	lastPrice: z.number().describe('what was last quoted price'),
 	symbol: z.string().describe('schwab security symbol'),
 	totalVolume: z.number().int().describe('integer($int64)'),
+	// Added fields from the actual response
+	volume: z.number().int().describe('Volume for the individual symbol'),
+	marketShare: z.number().describe('Market share of the symbol'),
+	trades: z.number().int().describe('Number of trades for the symbol'),
+	netPercentChange: z.number().describe('Net percent change for the symbol'),
 })
 export type ScreenerSchema = z.infer<typeof ScreenerSchema>
 

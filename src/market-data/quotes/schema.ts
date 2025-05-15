@@ -34,6 +34,8 @@ export const QuotesAssetSubTypeEnum = z.enum([
 	'ADR',
 	'ETF_STOCK',
 	'ETF_BOND',
+	'ETF',
+	'COE',
 	'INDEX_OPTION',
 	'EQUITY_OPTION',
 	// Removed placeholder comment string from enum values
@@ -306,6 +308,7 @@ const BaseQuoteAssetResponseSchema = z.object({
 		.number()
 		.optional()
 		.describe('Post market percent change value'),
+	quoteType: z.string().optional().describe('Type of quote (e.g., NBBO, DELAYED)'),
 	realtime: z.boolean().optional().describe('Is quote realtime'),
 	securityStatus: z.string().optional().describe('Security trading status'),
 	ssid: z.number().int().optional().describe('Unique symbol identifier'),
