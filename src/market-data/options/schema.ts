@@ -165,9 +165,10 @@ export const OptionContractSchema = z.object({
 		.optional()
 		.describe('Total volume for the option'),
 	tradeDate: z
-		.string()
+		.number()
+		.int()
 		.optional()
-		.describe('Trade date of the option. Format uncertain (e.g. YYYY-MM-DD)'), // Format uncertain from image
+		.describe('Trade date of the option (numeric, possibly a timestamp or 0 if not set/applicable).'),
 	quoteTimeInLong: z
 		.number()
 		.int()
@@ -449,7 +450,9 @@ export const ExpirationItemSchema = z.object({
 		.int()
 		.optional()
 		.describe('Number of days until expiration'),
-	expiration: z.string().describe('Expiration date (e.g., YYYY-MM-DD format)'),
+	expirationDate: z
+		.string()
+		.describe('Expiration date (e.g., YYYY-MM-DD format)'),
 	expirationType: ExpirationTypeEnum.describe('Type of expiration cycle'), // Reusing existing enum
 	standard: z
 		.boolean()

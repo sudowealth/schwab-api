@@ -18,8 +18,8 @@ export function withAuth(tokens: {
 			return next(req)
 		}
 
-		// Refresh if expiresAt <= now + 60_000 ms (1 minute)
-		if (currentToken.expiresAt <= Date.now() + 60_000) {
+		// Refresh if expiresAt <= now + 300_000 ms (5 minutes)
+		if (currentToken.expiresAt <= Date.now() + 300_000) {
 			try {
 				currentToken = await tokens.refresh()
 			} catch (error) {
