@@ -305,11 +305,11 @@ export const OptionChainSchema = z.object({
 		.optional()
 		.describe('Price of the underlying security at the time of the request'),
 	volatility: z.number().optional().describe('Volatility of the underlying'),
-	callExpDateMap: OptionContractDateMapSchema.describe(
-		'Map of expiration dates to call option contracts',
+	callExpDateMap: OptionContractDateMapSchema.optional().describe(
+		'Map of expiration dates to call option contracts. May be omitted if no call options exist for the query.',
 	),
-	putExpDateMap: OptionContractDateMapSchema.describe(
-		'Map of expiration dates to put option contracts',
+	putExpDateMap: OptionContractDateMapSchema.optional().describe(
+		'Map of expiration dates to put option contracts. May be omitted if no put options exist for the query.',
 	),
 })
 export type OptionChainSchema = z.infer<typeof OptionChainSchema>
