@@ -15,7 +15,7 @@ export const getInstruments = createEndpoint<
 	any // Error type (can be refined if specific error schemas exist)
 >({
 	method: 'GET',
-	path: '/market-data/v1/instruments', // As per the screenshot
+	path: '/marketdata/v1/instruments', // As per the screenshot
 	querySchema: GetInstrumentsRequestQueryParamsSchema,
 	responseSchema: InstrumentsResponseSchema,
 	description: 'Get Instruments by symbols and projections.',
@@ -30,7 +30,7 @@ export const getInstrumentByCusip = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/instruments/:cusip_id', // Path with parameter
+	path: '/marketdata/v1/instruments/:cusip_id', // Path with parameter
 	pathSchema: GetInstrumentByCusipRequestPathParamsSchema,
 	responseSchema: GetInstrumentByCusipResponseBodySchema,
 	description: 'Get Instrument by specific cusip.',

@@ -13,7 +13,7 @@ export const getPriceHistory = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/pricehistory', // As per the screenshot
+	path: '/marketdata/v1/pricehistory', // As per the screenshot
 	querySchema: GetPriceHistoryRequestQueryParamsSchema,
 	responseSchema: GetPriceHistoryResponseBodySchema,
 	description: 'Get PriceHistory for a single symbol and date ranges.',

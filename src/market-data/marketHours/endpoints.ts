@@ -16,7 +16,7 @@ export const getMarketHours = createEndpoint<
 	any // Error type (can be refined if specific error schemas exist)
 >({
 	method: 'GET',
-	path: '/market-data/v1/markets', // As per the screenshot
+	path: '/marketdata/v1/markets', // As per the screenshot
 	querySchema: GetMarketHoursRequestQueryParamsSchema,
 	responseSchema: GetMarketHoursResponseBodySchema,
 	description: 'Get Market Hours for different markets.',
@@ -31,7 +31,7 @@ export const getMarketHoursByMarketId = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/markets/:market_id', // Path with market_id parameter
+	path: '/marketdata/v1/markets/:market_id', // Path with market_id parameter
 	pathSchema: GetMarketHoursByMarketIdRequestPathParamsSchema,
 	querySchema: GetMarketHoursByMarketIdRequestQueryParamsSchema,
 	responseSchema: GetMarketHoursByMarketIdResponseBodySchema,

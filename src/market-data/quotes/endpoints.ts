@@ -31,7 +31,7 @@ export const getQuoteBySymbolId = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/{symbol_id}/quotes',
+	path: '/{symbolId}/quotes',
 	pathSchema: GetQuoteBySymbolIdRequestPathParamsSchema,
 	querySchema: GetQuoteBySymbolIdRequestQueryParamsSchema,
 	responseSchema: GetQuotesResponseBodySchema, // Reusing the schema from /quotes endpoint response

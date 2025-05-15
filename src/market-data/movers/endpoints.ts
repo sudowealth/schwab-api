@@ -14,7 +14,7 @@ export const getMovers = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/movers/:symbol_id', // As per the screenshot
+	path: '/marketdata/v1/movers/:symbolId', // As per the screenshot
 	pathSchema: GetMoversRequestPathParamsSchema,
 	querySchema: GetMoversRequestQueryParamsSchema,
 	responseSchema: GetMoversResponseBodySchema,
