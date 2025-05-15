@@ -16,7 +16,7 @@ export const getQuotes = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/quotes', // As per the screenshot (top left implies /quotes)
+	path: '/marketdata/v1/quotes', // As per the screenshot (top left implies /quotes)
 	querySchema: GetQuotesRequestQueryParamsSchema,
 	responseSchema: GetQuotesResponseBodySchema,
 	description: 'Get Quotes by list of symbols.',
