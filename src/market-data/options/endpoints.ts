@@ -15,7 +15,7 @@ export const getOptionChain = createEndpoint<
 	any // Error type (TODO: Define a more specific error schema if available)
 >({
 	method: 'GET',
-	path: '/chains',
+	path: '/marketdata/v1/chains',
 	querySchema: GetOptionChainRequestQueryParamsSchema,
 	responseSchema: OptionChainSchema,
 	description: 'Get option chain for an optionable symbol.',
@@ -30,7 +30,7 @@ export const getOptionExpirationChain = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/expirationchain',
+	path: '/marketdata/v1/expirationchain',
 	querySchema: GetOptionExpirationChainRequestQueryParamsSchema,
 	responseSchema: OptionExpirationChainResponseBodySchema,
 	description: 'Get option expiration chain for an optionable symbol.',
