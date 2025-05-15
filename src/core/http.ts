@@ -54,7 +54,7 @@ export interface EndpointMetadata<
 	ErrorType = unknown, // Error response type
 > {
 	method: M
-	path: string // Can include path parameters like /path/:id
+	path: string // Can include path parameters like /path/{id}
 	pathSchema?: ZodType<PType, ZodTypeDef, any> // Schema that outputs PType
 	querySchema?: ZodType<QType, ZodTypeDef, any> // Schema that outputs QType
 	bodySchema?: ZodType<BType, ZodTypeDef, any> // Schema that outputs BType

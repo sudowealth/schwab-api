@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import { MARKET_DATA } from '../../constants'
 import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
@@ -17,7 +16,7 @@ export const getMovers = createEndpoint<
 	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: `${MARKET_DATA.MOVERS.GET_MOVERS}/:symbolId`, // Using constant instead of hardcoded path
+	path: MARKET_DATA.MOVERS.GET_MOVERS,
 	pathSchema: GetMoversRequestPathParamsSchema,
 	querySchema: GetMoversRequestQueryParamsSchema,
 	responseSchema: GetMoversResponseBodySchema,

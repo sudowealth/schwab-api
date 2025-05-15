@@ -74,9 +74,9 @@ export type GetMarketHoursResponseBodySchema = z.infer<
 	typeof GetMarketHoursResponseBodySchema
 >
 
-// Path Parameters Schema for GET /markets/:marketId
+// Path Parameters Schema for GET /markets/{market_id}
 export const GetMarketHoursByMarketIdRequestPathParamsSchema = z.object({
-	marketId: MarketHoursMarketQueryEnum.describe(
+	market_id: MarketHoursMarketQueryEnum.describe(
 		'Market ID (equity, option, etc.)',
 	),
 })
@@ -84,7 +84,7 @@ export type GetMarketHoursByMarketIdRequestPathParamsSchema = z.infer<
 	typeof GetMarketHoursByMarketIdRequestPathParamsSchema
 >
 
-// Query Parameters Schema for GET /markets/:marketId
+// Query Parameters Schema for GET /markets/{market_id}
 export const GetMarketHoursByMarketIdRequestQueryParamsSchema = z.object({
 	date: z
 		.string()
@@ -96,7 +96,7 @@ export type GetMarketHoursByMarketIdRequestQueryParamsSchema = z.infer<
 	typeof GetMarketHoursByMarketIdRequestQueryParamsSchema
 >
 
-// Response Body Schema for GET /markets/:marketId
+// Response Body Schema for GET /markets/{market_id}
 // This endpoint returns a nested structure with market type as the top level key,
 // then product code as second level, containing the market hours data
 export const GetMarketHoursByMarketIdResponseBodySchema = z.record(

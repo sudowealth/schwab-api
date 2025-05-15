@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// Enum for symbolId path parameter
+// Enum for symbol_id path parameter
 export const MoversSymbolIdEnum = z.enum([
 	'$DJI',
 	'$COMPX',
@@ -50,9 +50,9 @@ export const ScreenerSchema = z.object({
 })
 export type ScreenerSchema = z.infer<typeof ScreenerSchema>
 
-// Schema for Request Path Parameters of GET /movers/:symbolId
+// Schema for Request Path Parameters of GET /movers/{symbol_id}
 export const GetMoversRequestPathParamsSchema = z.object({
-	symbolId: MoversSymbolIdEnum.describe(
+	symbol_id: MoversSymbolIdEnum.describe(
 		`Index Symbol. Available values: ${MoversSymbolIdEnum.options.join(', ')}`,
 	),
 })
@@ -60,7 +60,7 @@ export type GetMoversRequestPathParamsSchema = z.infer<
 	typeof GetMoversRequestPathParamsSchema
 >
 
-// Schema for Request Query Parameters of GET /movers/:symbolId
+// Schema for Request Query Parameters of GET /movers/{symbol_id}
 export const GetMoversRequestQueryParamsSchema = z.object({
 	sort: MoversSortEnum.optional().describe(
 		`Sort by a particular attribute. Available values: ${MoversSortEnum.options.join(', ')}`,
@@ -75,7 +75,7 @@ export type GetMoversRequestQueryParamsSchema = z.infer<
 	typeof GetMoversRequestQueryParamsSchema
 >
 
-// Schema for Response Body of GET /movers/:symbolId
+// Schema for Response Body of GET /movers/{symbol_id}
 export const GetMoversResponseBodySchema = z.object({
 	screeners: z.array(ScreenerSchema),
 })
