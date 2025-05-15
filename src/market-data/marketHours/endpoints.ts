@@ -31,7 +31,7 @@ export const getMarketHoursByMarketId = createEndpoint<
 	any // Error type
 >({
 	method: 'GET',
-	path: '/marketdata/v1/markets/:market_id', // Path with market_id parameter
+	path: '/marketdata/v1/markets/:marketId', // Path with marketId parameter
 	pathSchema: GetMarketHoursByMarketIdRequestPathParamsSchema,
 	querySchema: GetMarketHoursByMarketIdRequestQueryParamsSchema,
 	responseSchema: GetMarketHoursByMarketIdResponseBodySchema,

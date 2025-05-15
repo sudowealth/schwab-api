@@ -69,9 +69,9 @@ export type GetMarketHoursResponseBodySchema = z.infer<
 	typeof GetMarketHoursResponseBodySchema
 >
 
-// Path Parameters Schema for GET /markets/{market_id}
+// Path Parameters Schema for GET /markets/:marketId
 export const GetMarketHoursByMarketIdRequestPathParamsSchema = z.object({
-	market_id: MarketHoursMarketQueryEnum.describe(
+	marketId: MarketHoursMarketQueryEnum.describe(
 		'Market ID (equity, option, etc.)',
 	),
 })
@@ -79,7 +79,7 @@ export type GetMarketHoursByMarketIdRequestPathParamsSchema = z.infer<
 	typeof GetMarketHoursByMarketIdRequestPathParamsSchema
 >
 
-// Query Parameters Schema for GET /markets/{market_id}
+// Query Parameters Schema for GET /markets/:marketId
 export const GetMarketHoursByMarketIdRequestQueryParamsSchema = z.object({
 	date: z
 		.string()
@@ -91,7 +91,7 @@ export type GetMarketHoursByMarketIdRequestQueryParamsSchema = z.infer<
 	typeof GetMarketHoursByMarketIdRequestQueryParamsSchema
 >
 
-// Response Body Schema for GET /markets/{market_id}
+// Response Body Schema for GET /markets/:marketId
 // This endpoint returns the MarketHoursDataSchema directly for the specified market.
 export const GetMarketHoursByMarketIdResponseBodySchema = MarketHoursDataSchema
 export type GetMarketHoursByMarketIdResponseBodySchema = z.infer<
