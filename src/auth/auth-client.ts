@@ -5,7 +5,7 @@ import {
 	refreshToken,
 } from './token'
 import { type TokenSet, type AuthClientOptions, type AuthClient } from './types'
-import { getAuthorizationUrl, getTokenUrl, buildAuthorizeUrl } from './urls'
+import { buildAuthorizeUrl } from './urls'
 
 /**
  * Helper to map the Schwab token response to our TokenSet interface

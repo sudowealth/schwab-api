@@ -81,7 +81,6 @@ const stopPriceLinkBasis = z.enum([
 	'AVERAGE',
 ])
 const stopPriceLinkType = z.enum(['VALUE', 'PERCENT', 'TICK'])
-const stopPriceOffsetnumber = z.number()
 const stopType = z.enum(['STANDARD', 'BID', 'ASK', 'LAST', 'MARK'])
 const priceLinkBasis = z.enum([
 	'MANUAL',

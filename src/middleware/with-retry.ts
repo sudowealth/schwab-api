@@ -30,7 +30,7 @@ export function withRetry(opts?: {
 					if (response.body) {
 						try {
 							await response.text()
-						} catch (e) {
+						} catch {
 							// Ignore errors from consuming the body
 						}
 					}

@@ -113,11 +113,7 @@ function log(
 }
 
 // Utility function to handle API errors
-function handleApiError(
-	error: unknown,
-	context: string,
-	endpoint?: string,
-): never {
+function handleApiError(error: unknown, context: string): never {
 	if (error instanceof SchwabApiError) throw error
 
 	const status =
@@ -345,7 +341,6 @@ export async function schwabFetch<
 		handleApiError(
 			error,
 			`Unexpected error during fetch for ${method} ${endpointTemplate}`,
-			`${method} ${endpointTemplate}`,
 		)
 	}
 }
