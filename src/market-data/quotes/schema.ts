@@ -872,9 +872,9 @@ export type GetQuotesResponseBodySchema = z.infer<
 	typeof GetQuotesResponseBodySchema
 >
 
-// --- Schemas for GET /{symbolId}/quotes ---
+// --- Schemas for GET /:symbolId/quotes ---
 
-// Path Parameters Schema for GET /{symbolId}/quotes
+// Path Parameters Schema for GET /:symbolId/quotes
 export const GetQuoteBySymbolIdRequestPathParamsSchema = z.object({
 	symbolId: z.string().describe('Symbol of instrument to get a quote for'),
 })
@@ -882,7 +882,7 @@ export type GetQuoteBySymbolIdRequestPathParamsSchema = z.infer<
 	typeof GetQuoteBySymbolIdRequestPathParamsSchema
 >
 
-// Query Parameters Schema for GET /{symbolId}/quotes
+// Query Parameters Schema for GET /:symbolId/quotes
 export const GetQuoteBySymbolIdRequestQueryParamsSchema = z.object({
 	fields: QuoteFieldsEnum.optional()
 		.default('all')
@@ -894,7 +894,7 @@ export type GetQuoteBySymbolIdRequestQueryParamsSchema = z.infer<
 	typeof GetQuoteBySymbolIdRequestQueryParamsSchema
 >
 
-// Response Body Schema for GET /{symbolId}/quotes
+// Response Body Schema for GET /:symbolId/quotes
 // The response structure is the same as GET /quotes, but typically for a single symbol in the record.
 export const GetQuoteBySymbolIdResponseBodySchema = GetQuotesResponseBodySchema
 export type GetQuoteBySymbolIdResponseBodySchema = z.infer<
