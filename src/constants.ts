@@ -76,7 +76,7 @@ export const TRADER = {
 		GET_TRANSACTION: `${ACCOUNT_TRANSACTIONS_BASE_PATH}/{transactionId}`,
 	},
 	USER_PREFERENCES: {
-		GET_USER_PREFERENCES: `${TRADER_BASE_PATH}/userPreferences`,
+		GET_USER_PREFERENCES: `${TRADER_BASE_PATH}/userPreference`,
 	},
 }
 
