@@ -317,9 +317,14 @@ export async function schwabFetch<
 
 		const parsedResponse = responseSchema.safeParse(responseData)
 		if (!parsedResponse.success) {
+			const SENSITIVE_MAX_ERROR_LENGTH = 500; // To avoid overly long messages
+			const validationErrors = JSON.stringify(parsedResponse.error.format(), null, 2);
+			const truncatedErrors = validationErrors.length > SENSITIVE_MAX_ERROR_LENGTH 
+				? validationErrors.substring(0, SENSITIVE_MAX_ERROR_LENGTH) + '... (truncated)' 
+				: validationErrors;
 			throw new SchwabServerError(
-				parsedResponse.error.format(),
-				`Invalid response data structure for ${method} ${endpointTemplate}`,
+				parsedResponse.error.format(), // Keep the original body for programmatic access
+				`Invalid response data structure for ${method} ${endpointTemplate}. Validation errors: ${truncatedErrors}`,
 			)
 		}
 
