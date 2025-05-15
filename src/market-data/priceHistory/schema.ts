@@ -29,7 +29,7 @@ export const FrequencyEnum = z.union([
 	z.literal(10),
 	z.literal(15),
 	z.literal(30),
-])
+]).or(z.coerce.number().refine(val => [1, 5, 10, 15, 30].includes(val)))
 
 // Enum for period query parameter
 export const PeriodEnum = z.union([
@@ -42,7 +42,7 @@ export const PeriodEnum = z.union([
 	z.literal(10),
 	z.literal(15),
 	z.literal(20),
-])
+]).or(z.coerce.number().refine(val => [1, 2, 3, 4, 5, 6, 10, 15, 20].includes(val)))
 export type PeriodEnum = z.infer<typeof PeriodEnum>
 
 // Schema for Request Query Parameters of GET /pricehistory
