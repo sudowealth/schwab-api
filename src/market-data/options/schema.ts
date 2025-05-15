@@ -254,14 +254,14 @@ export const OptionContractSchema = z.object({
 })
 export type OptionContractSchema = z.infer<typeof OptionContractSchema>
 
-// Maps strike price (string) to OptionContract
+// Maps strike price (string) to array of OptionContract
 export const OptionContractMapSchema = z.record(
 	z.string(),
-	OptionContractSchema,
+	z.array(OptionContractSchema),
 )
 export type OptionContractMapSchema = z.infer<typeof OptionContractMapSchema>
 
-// Maps expiration date (string) to a map of strike prices to OptionContracts
+// Maps expiration date (string) to a map of strike prices to arrays of OptionContracts
 export const OptionContractDateMapSchema = z.record(
 	z.string(),
 	OptionContractMapSchema,
