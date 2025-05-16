@@ -1,3 +1,5 @@
+import { MARKET_DATA } from '../../constants'
+import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
 import {
 	GetMoversRequestPathParamsSchema,
@@ -11,12 +13,13 @@ export const getMovers = createEndpoint<
 	never, // No Request Body
 	GetMoversResponseBodySchema, // Response Body
 	'GET', // HTTP Method
-	any // Error type
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/movers/:symbol_id', // As per the screenshot
+	path: MARKET_DATA.MOVERS.GET_MOVERS,
 	pathSchema: GetMoversRequestPathParamsSchema,
 	querySchema: GetMoversRequestQueryParamsSchema,
 	responseSchema: GetMoversResponseBodySchema,
+	errorSchema: ErrorResponseSchema,
 	description: 'Get Movers for a specific index.',
 })

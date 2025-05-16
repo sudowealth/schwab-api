@@ -81,7 +81,6 @@ const stopPriceLinkBasis = z.enum([
 	'AVERAGE',
 ])
 const stopPriceLinkType = z.enum(['VALUE', 'PERCENT', 'TICK'])
-const stopPriceOffsetnumber = z.number()
 const stopType = z.enum(['STANDARD', 'BID', 'ASK', 'LAST', 'MARK'])
 const priceLinkBasis = z.enum([
 	'MANUAL',
@@ -400,7 +399,7 @@ export const GetOrdersRequestQueryParams = z.object({
 	status: status
 		.optional()
 		.describe(
-			'Specifies that only orders of this status should be returned. Default is all.',
+			`Specifies that only orders of this status should be returned. Default is all. Available values: ${status.options.join(', ')}`,
 		),
 })
 export type GetOrdersRequestQueryParams = z.infer<
@@ -445,7 +444,7 @@ export const GetOrdersByAccountRequestQueryParams = z.object({
 	status: status
 		.optional()
 		.describe(
-			'Specifies that only orders of this status should be returned. Available values : AWAITING_PARENT_ORDER, AWAITING_CONDITION, AWAITING_STOP_CONDITION, AWAITING_MANUAL_REVIEW, ACCEPTED, AWAITING_UR_OUT, PENDING_ACTIVATION, QUEUED, WORKING, REJECTED, PENDING_CANCEL, CANCELED, PENDING_REPLACE, REPLACED, FILLED, EXPIRED, NEW, AWAITING_RELEASE_TIME, PENDING_ACKNOWLEDGEMENT, PENDING_RECALL, UNKNOWN',
+			`Specifies that only orders of this status should be returned. Available values: ${status.options.join(', ')}`,
 		),
 })
 export type GetOrdersByAccountRequestQueryParams = z.infer<

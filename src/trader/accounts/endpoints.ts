@@ -1,3 +1,5 @@
+import { TRADER } from '../../constants'
+import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
 import {
 	GetAccountsRequestQueryParams,
@@ -14,12 +16,13 @@ export const getAccounts = createEndpoint<
 	never,
 	GetAccountsResponseBody,
 	'GET',
-	any
+	ErrorResponseSchema
 >({
 	method: 'GET',
-	path: '/trader/v1/accounts',
+	path: TRADER.ACCOUNTS.GET_ACCOUNTS,
 	querySchema: GetAccountsRequestQueryParams,
 	responseSchema: GetAccountsResponseBody,
+	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves all accounts associated with the user.',
 })
 
@@ -29,13 +32,14 @@ export const getAccountByNumber = createEndpoint<
 	never,
 	GetAccountByNumberResponseBody,
 	'GET',
-	any
+	ErrorResponseSchema
 >({
 	method: 'GET',
-	path: '/trader/v1/accounts/:accountNumber',
+	path: TRADER.ACCOUNTS.GET_ACCOUNT,
 	pathSchema: GetAccountByNumberRequestPathParams,
 	querySchema: GetAccountByNumberRequestQueryParams,
 	responseSchema: GetAccountByNumberResponseBody,
+	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves a specific account by its number.',
 })
 
@@ -45,10 +49,11 @@ export const getAccountNumbers = createEndpoint<
 	never,
 	GetAccountNumbersResponseBody,
 	'GET',
-	any
+	ErrorResponseSchema
 >({
 	method: 'GET',
-	path: '/trader/v1/accounts/accountNumbers',
+	path: TRADER.ACCOUNTS.GET_ACCOUNTS + '/accountNumbers',
 	responseSchema: GetAccountNumbersResponseBody,
+	errorSchema: ErrorResponseSchema,
 	description: 'Get list of account numbers and their encrypted values.',
 })

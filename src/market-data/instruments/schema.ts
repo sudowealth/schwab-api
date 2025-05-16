@@ -214,7 +214,7 @@ export type ExtendedInstrumentSchema = z.infer<typeof ExtendedInstrumentSchema>
 // InstrumentInfo itself has an assetType. FundamentalInstrument *also* has an assetType.
 // This implies FundamentalInstrument is a *type* of instrument, not just a data block.
 
-export const InstrumentSchema = z.discriminatedUnion('assetType', [
+const InstrumentSchema = z.discriminatedUnion('assetType', [
 	FundamentalInstrumentSchema,
 	BondInstrumentSchema,
 	EquityInstrumentSchema,
@@ -234,7 +234,9 @@ export type InstrumentSchema = z.infer<typeof InstrumentSchema>
 // Request Query Parameters Schema
 export const GetInstrumentsRequestQueryParamsSchema = z.object({
 	symbol: z.string().describe('Symbol of a security'),
-	projection: InstrumentProjectionEnum.describe('Search by'),
+	projection: InstrumentProjectionEnum.describe(
+		`Search by: ${InstrumentProjectionEnum.options.join(', ')}`,
+	),
 })
 export type GetInstrumentsRequestQueryParamsSchema = z.infer<
 	typeof GetInstrumentsRequestQueryParamsSchema
@@ -258,8 +260,9 @@ export type GetInstrumentByCusipRequestPathParamsSchema = z.infer<
 >
 
 // Response Body Schema for /instruments/{cusip_id}
-// This endpoint returns a single instrument, which matches our existing InstrumentSchema
-export const GetInstrumentByCusipResponseBodySchema = InstrumentSchema
+// This endpoint returns an object with an "instruments" array, similar to /instruments,
+// typically containing a single instrument matching the CUSIP.
+export const GetInstrumentByCusipResponseBodySchema = InstrumentsResponseSchema
 export type GetInstrumentByCusipResponseBodySchema = z.infer<
 	typeof GetInstrumentByCusipResponseBodySchema
 >

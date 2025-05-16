@@ -1,10 +1,11 @@
+import { MARKET_DATA } from '../../constants'
+import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
 import {
 	GetQuotesRequestQueryParamsSchema,
 	GetQuotesResponseBodySchema,
 	GetQuoteBySymbolIdRequestPathParamsSchema,
 	GetQuoteBySymbolIdRequestQueryParamsSchema,
-	// GetQuoteBySymbolIdResponseBodySchema is an alias to GetQuotesResponseBodySchema, so no need to import separately if using GetQuotesResponseBodySchema directly
 } from './schema'
 
 export const getQuotes = createEndpoint<
@@ -13,12 +14,13 @@ export const getQuotes = createEndpoint<
 	never, // No Request Body
 	GetQuotesResponseBodySchema, // Response Body
 	'GET', // HTTP Method
-	any // Error type
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/quotes', // As per the screenshot (top left implies /quotes)
+	path: MARKET_DATA.QUOTES.GET_QUOTES, // Using constant instead of hardcoded path
 	querySchema: GetQuotesRequestQueryParamsSchema,
 	responseSchema: GetQuotesResponseBodySchema,
+	errorSchema: ErrorResponseSchema, // Using standard error schema
 	description: 'Get Quotes by list of symbols.',
 })
 
@@ -28,12 +30,13 @@ export const getQuoteBySymbolId = createEndpoint<
 	never, // No Request Body
 	GetQuotesResponseBodySchema, // Response Body (reusing from /quotes)
 	'GET', // HTTP Method
-	any // Error type
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/{symbol_id}/quotes',
+	path: MARKET_DATA.QUOTES.GET_QUOTE,
 	pathSchema: GetQuoteBySymbolIdRequestPathParamsSchema,
 	querySchema: GetQuoteBySymbolIdRequestQueryParamsSchema,
 	responseSchema: GetQuotesResponseBodySchema, // Reusing the schema from /quotes endpoint response
+	errorSchema: ErrorResponseSchema, // Using standard error schema
 	description: 'Get Quote by a single symbol.',
 })

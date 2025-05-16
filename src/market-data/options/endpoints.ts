@@ -1,3 +1,5 @@
+import { MARKET_DATA } from '../../constants'
+import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
 import {
 	GetOptionChainRequestQueryParamsSchema,
@@ -12,12 +14,13 @@ export const getOptionChain = createEndpoint<
 	never, // No Request Body
 	OptionChainSchema, // Response Body
 	'GET', // HTTP Method
-	any // Error type (TODO: Define a more specific error schema if available)
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/chains',
+	path: MARKET_DATA.OPTIONS.GET_OPTION_CHAIN,
 	querySchema: GetOptionChainRequestQueryParamsSchema,
 	responseSchema: OptionChainSchema,
+	errorSchema: ErrorResponseSchema,
 	description: 'Get option chain for an optionable symbol.',
 })
 
@@ -27,11 +30,12 @@ export const getOptionExpirationChain = createEndpoint<
 	never, // No Request Body
 	OptionExpirationChainResponseBodySchema, // Response Body
 	'GET', // HTTP Method
-	any // Error type
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/expirationchain',
+	path: MARKET_DATA.OPTIONS.GET_OPTION_EXPIRATION_CHAIN,
 	querySchema: GetOptionExpirationChainRequestQueryParamsSchema,
 	responseSchema: OptionExpirationChainResponseBodySchema,
+	errorSchema: ErrorResponseSchema,
 	description: 'Get option expiration chain for an optionable symbol.',
 })

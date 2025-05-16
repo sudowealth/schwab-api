@@ -1,8 +1,30 @@
-// Public surface of the schwab-api-client package
+// Public surface of the schwab-api package
 export * from './core'
 export * as auth from './auth'
 export * as marketData from './market-data'
 export * as trader from './trader'
 export * as schemas from './schemas'
-export { configureSchwabApi, SANDBOX_API_CONFIG } from './core/http'
-export { SchwabApiError, isSchwabApiError } from './core/errors'
+export {
+	SchwabApiError,
+	isSchwabApiError,
+	SchwabAuthError,
+} from './core/errors'
+
+// OAuth Helper exports
+export { createAuthClient } from './auth/auth-client'
+export { TokenManager, type TokenService } from './auth/token-manager'
+export {
+	createTokenService,
+	createExtendedAuthClient,
+} from './auth/token-service'
+export {
+	createSchwabAuthClient,
+	type FullAuthClient,
+} from './auth/unified-auth'
+export type { TokenSet } from './auth/types'
+
+// Request Pipeline exports
+export { configureSchwabApi } from './configure-api'
+export { withAuth } from './middleware/with-auth'
+export { withRateLimit } from './middleware/with-rate-limit'
+export { withRetry } from './middleware/with-retry'

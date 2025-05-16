@@ -1,3 +1,5 @@
+import { MARKET_DATA } from '../../constants'
+import { ErrorResponseSchema } from '../../core/errors'
 import { createEndpoint } from '../../core/http'
 import {
 	GetMarketHoursRequestQueryParamsSchema,
@@ -13,12 +15,13 @@ export const getMarketHours = createEndpoint<
 	never, // No Request Body
 	GetMarketHoursResponseBodySchema, // Response Body
 	'GET', // HTTP Method
-	any // Error type (can be refined if specific error schemas exist)
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/markets', // As per the screenshot
+	path: MARKET_DATA.MARKET_HOURS.GET_HOURS_FOR_MULTIPLE_MARKETS,
 	querySchema: GetMarketHoursRequestQueryParamsSchema,
 	responseSchema: GetMarketHoursResponseBodySchema,
+	errorSchema: ErrorResponseSchema,
 	description: 'Get Market Hours for different markets.',
 })
 
@@ -28,12 +31,13 @@ export const getMarketHoursByMarketId = createEndpoint<
 	never, // No Request Body
 	GetMarketHoursByMarketIdResponseBodySchema, // Response Body
 	'GET', // HTTP Method
-	any // Error type
+	ErrorResponseSchema // Error type
 >({
 	method: 'GET',
-	path: '/market-data/v1/markets/:market_id', // Path with market_id parameter
+	path: MARKET_DATA.MARKET_HOURS.GET_HOURS_FOR_SINGLE_MARKET,
 	pathSchema: GetMarketHoursByMarketIdRequestPathParamsSchema,
 	querySchema: GetMarketHoursByMarketIdRequestQueryParamsSchema,
 	responseSchema: GetMarketHoursByMarketIdResponseBodySchema,
+	errorSchema: ErrorResponseSchema,
 	description: 'Get Market Hours for a single market.',
 })

@@ -46,8 +46,13 @@ export const OptionDeliverablesSchema = z.object({
 	assetType: z
 		.string()
 		.describe('Asset type of the deliverable (e.g., EQUITY, CURRENCY)'), // Consider reusing InstrumentAssetTypeEnum if applicable
-	deliverableUnits: z.string().describe('Units of the deliverable'), // Screenshot indicates string, e.g. "100.0"
-	currencyType: z.string().describe('Currency type of the deliverable'),
+	deliverableUnits: z
+		.union([z.string(), z.number()])
+		.describe('Units of the deliverable'),
+	currencyType: z
+		.string()
+		.optional()
+		.describe('Currency type of the deliverable'),
 })
 export type OptionDeliverablesSchema = z.infer<typeof OptionDeliverablesSchema>
 
@@ -165,9 +170,12 @@ export const OptionContractSchema = z.object({
 		.optional()
 		.describe('Total volume for the option'),
 	tradeDate: z
-		.string()
+		.number()
+		.int()
 		.optional()
-		.describe('Trade date of the option. Format uncertain (e.g. YYYY-MM-DD)'), // Format uncertain from image
+		.describe(
+			'Trade date of the option (numeric, possibly a timestamp or 0 if not set/applicable).',
+		),
 	quoteTimeInLong: z
 		.number()
 		.int()
@@ -253,14 +261,14 @@ export const OptionContractSchema = z.object({
 })
 export type OptionContractSchema = z.infer<typeof OptionContractSchema>
 
-// Maps strike price (string) to OptionContract
+// Maps strike price (string) to array of OptionContract
 export const OptionContractMapSchema = z.record(
 	z.string(),
-	OptionContractSchema,
+	z.array(OptionContractSchema),
 )
 export type OptionContractMapSchema = z.infer<typeof OptionContractMapSchema>
 
-// Maps expiration date (string) to a map of strike prices to OptionContracts
+// Maps expiration date (string) to a map of strike prices to arrays of OptionContracts
 export const OptionContractDateMapSchema = z.record(
 	z.string(),
 	OptionContractMapSchema,
@@ -304,11 +312,11 @@ export const OptionChainSchema = z.object({
 		.optional()
 		.describe('Price of the underlying security at the time of the request'),
 	volatility: z.number().optional().describe('Volatility of the underlying'),
-	callExpDateMap: OptionContractDateMapSchema.describe(
-		'Map of expiration dates to call option contracts',
+	callExpDateMap: OptionContractDateMapSchema.optional().describe(
+		'Map of expiration dates to call option contracts. May be omitted if no call options exist for the query.',
 	),
-	putExpDateMap: OptionContractDateMapSchema.describe(
-		'Map of expiration dates to put option contracts',
+	putExpDateMap: OptionContractDateMapSchema.optional().describe(
+		'Map of expiration dates to put option contracts. May be omitted if no put options exist for the query.',
 	),
 })
 export type OptionChainSchema = z.infer<typeof OptionChainSchema>
@@ -449,7 +457,9 @@ export const ExpirationItemSchema = z.object({
 		.int()
 		.optional()
 		.describe('Number of days until expiration'),
-	expiration: z.string().describe('Expiration date (e.g., YYYY-MM-DD format)'),
+	expirationDate: z
+		.string()
+		.describe('Expiration date (e.g., YYYY-MM-DD format)'),
 	expirationType: ExpirationTypeEnum.describe('Type of expiration cycle'), // Reusing existing enum
 	standard: z
 		.boolean()

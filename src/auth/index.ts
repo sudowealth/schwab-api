@@ -1,2 +1,8 @@
 export * from './urls'
 export * from './token'
+export * from './types'
+export * from './errors'
+export { createAuthClient } from './auth-client'
+export { TokenManager, type TokenService } from './token-manager'
+export { createTokenService, createExtendedAuthClient } from './token-service'
+export { createSchwabAuthClient, type FullAuthClient } from './unified-auth'

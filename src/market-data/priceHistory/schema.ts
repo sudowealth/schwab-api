@@ -22,6 +22,38 @@ export type PriceHistoryFrequencyTypeEnum = z.infer<
 	typeof PriceHistoryFrequencyTypeEnum
 >
 
+// Enum for frequency query parameter
+export const FrequencyEnum = z
+	.union([
+		z.literal(1),
+		z.literal(5),
+		z.literal(10),
+		z.literal(15),
+		z.literal(30),
+	])
+	.or(z.coerce.number().refine((val) => [1, 5, 10, 15, 30].includes(val)))
+export type FrequencyEnum = z.infer<typeof FrequencyEnum>
+
+// Enum for period query parameter
+export const PeriodEnum = z
+	.union([
+		z.literal(1),
+		z.literal(2),
+		z.literal(3),
+		z.literal(4),
+		z.literal(5),
+		z.literal(6),
+		z.literal(10),
+		z.literal(15),
+		z.literal(20),
+	])
+	.or(
+		z.coerce
+			.number()
+			.refine((val) => [1, 2, 3, 4, 5, 6, 10, 15, 20].includes(val)),
+	)
+export type PeriodEnum = z.infer<typeof PeriodEnum>
+
 // Schema for Request Query Parameters of GET /pricehistory
 export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 	symbol: z
@@ -30,9 +62,7 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 	periodType: PriceHistoryPeriodTypeEnum.optional().describe(
 		'The chart period being requested. Available values: day, month, year, ytd',
 	),
-	period: z
-		.number()
-		.int()
+	period: PeriodEnum.default(1)
 		.optional()
 		.describe(
 			'The number of chart period types. \n' +
@@ -46,13 +76,11 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 			'- If periodType is day - default is minute. \n' +
 			'- If periodType is month - default is weekly. \n' +
 			'- If periodType is year - default is monthly. \n' +
-			'- If periodType is ytd - default is weekly. \n' +
-			'Available values: minute, daily, weekly, monthly',
+			'- If periodType is ytd - default is weekly. Note: When periodType is ytd, valid values for frequencyType are daily or weekly. \n' +
+			'General available values: minute, daily, weekly, monthly (specific restrictions may apply based on periodType).',
 	),
-	frequency: z
-		.number()
-		.int()
-		.optional()
+	frequency: FrequencyEnum.optional()
+		.default(1)
 		.describe(
 			'The time frequency duration. Default value is 1 if not specified. \n' +
 				'- If frequencyType is minute - valid values are 1, 5, 10, 15, 30. \n' +

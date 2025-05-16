@@ -47,7 +47,9 @@ export const GetMarketHoursRequestQueryParamsSchema = z.object({
 	markets: z
 		.union([MarketHoursMarketQueryEnum, z.array(MarketHoursMarketQueryEnum)])
 		.transform((val) => (Array.isArray(val) ? val : [val]))
-		.describe('List of markets (equity, option, bond, future, forex)'),
+		.describe(
+			`List of markets. Available values: ${MarketHoursMarketQueryEnum.options.join(', ')}`,
+		),
 	date: z
 		.string()
 		.regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
@@ -59,11 +61,14 @@ export type GetMarketHoursRequestQueryParamsSchema = z.infer<
 >
 
 // Schema for Response Body of GET /markets
-// The response is an object where keys are the market names queried (e.g., "equity", "option")
-// and values are the market hours data.
+// The response is a nested structure with market type as the top level key,
+// then product code as second level, containing the market hours data
 export const GetMarketHoursResponseBodySchema = z.record(
-	MarketHoursMarketQueryEnum, // Keys like "equity", "option"
-	MarketHoursDataSchema,
+	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
+	z.record(
+		z.string(), // Second level key (e.g., "EQ") - product code
+		MarketHoursDataSchema, // Market hours data
+	),
 )
 export type GetMarketHoursResponseBodySchema = z.infer<
 	typeof GetMarketHoursResponseBodySchema
@@ -92,8 +97,15 @@ export type GetMarketHoursByMarketIdRequestQueryParamsSchema = z.infer<
 >
 
 // Response Body Schema for GET /markets/{market_id}
-// This endpoint returns the MarketHoursDataSchema directly for the specified market.
-export const GetMarketHoursByMarketIdResponseBodySchema = MarketHoursDataSchema
+// This endpoint returns a nested structure with market type as the top level key,
+// then product code as second level, containing the market hours data
+export const GetMarketHoursByMarketIdResponseBodySchema = z.record(
+	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
+	z.record(
+		z.string(), // Second level key (e.g., "EQ") - product code
+		MarketHoursDataSchema, // Market hours data
+	),
+)
 export type GetMarketHoursByMarketIdResponseBodySchema = z.infer<
 	typeof GetMarketHoursByMarketIdResponseBodySchema
 >

@@ -11,7 +11,7 @@ const AccountAPIOptionDeliverable = z.object({
 })
 type AccountAPIOptionDeliverable = z.infer<typeof AccountAPIOptionDeliverable>
 
-const AccountsBaseInstrument = z.object({
+export const AccountsBaseInstrument = z.object({
 	assetType: assetType,
 	cusip: z.string().optional(), // Made optional based on some TransactionInstrument variations
 	symbol: z.string(),
