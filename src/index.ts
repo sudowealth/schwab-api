@@ -13,10 +13,8 @@ export {
 // OAuth Helper exports
 export { createAuthClient } from './auth/auth-client'
 export { TokenManager, type TokenService } from './auth/token-manager'
-export {
-	createTokenService,
-	createExtendedAuthClient,
-} from './auth/token-service'
+export { createTokenService, createExtendedAuthClient } from './auth/token-service'
+export { createSchwabAuthLite, type SchwabAuth } from './auth/simplified-auth'
 export type { TokenSet } from './auth/types'
 
 // Request Pipeline exports
