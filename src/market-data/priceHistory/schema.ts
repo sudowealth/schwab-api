@@ -23,27 +23,35 @@ export type PriceHistoryFrequencyTypeEnum = z.infer<
 >
 
 // Enum for frequency query parameter
-export const FrequencyEnum = z.union([
-	z.literal(1),
-	z.literal(5),
-	z.literal(10),
-	z.literal(15),
-	z.literal(30),
-]).or(z.coerce.number().refine(val => [1, 5, 10, 15, 30].includes(val)))
+export const FrequencyEnum = z
+	.union([
+		z.literal(1),
+		z.literal(5),
+		z.literal(10),
+		z.literal(15),
+		z.literal(30),
+	])
+	.or(z.coerce.number().refine((val) => [1, 5, 10, 15, 30].includes(val)))
 export type FrequencyEnum = z.infer<typeof FrequencyEnum>
 
 // Enum for period query parameter
-export const PeriodEnum = z.union([
-	z.literal(1),
-	z.literal(2),
-	z.literal(3),
-	z.literal(4),
-	z.literal(5),
-	z.literal(6),
-	z.literal(10),
-	z.literal(15),
-	z.literal(20),
-]).or(z.coerce.number().refine(val => [1, 2, 3, 4, 5, 6, 10, 15, 20].includes(val)))
+export const PeriodEnum = z
+	.union([
+		z.literal(1),
+		z.literal(2),
+		z.literal(3),
+		z.literal(4),
+		z.literal(5),
+		z.literal(6),
+		z.literal(10),
+		z.literal(15),
+		z.literal(20),
+	])
+	.or(
+		z.coerce
+			.number()
+			.refine((val) => [1, 2, 3, 4, 5, 6, 10, 15, 20].includes(val)),
+	)
 export type PeriodEnum = z.infer<typeof PeriodEnum>
 
 // Schema for Request Query Parameters of GET /pricehistory
@@ -54,20 +62,22 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 	periodType: PriceHistoryPeriodTypeEnum.optional().describe(
 		'The chart period being requested. Available values: day, month, year, ytd',
 	),
-	period: PeriodEnum.default(1).optional().describe(
-		'The number of chart period types. \n' +
-			'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
-			'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
-			'- If periodType is year - valid values are 1, 2, 3, 5, 10, 15, 20 (default 1). \n' +
-			'- If periodType is ytd - valid values are 1 (default 1).',
-	),
+	period: PeriodEnum.default(1)
+		.optional()
+		.describe(
+			'The number of chart period types. \n' +
+				'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
+				'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
+				'- If periodType is year - valid values are 1, 2, 3, 5, 10, 15, 20 (default 1). \n' +
+				'- If periodType is ytd - valid values are 1 (default 1).',
+		),
 	frequencyType: PriceHistoryFrequencyTypeEnum.optional().describe(
 		'The time frequencyType. \n' +
 			'- If periodType is day - default is minute. \n' +
 			'- If periodType is month - default is weekly. \n' +
 			'- If periodType is year - default is monthly. \n' +
-			'- If periodType is ytd - default is weekly. \n' +
-			'Available values: minute, daily, weekly, monthly',
+			'- If periodType is ytd - default is weekly. Note: When periodType is ytd, valid values for frequencyType are daily or weekly. \n' +
+			'General available values: minute, daily, weekly, monthly (specific restrictions may apply based on periodType).',
 	),
 	frequency: FrequencyEnum.optional()
 		.default(1)
