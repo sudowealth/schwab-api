@@ -12,6 +12,12 @@ export {
 
 // OAuth Helper exports
 export { createAuthClient } from './auth/auth-client'
+export { TokenManager, type TokenService } from './auth/token-manager'
+export {
+	createTokenService,
+	createExtendedAuthClient,
+} from './auth/token-service'
+export type { TokenSet } from './auth/types'
 
 // Request Pipeline exports
 export { configureSchwabApi } from './configure-api'
