@@ -30,6 +30,7 @@ export const FrequencyEnum = z.union([
 	z.literal(15),
 	z.literal(30),
 ]).or(z.coerce.number().refine(val => [1, 5, 10, 15, 30].includes(val)))
+export type FrequencyEnum = z.infer<typeof FrequencyEnum>
 
 // Enum for period query parameter
 export const PeriodEnum = z.union([
@@ -53,7 +54,7 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 	periodType: PriceHistoryPeriodTypeEnum.optional().describe(
 		'The chart period being requested. Available values: day, month, year, ytd',
 	),
-	period: PeriodEnum.optional().describe(
+	period: PeriodEnum.default(1).optional().describe(
 		'The number of chart period types. \n' +
 			'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
 			'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
