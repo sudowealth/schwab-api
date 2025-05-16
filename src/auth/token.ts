@@ -153,11 +153,20 @@ export async function refreshToken(
 	const body = new URLSearchParams()
 	body.append('grant_type', OAUTH_GRANT_TYPES.REFRESH_TOKEN)
 	body.append('refresh_token', opts.refreshToken)
-	// client_id and client_secret are sent in Authorization header (Basic Auth)
+	// Explicitly add client_id to payload (some OAuth servers require this in addition to Auth header)
+	body.append('client_id', opts.clientId)
+	// client_id and client_secret are also sent in Authorization header (Basic Auth)
 
 	const authHeader = 'Basic ' + btoa(`${opts.clientId}:${opts.clientSecret}`)
 
 	tokenLog('info', `Refreshing token at: ${tokenEndpoint}`)
+
+	// Debug log payload for troubleshooting
+	tokenLog('info', 'Token refresh request details:', {
+		grant_type: OAUTH_GRANT_TYPES.REFRESH_TOKEN,
+		refresh_token_length: opts.refreshToken.length,
+		refresh_token_prefix: opts.refreshToken.substring(0, 10) + '...',
+	})
 
 	try {
 		// Add timeout support
@@ -180,19 +189,25 @@ export async function refreshToken(
 		const data = await response.json()
 
 		if (!response.ok) {
-			tokenLog('error', 'Token refresh failed:', data)
+			tokenLog('error', 'Token refresh failed:', {
+				status: response.status,
+				statusText: response.statusText,
+				error: data.error,
+				error_description: data.error_description,
+				response: data,
+			})
 			const status = typeof response.status === 'number' ? response.status : 400
 
 			if (status === 401) {
 				throw new SchwabAuthorizationError(
 					data,
-					`Token refresh failed: ${data.error || 'Unauthorized'}`,
+					`Token refresh failed: ${data.error || 'Unauthorized'} - ${data.error_description || ''}`,
 				)
 			} else {
 				throw new SchwabApiError(
 					status,
 					data,
-					`Token refresh failed with status ${status}: ${data.error || response.statusText}`,
+					`Token refresh failed with status ${status}: ${data.error || response.statusText} - ${data.error_description || ''}`,
 				)
 			}
 		}
