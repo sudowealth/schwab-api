@@ -1,5 +1,5 @@
-import  { type TokenService } from './token-manager'
-import  { type AuthClient, type TokenSet } from './types'
+import { type TokenService } from './token-manager'
+import { type AuthClient, type TokenSet } from './types'
 
 /**
  * Creates a TokenService implementation backed by an AuthClient
@@ -16,8 +16,6 @@ export function createTokenService(authClient: AuthClient): TokenService {
 				// Register a one-time callback to capture the new token
 				let newTokenSet: TokenSet | null = null
 
-				// We register the callback but don't need to unregister
-				// since we only use it once
 				authClient.onRefresh((tokenSet) => {
 					newTokenSet = {
 						accessToken: tokenSet.accessToken,
@@ -26,8 +24,8 @@ export function createTokenService(authClient: AuthClient): TokenService {
 					}
 				})
 
-				// Use the auth client to refresh the token
-				await authClient.refreshTokens()
+				// Call refreshTokens with the explicit refreshToken
+				await authClient.refreshTokens({ refreshToken })
 
 				// Verify we got a token set from the callback
 				if (!newTokenSet) {

@@ -137,18 +137,23 @@ export function createAuthClient(options: AuthClientOptions): AuthClient {
 
 		/**
 		 * Refresh the access token using the refresh token
+		 * @param options Optional refresh options
 		 * @throws SchwabAuthError with code 'TOKEN_EXPIRED' if the refresh token has expired (after 7 days)
 		 */
-		async refreshTokens(): Promise<TokenSet> {
+		async refreshTokens(options?: {
+			refreshToken?: string
+		}): Promise<TokenSet> {
 			try {
 				// Try to load tokens if we have a load function
 				let currentTokens: TokenSet | null = null
+				let refreshTokenToUse = options?.refreshToken
 
-				if (loadTokens) {
+				if (!refreshTokenToUse && loadTokens) {
 					currentTokens = await loadTokens()
+					refreshTokenToUse = currentTokens?.refreshToken
 				}
 
-				if (!currentTokens || !currentTokens.refreshToken) {
+				if (!refreshTokenToUse) {
 					throw new SchwabAuthError(
 						'TOKEN_EXPIRED',
 						'No refresh token available',
@@ -166,17 +171,16 @@ export function createAuthClient(options: AuthClientOptions): AuthClient {
 				const response = await refreshToken({
 					clientId,
 					clientSecret,
-					refreshToken: currentTokens.refreshToken,
+					refreshToken: refreshTokenToUse,
 					fetch: fetchFn,
 				})
 
 				// Use the new refresh token if provided, otherwise keep the old one
-				const refreshTokenToUse =
-					response.refresh_token || currentTokens.refreshToken
+				const refreshTokenToSave = response.refresh_token || refreshTokenToUse
 
 				const tokenSet: TokenSet = {
 					accessToken: response.access_token,
-					refreshToken: refreshTokenToUse,
+					refreshToken: refreshTokenToSave,
 					expiresAt: Date.now() + response.expires_in * 1000,
 				}
 

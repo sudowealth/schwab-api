@@ -29,7 +29,7 @@ export interface AuthClient {
 	 * Refresh the access token using the refresh token
 	 * @throws SchwabAuthError with code 'TOKEN_EXPIRED' if the refresh token has expired (after 7 days)
 	 */
-	refreshTokens(): Promise<TokenSet>
+	refreshTokens(options?: { refreshToken?: string }): Promise<TokenSet>
 
 	/**
 	 * Register a callback to be called when tokens are refreshed
