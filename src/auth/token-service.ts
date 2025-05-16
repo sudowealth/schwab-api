@@ -82,10 +82,16 @@ export function createExtendedAuthClient(authClient: AuthClient) {
 		},
 
 		/**
-		 * Refreshes an access token
-		 * @param refreshToken The refresh token
-		 * @param onSuccessfulPersist Optional callback for successful persistence
-		 * @returns A new token set
+		 * Refreshes an access token using a refresh token.
+		 *
+		 * IMPORTANT: Schwab refresh tokens expire after 7 days. When a refresh token expires,
+		 * this method will throw a SchwabAuthError with code 'TOKEN_EXPIRED'. In this case,
+		 * a new authorization flow must be initiated to obtain a new refresh token.
+		 *
+		 * @param refreshToken The refresh token to use
+		 * @param onSuccessfulPersist Optional callback to persist the new token set
+		 * @returns A new token set containing access and refresh tokens
+		 * @throws SchwabAuthError with code 'TOKEN_EXPIRED' when the refresh token has expired
 		 */
 		refresh: tokenService.refresh,
 	}

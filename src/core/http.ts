@@ -167,29 +167,33 @@ export async function schwabFetch<
 		const parsed = pathSchema.safeParse(pathParams ?? {})
 		if (!parsed.success) {
 			// Format the validation errors into a more readable message
-			const errors = parsed.error.format();
-			let validationDetails = '';
-			
+			const errors = parsed.error.format()
+			let validationDetails = ''
+
 			// Try to extract specific field validation errors
 			try {
 				const errorEntries = Object.entries(errors)
 					.filter(([key]) => key !== '_errors')
 					.map(([key, value]) => {
-						if (typeof value === 'object' && '_errors' in value && Array.isArray(value._errors)) {
-							return `'${key}': ${value._errors.join(', ')}`;
+						if (
+							typeof value === 'object' &&
+							'_errors' in value &&
+							Array.isArray(value._errors)
+						) {
+							return `'${key}': ${value._errors.join(', ')}`
 						}
-						return null;
+						return null
 					})
-					.filter(Boolean);
-					
+					.filter(Boolean)
+
 				if (errorEntries.length > 0) {
-					validationDetails = ` - Validation errors: ${errorEntries.join('; ')}`;
+					validationDetails = ` - Validation errors: ${errorEntries.join('; ')}`
 				}
 			} catch (e) {
 				// If error formatting fails, just use the default message
-				log('warn', 'Failed to format validation errors', e);
+				log('warn', 'Failed to format validation errors', e)
 			}
-			
+
 			throw new SchwabInvalidRequestError(
 				parsed.error.format(),
 				`Invalid path parameters for ${method} ${endpointTemplate}${validationDetails}`,
@@ -209,29 +213,33 @@ export async function schwabFetch<
 		const parsed = querySchema.safeParse(queryParams ?? {})
 		if (!parsed.success) {
 			// Format the validation errors into a more readable message
-			const errors = parsed.error.format();
-			let validationDetails = '';
-			
+			const errors = parsed.error.format()
+			let validationDetails = ''
+
 			// Try to extract specific field validation errors
 			try {
 				const errorEntries = Object.entries(errors)
 					.filter(([key]) => key !== '_errors')
 					.map(([key, value]) => {
-						if (typeof value === 'object' && '_errors' in value && Array.isArray(value._errors)) {
-							return `'${key}': ${value._errors.join(', ')}`;
+						if (
+							typeof value === 'object' &&
+							'_errors' in value &&
+							Array.isArray(value._errors)
+						) {
+							return `'${key}': ${value._errors.join(', ')}`
 						}
-						return null;
+						return null
 					})
-					.filter(Boolean);
-					
+					.filter(Boolean)
+
 				if (errorEntries.length > 0) {
-					validationDetails = ` - Validation errors: ${errorEntries.join('; ')}`;
+					validationDetails = ` - Validation errors: ${errorEntries.join('; ')}`
 				}
 			} catch (e) {
 				// If error formatting fails, just use the default message
-				log('warn', 'Failed to format validation errors', e);
+				log('warn', 'Failed to format validation errors', e)
 			}
-			
+
 			throw new SchwabInvalidRequestError(
 				parsed.error.format(),
 				`Invalid query parameters for ${method} ${endpointTemplate}${validationDetails}`,
@@ -257,29 +265,33 @@ export async function schwabFetch<
 		const parsed = bodySchema.safeParse(body ?? {}) // Allow undefined body if schema supports it
 		if (!parsed.success) {
 			// Format the validation errors into a more readable message
-			const errors = parsed.error.format();
-			let validationDetails = '';
-			
+			const errors = parsed.error.format()
+			let validationDetails = ''
+
 			// Try to extract specific field validation errors
 			try {
 				const errorEntries = Object.entries(errors)
 					.filter(([key]) => key !== '_errors')
 					.map(([key, value]) => {
-						if (typeof value === 'object' && '_errors' in value && Array.isArray(value._errors)) {
-							return `'${key}': ${value._errors.join(', ')}`;
+						if (
+							typeof value === 'object' &&
+							'_errors' in value &&
+							Array.isArray(value._errors)
+						) {
+							return `'${key}': ${value._errors.join(', ')}`
 						}
-						return null;
+						return null
 					})
-					.filter(Boolean);
-					
+					.filter(Boolean)
+
 				if (errorEntries.length > 0) {
-					validationDetails = ` - Validation errors: ${errorEntries.join('; ')}`;
+					validationDetails = ` - Validation errors: ${errorEntries.join('; ')}`
 				}
 			} catch (e) {
 				// If error formatting fails, just use the default message
-				log('warn', 'Failed to format validation errors', e);
+				log('warn', 'Failed to format validation errors', e)
 			}
-			
+
 			throw new SchwabInvalidRequestError(
 				parsed.error.format(),
 				`Invalid request body for ${method} ${endpointTemplate}${validationDetails}`,
@@ -365,30 +377,36 @@ export async function schwabFetch<
 			}
 
 			// Prepare a more detailed error message
-			let detailedErrorMessage = `API Error for ${method} ${endpointTemplate}: ${response.statusText}`;
-			
+			let detailedErrorMessage = `API Error for ${method} ${endpointTemplate}: ${response.statusText}`
+
 			// Extract validation details from errorBody if available
 			if (errorBody && typeof errorBody === 'object') {
 				if ('errors' in errorBody && Array.isArray(errorBody.errors)) {
-					const errorDetails = errorBody.errors.map((err: any) => {
-						let detail = '';
-						if (err.title) detail += `${err.title}`;
-						if (err.detail) detail += ` - ${err.detail}`;
-						if (err.source && err.source.parameter) detail += ` (parameter: ${err.source.parameter})`;
-						return detail;
-					}).join('; ');
-					
+					const errorDetails = errorBody.errors
+						.map((err: any) => {
+							let detail = ''
+							if (err.title) detail += `${err.title}`
+							if (err.detail) detail += ` - ${err.detail}`
+							if (err.source && err.source.parameter)
+								detail += ` (parameter: ${err.source.parameter})`
+							return detail
+						})
+						.join('; ')
+
 					if (errorDetails) {
-						detailedErrorMessage += ` - Details: ${errorDetails}`;
+						detailedErrorMessage += ` - Details: ${errorDetails}`
 					}
 				}
 			}
-			
+
 			// Add query parameters to error message for debugging
-			if (validatedQueryParams && Object.keys(validatedQueryParams).length > 0) {
-				detailedErrorMessage += ` - Query params: ${JSON.stringify(validatedQueryParams)}`;
+			if (
+				validatedQueryParams &&
+				Object.keys(validatedQueryParams).length > 0
+			) {
+				detailedErrorMessage += ` - Query params: ${JSON.stringify(validatedQueryParams)}`
 			}
-			
+
 			throw createSchwabApiError(
 				response.status,
 				errorBody,
@@ -414,11 +432,17 @@ export async function schwabFetch<
 
 		const parsedResponse = responseSchema.safeParse(responseData)
 		if (!parsedResponse.success) {
-			const SENSITIVE_MAX_ERROR_LENGTH = 500; // To avoid overly long messages
-			const validationErrors = JSON.stringify(parsedResponse.error.format(), null, 2);
-			const truncatedErrors = validationErrors.length > SENSITIVE_MAX_ERROR_LENGTH 
-				? validationErrors.substring(0, SENSITIVE_MAX_ERROR_LENGTH) + '... (truncated)' 
-				: validationErrors;
+			const SENSITIVE_MAX_ERROR_LENGTH = 500 // To avoid overly long messages
+			const validationErrors = JSON.stringify(
+				parsedResponse.error.format(),
+				null,
+				2,
+			)
+			const truncatedErrors =
+				validationErrors.length > SENSITIVE_MAX_ERROR_LENGTH
+					? validationErrors.substring(0, SENSITIVE_MAX_ERROR_LENGTH) +
+						'... (truncated)'
+					: validationErrors
 			throw new SchwabServerError(
 				parsedResponse.error.format(), // Keep the original body for programmatic access
 				`Invalid response data structure for ${method} ${endpointTemplate}. Validation errors: ${truncatedErrors}`,

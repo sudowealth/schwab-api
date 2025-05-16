@@ -212,13 +212,37 @@ export function createAuthClient(options: AuthClientOptions): AuthClient {
 				if (error instanceof Error) {
 					message = error.message
 
-					if ('status' in error && typeof (error as any).status === 'number') {
+					// Check for specific error messages that indicate token expiration
+					if (
+						message.includes('refresh token authentication failed') ||
+						message.includes('refresh_token_authentication_error')
+					) {
+						code = 'TOKEN_EXPIRED'
+						message =
+							'Refresh token has expired or been revoked. A new authorization flow is required.'
+					} else if (
+						'status' in error &&
+						typeof (error as any).status === 'number'
+					) {
 						status = (error as any).status
 
 						if (status === 401) {
 							code = 'UNAUTHORIZED'
 						} else if (status === 400) {
-							code = 'TOKEN_EXPIRED'
+							// Check if this is a specific error we can better classify
+							if ((error as any).data && (error as any).data.error) {
+								const errorCode = (error as any).data.error
+								if (
+									errorCode === 'refresh_token_authentication_error' ||
+									errorCode === 'unsupported_token_type'
+								) {
+									code = 'TOKEN_EXPIRED'
+									message =
+										'Refresh token has expired or is invalid. A new authorization flow is required.'
+								}
+							} else {
+								code = 'TOKEN_EXPIRED'
+							}
 						}
 					}
 				}

@@ -26,14 +26,16 @@ export const MoversSortEnum = z.enum([
 export type MoversSortEnum = z.infer<typeof MoversSortEnum>
 
 // Enum for frequency query parameter (numeric values)
-export const MoversFrequencyEnum = z.union([
-	z.literal(0),
-	z.literal(1),
-	z.literal(5),
-	z.literal(10),
-	z.literal(30),
-	z.literal(60),
-]).or(z.coerce.number().refine(val => [0, 1, 5, 10, 30, 60].includes(val)))
+export const MoversFrequencyEnum = z
+	.union([
+		z.literal(0),
+		z.literal(1),
+		z.literal(5),
+		z.literal(10),
+		z.literal(30),
+		z.literal(60),
+	])
+	.or(z.coerce.number().refine((val) => [0, 1, 5, 10, 30, 60].includes(val)))
 export type MoversFrequencyEnum = z.infer<typeof MoversFrequencyEnum>
 
 // Enum for direction field in ScreenerSchema

@@ -26,6 +26,32 @@ export interface FullAuthClient {
  *
  * This is the recommended approach for most applications, providing a simplified
  * interface for the complete OAuth flow.
+ *
+ * ## Token Refresh Handling
+ *
+ * Schwab refresh tokens expire after 7 days. When this happens, your application will
+ * receive a `TOKEN_EXPIRED` error when attempting to refresh. When this occurs, you must
+ * initiate a new authorization flow by:
+ *
+ * 1. Capturing the `SchwabAuthError` with code 'TOKEN_EXPIRED'
+ * 2. Redirecting the user to re-authenticate using the authorization URL
+ * 3. Exchanging the new authorization code for new tokens
+ *
+ * Example error handling:
+ * ```typescript
+ * try {
+ *   const newTokens = await auth.refresh(oldRefreshToken);
+ *   // Update stored tokens with newTokens
+ * } catch (error) {
+ *   if (error instanceof SchwabAuthError && error.code === 'TOKEN_EXPIRED') {
+ *     // Refresh token has expired, redirect user to re-authenticate
+ *     const { authUrl } = auth.getAuthorizationUrl();
+ *     // Redirect user to authUrl
+ *   } else {
+ *     // Handle other errors
+ *   }
+ * }
+ * ```
  */
 export function createSchwabAuthClient(
 	opts: AuthClientOptions,

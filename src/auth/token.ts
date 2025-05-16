@@ -198,7 +198,18 @@ export async function refreshToken(
 			})
 			const status = typeof response.status === 'number' ? response.status : 400
 
-			if (status === 401) {
+			// Handle specific refresh token errors with more helpful messages
+			if (data.error === 'refresh_token_authentication_error') {
+				throw new SchwabAuthorizationError(
+					data,
+					`Refresh token authentication failed - the token may have expired or been revoked. A new authentication flow is required.`,
+				)
+			} else if (data.error === 'unsupported_token_type') {
+				throw new SchwabAuthorizationError(
+					data,
+					`Token refresh failed: The refresh token format is not supported - ${data.error_description || ''}`,
+				)
+			} else if (status === 401) {
 				throw new SchwabAuthorizationError(
 					data,
 					`Token refresh failed: ${data.error || 'Unauthorized'} - ${data.error_description || ''}`,

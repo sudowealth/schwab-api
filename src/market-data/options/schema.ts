@@ -46,8 +46,13 @@ export const OptionDeliverablesSchema = z.object({
 	assetType: z
 		.string()
 		.describe('Asset type of the deliverable (e.g., EQUITY, CURRENCY)'), // Consider reusing InstrumentAssetTypeEnum if applicable
-	deliverableUnits: z.union([z.string(), z.number()]).describe('Units of the deliverable'),
-	currencyType: z.string().optional().describe('Currency type of the deliverable'),
+	deliverableUnits: z
+		.union([z.string(), z.number()])
+		.describe('Units of the deliverable'),
+	currencyType: z
+		.string()
+		.optional()
+		.describe('Currency type of the deliverable'),
 })
 export type OptionDeliverablesSchema = z.infer<typeof OptionDeliverablesSchema>
 
@@ -168,7 +173,9 @@ export const OptionContractSchema = z.object({
 		.number()
 		.int()
 		.optional()
-		.describe('Trade date of the option (numeric, possibly a timestamp or 0 if not set/applicable).'),
+		.describe(
+			'Trade date of the option (numeric, possibly a timestamp or 0 if not set/applicable).',
+		),
 	quoteTimeInLong: z
 		.number()
 		.int()
