@@ -5,20 +5,18 @@ import { type SchwabTokenResponse } from './types'
 import { getTokenUrlWithContext } from './urls'
 
 export interface ExchangeCodeForTokenOptions {
-	clientId: string
-	clientSecret: string
-	code: string
-	redirectUri: string
-	tokenUrl?: string // default from getTokenUrlWithContext()
-	fetch?: typeof fetch // Optional fetch override
+        clientId: string
+        clientSecret: string
+        code: string
+        redirectUri: string
+        tokenUrl?: string // default from getTokenUrlWithContext()
 }
 
 export interface RefreshTokenOptions {
-	clientId: string
-	clientSecret: string
-	refreshToken: string
-	tokenUrl?: string // default from getTokenUrlWithContext()
-	fetch?: typeof fetch // Optional fetch override
+        clientId: string
+        clientSecret: string
+        refreshToken: string
+        tokenUrl?: string // default from getTokenUrlWithContext()
 }
 
 /**
@@ -52,7 +50,7 @@ export async function exchangeCodeForTokenWithContext(
 	opts: ExchangeCodeForTokenOptions,
 ): Promise<SchwabTokenResponse> {
 	const { config } = context
-	const fetchFn = opts.fetch || context.fetchFn
+        const fetchFn = context.fetchFn
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	const body = new URLSearchParams()
@@ -122,7 +120,7 @@ export async function refreshTokenWithContext(
 	opts: RefreshTokenOptions,
 ): Promise<SchwabTokenResponse> {
 	const { config } = context
-	const fetchFn = opts.fetch || context.fetchFn
+        const fetchFn = context.fetchFn
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	const body = new URLSearchParams()

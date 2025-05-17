@@ -89,13 +89,12 @@ export class BaseTokenHandler implements ITokenLifecycleManager {
 				this.fetchFn,
 			)
 
-			const response = await exchangeCodeForTokenWithContext(context, {
-				clientId: this.clientId,
-				clientSecret: this.clientSecret,
-				code,
-				redirectUri: this.redirectUri,
-				fetch: this.fetchFn,
-			})
+                       const response = await exchangeCodeForTokenWithContext(context, {
+                                clientId: this.clientId,
+                                clientSecret: this.clientSecret,
+                                code,
+                                redirectUri: this.redirectUri,
+                        })
 
 			const tokenSet = mapTokenResponse(response)
 
@@ -200,12 +199,11 @@ export class BaseTokenHandler implements ITokenLifecycleManager {
 				this.fetchFn,
 			)
 
-			const response = await refreshTokenWithContext(context, {
-				clientId: this.clientId,
-				clientSecret: this.clientSecret,
-				refreshToken: refreshTokenToUse,
-				fetch: this.fetchFn,
-			})
+                        const response = await refreshTokenWithContext(context, {
+                                clientId: this.clientId,
+                                clientSecret: this.clientSecret,
+                                refreshToken: refreshTokenToUse,
+                        })
 
 			// Use the new refresh token if provided, otherwise keep the old one
 			const refreshTokenToSave = response.refresh_token || refreshTokenToUse
