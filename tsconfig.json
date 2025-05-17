@@ -1,17 +1,28 @@
 {
-	"$schema": "https://json.schemastore.org/tsconfig",
-	"compilerOptions": {
-		"isolatedModules": true,
-		"module": "ESNext",
-		"target": "ES2022",
-		"strict": true,
-		"skipLibCheck": true,
-		"noUncheckedIndexedAccess": true,
-		"esModuleInterop": true,
-		"moduleResolution": "node",
-		"declaration": true,
-		"outDir": "./dist"
-	},
-	"include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
-	"exclude": ["node_modules", "dist"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "isolatedModules": true,
+    "module": "ESNext",
+    "target": "ES2022",
+    "strict": true,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "./dist",
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
