@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { dateStringSchema } from '../../utils/date-utils'
-import { InstrumentAssetTypeEnum } from '../instruments/schema' // Reusing for marketType in response
+import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'markets' query parameter
 export const MarketHoursMarketQueryEnum = z.enum([

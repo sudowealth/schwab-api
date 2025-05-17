@@ -1,33 +1,16 @@
 import { z } from 'zod'
+import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for projection parameter
 export const InstrumentProjectionEnum = z.enum([
-	'symbol-search',
-	'symbol-regex',
-	'desc-search',
-	'desc-regex',
-	'search',
-	'fundamental',
+        'symbol-search',
+        'symbol-regex',
+        'desc-search',
+        'desc-regex',
+        'search',
+        'fundamental',
 ])
 export type InstrumentProjectionEnum = z.infer<typeof InstrumentProjectionEnum>
-
-// Enum for AssetType
-export const InstrumentAssetTypeEnum = z.enum([
-	'BOND',
-	'EQUITY',
-	'ETF',
-	'EXTENDED', // Assuming EXTENDED is a valid type, present in screenshot Fundamental section
-	'FOREX',
-	'FUTURE',
-	'FUTURE_OPTION',
-	'FUNDAMENTAL', // This seems like a special type for the projection, also listed as an assetType
-	'INDEX',
-	'INDICATOR',
-	'MUTUAL_FUND',
-	'OPTION',
-	'UNKNOWN',
-])
-export type InstrumentAssetTypeEnum = z.infer<typeof InstrumentAssetTypeEnum>
 
 // Base Instrument Schema
 const InstrumentInfoSchema = z.object({
