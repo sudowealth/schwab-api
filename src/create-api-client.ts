@@ -1,18 +1,18 @@
-import * as auth from './auth'
+import * as authNs from './auth'
 import { type ITokenLifecycleManager } from './auth/token-lifecycle-manager'
 import {
 	type SchwabApiConfig,
 	getSchwabApiConfigDefaults,
-	resolveBaseUrl,
+	// resolveBaseUrl, // Not directly used in the provided snippet modification
 } from './core/config'
 import {
 	createRequestContext,
 	type RequestContext,
-	createEndpoint,
+	createEndpoint as coreHttpCreateEndpoint, // Aliased import
 	type EndpointMetadata,
 	type HttpMethod,
 } from './core/http'
-import * as errors from './errors'
+import * as errorsNs from './errors'
 import {
 	SchwabError,
 	SchwabApiError,
@@ -31,14 +31,14 @@ import {
 	ErrorResponseSchema,
 	parseErrorResponse,
 } from './errors'
-import * as marketData from './market-data'
+import * as marketDataNs from './market-data'
 import { compose } from './middleware/compose'
 import {
 	type MiddlewarePipelineOptions,
 	buildMiddlewarePipeline,
 } from './middleware/pipeline'
-import * as schemas from './schemas'
-import * as trader from './trader'
+import * as schemasNs from './schemas'
+import * as traderNs from './trader'
 
 /**
  * Options for creating a Schwab API client
@@ -60,32 +60,11 @@ export interface CreateApiClientOptions {
 	 *
 	 * Concurrency protection is automatically applied for refresh-capable token managers.
 	 */
-	auth?: string | ITokenLifecycleManager | auth.AuthFactoryConfig
+	auth?: string | ITokenLifecycleManager | authNs.AuthFactoryConfig
 
 	/**
 	 * Middleware configuration options
 	 * This provides a flexible way to configure the middleware pipeline
-	 *
-	 * @example
-	 * ```typescript
-	 * // Customizing middleware
-	 * const client = createApiClient({
-	 *   config: { environment: 'SANDBOX' },
-	 *   auth: myTokenManager,
-	 *   middleware: {
-	 *     // Configure specific middleware
-	 *     rateLimit: { maxRequests: 60, windowMs: 60000 },
-	 *     retry: { maxAttempts: 5, baseDelayMs: 2000 },
-	 *
-	 *     // Add custom middleware in specific positions
-	 *     before: [loggingMiddleware],
-	 *     between: {
-	 *       authAndRateLimit: [metricsMiddleware]
-	 *     },
-	 *     custom: [errorReportingMiddleware]
-	 *   }
-	 * })
-	 * ```
 	 */
 	middleware?: MiddlewarePipelineOptions
 }
@@ -97,23 +76,25 @@ export interface CreateApiClientOptions {
 export interface SchwabApiClient {
 	/**
 	 * Market Data API (quotes, price history, instruments, etc.)
+	 * Type will be transformed from marketDataNs
 	 */
-	marketData: typeof marketData
+	marketData: any // Placeholder type, to be refined
 
 	/**
 	 * Trader API (accounts, orders, transactions, etc.)
+	 * Type will be transformed from traderNs
 	 */
-	trader: typeof trader
+	trader: any // Placeholder type, to be refined
 
 	/**
 	 * Schemas for API requests and responses
 	 */
-	schemas: typeof schemas
+	schemas: typeof schemasNs
 
 	/**
 	 * Auth utilities and types
 	 */
-	auth: typeof auth
+	auth: typeof authNs
 
 	/**
 	 * Error types and utilities
@@ -153,49 +134,18 @@ export interface SchwabApiClient {
 	_context: RequestContext
 
 	/**
-	 * Unified discovery object that provides direct access to all modules,
-	 * types, and utilities in a single structured object. This enables
-	 * comprehensive discoverability of all APIs without additional imports.
+	 * Unified discovery object
 	 */
 	all: {
-		/**
-		 * Market Data API (quotes, price history, instruments, etc.)
-		 */
-		marketData: typeof marketData
-
-		/**
-		 * Trader API (accounts, orders, transactions, etc.)
-		 */
-		trader: typeof trader
-
-		/**
-		 * Schemas for API requests and responses
-		 */
-		schemas: typeof schemas
-
-		/**
-		 * Auth utilities and types
-		 */
-		auth: typeof auth
-
-		/**
-		 * Complete set of error types and utilities
-		 */
-		errors: typeof errors
+		marketData: any // Placeholder type
+		trader: any // Placeholder type
+		schemas: typeof schemasNs
+		auth: typeof authNs
+		errors: typeof errorsNs
 	}
 
 	/**
 	 * Create an endpoint function using the shared API client context
-	 * This is the recommended way to create API endpoint functions
-	 *
-	 * @template P - Path parameter type
-	 * @template Q - Query parameter type
-	 * @template B - Body parameter type
-	 * @template R - Response type
-	 * @template M - HTTP method
-	 * @template E - Error type
-	 * @param meta - Endpoint metadata
-	 * @returns A function that makes requests to the endpoint
 	 */
 	createEndpoint<
 		P = unknown,
@@ -206,169 +156,115 @@ export interface SchwabApiClient {
 		E = unknown,
 	>(
 		meta: EndpointMetadata<P, Q, B, R, M, E>,
-	): ReturnType<typeof createEndpoint<P, Q, B, R, M, E>>
+	): ReturnType<typeof coreHttpCreateEndpoint<P, Q, B, R, M, E>>
 }
 
-/**
- * Creates a configured Schwab API client
- *
- * This is the main entry point for using the Schwab API client library.
- * It provides a consistent approach to middleware configuration
- * and token management.
- *
- * Features enabled by default:
- * - Concurrency-safe token refresh
- * - Rate limiting (120 requests per minute)
- * - Automatic retries (up to 3 times with exponential backoff)
- *
- * @example
- * ```typescript
- * // Example 1: Basic usage with default middleware
- * const client = createApiClient({
- *   config: { environment: 'SANDBOX' },
- *   auth: myTokenManager
- * })
- * ```
- *
- * @example
- * ```typescript
- * // Example 2: Using with OAuth flow (recommended for most apps)
- * const authClient = createSchwabAuthClient({...})
- * const tokenSet = await authClient.exchangeCode(code)
- *
- * // Create a custom refresh provider that implements ITokenLifecycleManager
- * const tokenManager = {
- *   async getTokenData() {
- *     const tokens = await authClient.load() || tokenSet
- *     return {
- *       accessToken: tokens.accessToken,
- *       refreshToken: tokens.refreshToken,
- *       expiresAt: tokens.expiresAt
- *     }
- *   },
- *
- *   async getAccessToken() {
- *     const tokens = await this.getTokenData()
- *     return tokens ? tokens.accessToken : null
- *   },
- *
- *   supportsRefresh() {
- *     return true
- *   },
- *
- *   async refreshIfNeeded() {
- *     const newTokens = await authClient.refreshTokens()
- *     return {
- *       accessToken: newTokens.accessToken,
- *       refreshToken: newTokens.refreshToken,
- *       expiresAt: newTokens.expiresAt
- *     }
- *   },
- *
- *   onRefresh(callback) {
- *     authClient.onRefresh(callback)
- *   }
- * }
- *
- * // Concurrency protection is automatically applied
- * const client = createApiClient({
- *   config: {
- *     environment: 'SANDBOX',
- *     enableLogging: true
- *   },
- *   auth: tokenManager
- * })
- * ```
- *
- * @example
- * ```typescript
- * // Example 3: Customizing middleware
- * const client = createApiClient({
- *   config: { environment: 'SANDBOX' },
- *   auth: myTokenManager,
- *   middleware: {
- *     // Configure specific middleware
- *     rateLimit: { maxRequests: 60, windowMs: 60000 },
- *     retry: { maxAttempts: 5, baseDelayMs: 2000 },
- *
- *     // Add custom middleware in specific positions
- *     before: [loggingMiddleware],
- *     between: {
- *       authAndRateLimit: [metricsMiddleware]
- *     },
- *     custom: [errorReportingMiddleware]
- *   }
- * })
- * ```
- *
- * The middleware execution order follows this specific sequence:
- * 1. `before` middleware (executed first)
- * 2. Authentication middleware (if auth is provided)
- * 3. `between.authAndRateLimit` middleware
- * 4. Rate limiting middleware
- * 5. `between.rateLimitAndRetry` middleware
- * 6. Retry middleware
- * 7. `custom` middleware (executed last)
- */
+// Helper function to recursively process namespaces and convert Meta objects to endpoints
+function processNamespace<T extends Record<string, any>>(
+	ns: T,
+	clientCreateEndpoint: (
+		meta: EndpointMetadata<any, any, any, any, any, any>,
+	) => any,
+): any {
+	// Consider a more specific return type if possible, e.g., Processed<T>
+	const result: any = {}
+	for (const key in ns) {
+		if (Object.prototype.hasOwnProperty.call(ns, key)) {
+			const value = ns[key]
+			if (typeof value === 'object' && value !== null) {
+				// Check if it's likely an EndpointMetadata object exported from an endpoints module
+				// It should have properties like 'method' and 'path', and we're looking for a 'Meta' suffix.
+				// Also ensure it's not a sub-namespace object that could also contain such properties.
+				// A simple check for 'method' and 'path' and key ending with 'Meta' is a heuristic.
+				if (
+					key.endsWith('Meta') &&
+					'method' in value &&
+					'path' in value &&
+					!Object.values(value).some(
+						(v) =>
+							typeof v === 'object' &&
+							v !== null &&
+							'method' in v &&
+							'path' in v,
+					)
+				) {
+					const endpointName = key.substring(0, key.length - 'Meta'.length)
+					result[endpointName] = clientCreateEndpoint(value as EndpointMetadata)
+				} else {
+					// Recursively process sub-namespaces (like 'quotes' within 'marketData')
+					result[key] = processNamespace(value, clientCreateEndpoint)
+				}
+			} else {
+				// Copy other properties (functions like extractQuoteErrors, primitives, etc.) as is
+				result[key] = value
+			}
+		}
+	}
+	return result
+}
+
 export function createApiClient(
 	options: CreateApiClientOptions = {},
 ): SchwabApiClient {
-	// Merge provided config with defaults
-	const rawConfig = {
-		...getSchwabApiConfigDefaults(),
-		...options.config,
+	const finalConfig = { ...getSchwabApiConfigDefaults(), ...options.config }
+
+	let authManager: ITokenLifecycleManager
+	if (typeof options.auth === 'string') {
+		authManager = authNs.createSchwabAuth({
+			strategy: authNs.AuthStrategy.STATIC,
+			accessToken: options.auth,
+		})
+	} else if (options.auth && 'strategy' in options.auth) {
+		authManager = authNs.createSchwabAuth(
+			options.auth as authNs.AuthFactoryConfig,
+		)
+	} else if (options.auth) {
+		authManager = options.auth as ITokenLifecycleManager
+	} else {
+		// Default to a simple static token manager if no auth provided
+		authManager = authNs.createSchwabAuth({
+			strategy: authNs.AuthStrategy.STATIC,
+			accessToken: '',
+		})
+		console.warn(
+			'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
+		)
 	}
 
-	// Ensure baseUrl is consistent with environment if not explicitly provided
-	const finalConfig: SchwabApiConfig = {
-		...rawConfig,
-		// Only set baseUrl if not explicitly provided in options.config
-		...(options.config?.baseUrl ? {} : { baseUrl: resolveBaseUrl(rawConfig) }),
-	}
-
-	// Get the token manager from auth parameter
-	let tokenManager: unknown
-
-	// Handle auth parameter
-	if (options.auth !== undefined) {
-		if (
-			typeof options.auth === 'string' ||
-			auth.isTokenLifecycleManager(options.auth)
-		) {
-			// String token or token manager object
-			tokenManager = options.auth
-		} else {
-			// AuthFactoryConfig - create a token manager using the auth factory
-			tokenManager = auth.createSchwabAuth(options.auth)
-		}
-	}
-
-	// Build the middleware pipeline
-	const middlewares = buildMiddlewarePipeline(
-		options.middleware || {},
-		tokenManager as string | ITokenLifecycleManager | undefined,
+	const middlewareConfig = options.middleware ?? {}
+	const middleware = buildMiddlewarePipeline(middlewareConfig, authManager)
+	const chain = compose(...middleware)
+	const apiClientContext = createRequestContext(finalConfig, (req) =>
+		chain(req),
 	)
 
-	// Compose the middleware chain
-	const chain = compose(...middlewares)
+	const clientBoundCreateEndpoint = function <
+		P,
+		Q,
+		B,
+		R,
+		M extends HttpMethod,
+		E,
+	>(
+		meta: EndpointMetadata<P, Q, B, R, M, E>,
+	): ReturnType<typeof coreHttpCreateEndpoint<P, Q, B, R, M, E>> {
+		return coreHttpCreateEndpoint(apiClientContext, meta)
+	}
 
-	// Fetch function is now passed explicitly via context
+	const processedMarketData = processNamespace(
+		marketDataNs,
+		clientBoundCreateEndpoint,
+	)
+	const processedTrader = processNamespace(traderNs, clientBoundCreateEndpoint)
 
-	// Create a request context with config and fetch function
-	const context = createRequestContext(finalConfig, (req) => chain(req))
-
-	// Return the API client with all namespaces and helper functions
-	return {
-		marketData,
-		trader,
-		schemas,
-		auth,
+	const client: SchwabApiClient = {
+		marketData: processedMarketData,
+		trader: processedTrader,
+		schemas: schemasNs,
+		auth: authNs,
 		errors: {
-			// Base error class
 			SchwabError,
 			isSchwabError,
-
-			// API errors
 			SchwabApiError,
 			isSchwabApiError,
 			SchwabRateLimitError,
@@ -378,34 +274,22 @@ export function createApiClient(
 			SchwabServerError,
 			SchwabNetworkError,
 			SchwabTimeoutError,
-
-			// Auth errors
 			SchwabAuthError,
-
-			// Error codes
 			ApiErrorCode,
 			AuthErrorCode,
-
-			// Error parsing
 			ErrorResponse: ErrorResponseSchema,
 			parseErrorResponse,
 		},
-
-		// Expose the context for advanced use cases
-		_context: context,
-
-		// Factory function to create endpoint functions using the shared context
-		createEndpoint: <P, Q, B, R, M extends HttpMethod, E>(
-			meta: EndpointMetadata<P, Q, B, R, M, E>,
-		) => createEndpoint(context, meta),
-
-		// Unified discovery object for comprehensive API access
+		_context: apiClientContext,
+		createEndpoint: clientBoundCreateEndpoint,
 		all: {
-			marketData,
-			trader,
-			schemas,
-			auth,
-			errors,
+			marketData: processedMarketData,
+			trader: processedTrader,
+			schemas: schemasNs,
+			auth: authNs,
+			errors: errorsNs,
 		},
 	}
+
+	return client
 }

@@ -1,6 +1,5 @@
 import { TRADER } from '../../constants'
-import { createEndpoint } from '../../core/http'
-import { getSharedContext } from '../../core/shared-context'
+import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
 	GetTransactionsRequestPathParams,
@@ -10,14 +9,14 @@ import {
 	GetTransactionByIdResponseBody,
 } from './schema'
 
-export const getTransactions = createEndpoint<
+export const getTransactionsMeta: EndpointMetadata<
 	GetTransactionsRequestPathParams,
 	GetTransactionsRequestQueryParams,
 	never,
 	GetTransactionsResponseBody,
 	'GET',
 	ErrorResponseSchema
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: TRADER.TRANSACTIONS.GET_TRANSACTIONS,
 	pathSchema: GetTransactionsRequestPathParams,
@@ -26,20 +25,20 @@ export const getTransactions = createEndpoint<
 	errorSchema: ErrorResponseSchema,
 	description:
 		'Retrieves transactions for a specific account within a date range.',
-})
+}
 
-export const getTransactionById = createEndpoint<
+export const getTransactionByIdMeta: EndpointMetadata<
 	GetTransactionByIdRequestPathParams,
 	never,
 	never,
 	GetTransactionByIdResponseBody,
 	'GET',
 	ErrorResponseSchema
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: TRADER.TRANSACTIONS.GET_TRANSACTION,
 	pathSchema: GetTransactionByIdRequestPathParams,
 	responseSchema: GetTransactionByIdResponseBody,
 	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves a specific transaction by transaction ID.',
-})
+}

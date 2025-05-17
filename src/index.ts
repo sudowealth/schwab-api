@@ -65,10 +65,6 @@ export {
  *
  * For most applications, use createSchwabAuthClient for a unified approach.
  */
-export {
-	createSchwabAuthClient,
-	type FullAuthClient,
-} from './auth/unified-auth'
 export type { TokenSet } from './auth/types'
 
 /**

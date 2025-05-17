@@ -1,6 +1,5 @@
 import { TRADER } from '../../constants'
-import { createEndpoint } from '../../core/http'
-import { getSharedContext } from '../../core/shared-context'
+import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
 	GetAccountsRequestQueryParams,
@@ -11,30 +10,30 @@ import {
 	GetAccountNumbersResponseBody,
 } from './schema'
 
-export const getAccounts = createEndpoint<
+export const getAccountsMeta: EndpointMetadata<
 	never,
 	GetAccountsRequestQueryParams,
 	never,
 	GetAccountsResponseBody,
 	'GET',
 	ErrorResponseSchema
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNTS,
 	querySchema: GetAccountsRequestQueryParams,
 	responseSchema: GetAccountsResponseBody,
 	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves all accounts associated with the user.',
-})
+}
 
-export const getAccountByNumber = createEndpoint<
+export const getAccountByNumberMeta: EndpointMetadata<
 	GetAccountByNumberRequestPathParams,
 	GetAccountByNumberRequestQueryParams,
 	never,
 	GetAccountByNumberResponseBody,
 	'GET',
 	ErrorResponseSchema
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNT,
 	pathSchema: GetAccountByNumberRequestPathParams,
@@ -42,19 +41,19 @@ export const getAccountByNumber = createEndpoint<
 	responseSchema: GetAccountByNumberResponseBody,
 	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves a specific account by account number.',
-})
+}
 
-export const getAccountNumbers = createEndpoint<
+export const getAccountNumbersMeta: EndpointMetadata<
 	never,
 	never,
 	never,
 	GetAccountNumbersResponseBody,
 	'GET',
 	ErrorResponseSchema
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNT_NUMBERS,
 	responseSchema: GetAccountNumbersResponseBody,
 	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves all account numbers associated with the user.',
-})
+}

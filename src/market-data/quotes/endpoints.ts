@@ -1,6 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpoint } from '../../core/http'
-import { getSharedContext } from '../../core/shared-context'
+import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
 	GetQuotesRequestQueryParamsSchema,
@@ -19,14 +18,14 @@ import {
  *
  * @see extractQuoteErrors
  */
-export const getQuotes = createEndpoint<
+export const getQuotesMeta: EndpointMetadata<
 	never, // No Path Params
 	GetQuotesRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
 	GetQuotesResponseBodySchema, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: MARKET_DATA.QUOTES.GET_QUOTES, // Using constant instead of hardcoded path
 	querySchema: GetQuotesRequestQueryParamsSchema,
@@ -34,7 +33,7 @@ export const getQuotes = createEndpoint<
 	errorSchema: ErrorResponseSchema, // Using standard error schema
 	description:
 		'Get Quotes by list of symbols with support for partial success (some symbols may return errors).',
-})
+}
 
 /**
  * Get a quote for a single symbol.
@@ -45,14 +44,14 @@ export const getQuotes = createEndpoint<
  *
  * @see hasSymbolError
  */
-export const getQuoteBySymbolId = createEndpoint<
+export const getQuoteBySymbolIdMeta: EndpointMetadata<
 	GetQuoteBySymbolIdRequestPathParamsSchema, // Path Params
 	GetQuoteBySymbolIdRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
 	GetQuotesResponseBodySchema, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
->(getSharedContext(), {
+> = {
 	method: 'GET',
 	path: MARKET_DATA.QUOTES.GET_QUOTE, // Using constant instead of hardcoded path
 	pathSchema: GetQuoteBySymbolIdRequestPathParamsSchema,
@@ -60,4 +59,4 @@ export const getQuoteBySymbolId = createEndpoint<
 	responseSchema: GetQuotesResponseBodySchema,
 	errorSchema: ErrorResponseSchema, // Using standard error schema
 	description: 'Get Quote for a single symbol ID.',
-})
+}
