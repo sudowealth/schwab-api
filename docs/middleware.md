@@ -6,28 +6,6 @@ The Schwab API client uses a middleware pipeline architecture that allows you to
 extend and customize its behavior. The middleware system has been designed to
 ensure proper interaction between components.
 
-> **Note**: The priority-based middleware ordering described in this document is
-> considered legacy. The preferred approach is to use the simplified pipeline
-> approach described in [simplified-middleware.md](./simplified-middleware.md).
-
-## Legacy Middleware Priority Order
-
-In the legacy approach, middleware components are applied in a specific order to
-ensure proper functionality. The order follows these priority levels (from
-highest to lowest):
-
-1. **Authentication (Priority 600)** - Adds authentication tokens to requests
-2. **Rate Limiting (Priority 400)** - Ensures your application stays within API
-   rate limits
-3. **Retry (Priority 200)** - Automatically retries failed requests with
-   exponential backoff
-
-This order is important because:
-
-- Authentication must happen before other operations
-- Rate limiting should occur before retry to properly control request flow
-- Retry should be last to handle errors from earlier middleware
-
 ## Standard Middleware Components
 
 ### Authentication Middleware (`withTokenAuth`)
@@ -89,44 +67,6 @@ const retryMiddleware = withRetry({
 })
 ```
 
-## Legacy: Using the MiddlewareRegistry
-
-For advanced use cases, you can directly use the `MiddlewareRegistry` to manage
-middleware ordering and priorities. However, this approach is considered legacy,
-and you should prefer the simplified pipeline approach.
-
-```typescript
-import {
-	MiddlewareRegistry,
-	MiddlewarePriority,
-	withRetry,
-	withRateLimit,
-	withTokenAuth,
-	compose,
-} from '@sudowealth/schwab-api'
-
-// Create a registry instance
-const registry = new MiddlewareRegistry()
-
-// Register middleware with priorities
-registry.register(
-	withTokenAuth(tokenManager),
-	MiddlewarePriority.AUTHENTICATION,
-	'auth',
-)
-registry.register(withRateLimit(), MiddlewarePriority.RATE_LIMIT, 'rateLimit')
-registry.register(withRetry(), MiddlewarePriority.RETRY, 'retry')
-
-// Add custom middleware
-registry.register(myLoggingMiddleware, MiddlewarePriority.HIGHEST, 'logging')
-
-// Get ordered middleware functions and compose them
-const chain = compose(...registry.getMiddlewareFunctions())
-
-// Use the chain with fetch
-const response = await chain(request)
-```
-
 ## Modern Approach: Using the Pipeline
 
 The recommended way to configure middleware is through the new pipeline
@@ -160,52 +100,6 @@ const client = createApiClient({
 		},
 
 		// Add custom middleware in specific positions
-		before: [myLoggingMiddleware],
-		between: {
-			authAndRateLimit: [myMetricsMiddleware],
-		},
-		custom: [myErrorHandlingMiddleware],
-	},
-})
-```
-
-## Deprecated: Old API Approaches
-
-The following approaches are no longer supported:
-
-- Using `middlewares` array to add middleware
-- Using `enforceMiddlewareOrder` flag
-- Using `useDefaultMiddlewares` flag to disable default middleware
-
-These legacy options have been replaced by the more flexible and intuitive
-pipeline configuration shown above.
-
-```typescript
-// Modern middleware configuration approach
-import { createApiClient } from '@sudowealth/schwab-api'
-
-const client = createApiClient({
-	// Authentication
-	token: tokenManager,
-
-	// Middleware pipeline configuration
-	middleware: {
-		// Configure built-in middleware
-		auth: {
-			refreshExpiring: true,
-			refreshThresholdMs: 300_000,
-		},
-		rateLimit: {
-			maxRequests: 120,
-			windowMs: 60_000,
-		},
-		retry: {
-			max: 3,
-			baseMs: 1000,
-			maxDelayMs: 30_000,
-		},
-
-		// Add custom middleware at specific positions
 		before: [myLoggingMiddleware],
 		between: {
 			authAndRateLimit: [myMetricsMiddleware],

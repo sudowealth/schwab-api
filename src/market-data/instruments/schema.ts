@@ -266,21 +266,3 @@ export const GetInstrumentByCusipResponseBodySchema = InstrumentsResponseSchema
 export type GetInstrumentByCusipResponseBodySchema = z.infer<
 	typeof GetInstrumentByCusipResponseBodySchema
 >
-
-// It seems the example response shows a dynamic key based on the query itself:
-// "symbolsAAPL,BAC&projection=symbol-search": { "instruments": [] }
-// If this is the case, the response schema needs to be z.record(z.string(), InstrumentsResponseSchema)
-// However, the "Schema" panel shows a direct "InstrumentResponse" object.
-// Assuming the "Schema" panel is the source of truth for the direct response structure.
-// If the key is indeed dynamic, the endpoint definition would need to handle this.
-// For now, following the explicit schema structure shown.
-
-// The example from the image: "Example Value / Schema" shows "InstrumentResponse" as the top level.
-// And "instruments" as a field in it.
-// The schema for 'instruments' items: one of {InstrumentInfo, FundamentalInstrument, BondInstrumentInfo ...}
-// This implies that the discriminated union is correct.
-// BondInstrumentInfo in the screenshot shows fields like bondFactor, bondMultiplier, bondPrice
-// these are added to BondInstrumentSchema.
-// FundamentalInstrument in the screenshot shows 'fundamental: FundamentalList'. I defined FundamentalDataSchema.
-// The screenshot also lists InstrumentInfo for types like EQUITY, ETF etc. This is handled by specific schemas
-// extending InstrumentInfoSchema and setting the literal assetType.

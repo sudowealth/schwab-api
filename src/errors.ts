@@ -502,11 +502,40 @@ export class SchwabAuthorizationError extends ClientApiError {
 }
 
 /**
- * Server-side errors (500, 502, 503, 504)
- * Maintained for backward compatibility but should generally use
- * createSchwabServerError factory for creation
+ * Enum to indicate the specific type of server error
+ */
+export enum ServerErrorReason {
+	/**
+	 * Generic internal server error (500)
+	 */
+	INTERNAL_ERROR = 'INTERNAL_ERROR',
+
+	/**
+	 * Bad gateway error (502) - upstream service returned invalid response
+	 */
+	BAD_GATEWAY = 'BAD_GATEWAY',
+
+	/**
+	 * Service unavailable (503) - server temporarily unavailable
+	 */
+	SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+
+	/**
+	 * Gateway timeout (504) - upstream service timed out
+	 */
+	GATEWAY_TIMEOUT = 'GATEWAY_TIMEOUT',
+}
+
+/**
+ * Unified server-side error class for all 5xx errors (500, 502, 503, 504)
+ * Consolidates the functionality of SchwabServiceUnavailableError and SchwabGatewayError
  */
 export class SchwabServerError extends RetryableApiError {
+	/**
+	 * Specific reason for the server error
+	 */
+	reason: ServerErrorReason
+
 	constructor(
 		status: number = 500,
 		body?: unknown,
@@ -514,16 +543,22 @@ export class SchwabServerError extends RetryableApiError {
 		parsedError?: ErrorResponseSchema,
 		metadata?: ErrorResponseMetadata,
 	) {
-		// Determine proper code based on status
+		// Determine proper code and reason based on status
 		let code: ApiErrorCode
-		if (status === 500) {
-			code = ApiErrorCode.SERVER_ERROR
-		} else if (status === 503) {
+		let reason: ServerErrorReason
+
+		if (status === 503) {
 			code = ApiErrorCode.SERVICE_UNAVAILABLE
-		} else if (status === 502 || status === 504) {
+			reason = ServerErrorReason.SERVICE_UNAVAILABLE
+		} else if (status === 502) {
 			code = ApiErrorCode.GATEWAY_ERROR
+			reason = ServerErrorReason.BAD_GATEWAY
+		} else if (status === 504) {
+			code = ApiErrorCode.GATEWAY_ERROR
+			reason = ServerErrorReason.GATEWAY_TIMEOUT
 		} else {
 			code = ApiErrorCode.SERVER_ERROR
+			reason = ServerErrorReason.INTERNAL_ERROR
 		}
 
 		// Create default message based on status
@@ -540,25 +575,78 @@ export class SchwabServerError extends RetryableApiError {
 
 		super(status, body, message || defaultMessage, code, parsedError, metadata)
 
-		// Set appropriate name based on status
-		if (status === 503) {
-			this.name = 'SchwabServiceUnavailableError'
-		} else if (status === 502) {
-			this.name = 'SchwabBadGatewayError'
-		} else if (status === 504) {
-			this.name = 'SchwabGatewayTimeoutError'
-		} else {
-			this.name = 'SchwabServerError'
-		}
-
+		this.reason = reason
+		this.name = 'SchwabServerError'
 		Object.setPrototypeOf(this, SchwabServerError.prototype)
+	}
+
+	/**
+	 * Checks if this is a service unavailable error (503)
+	 */
+	isServiceUnavailable(): boolean {
+		return this.reason === ServerErrorReason.SERVICE_UNAVAILABLE
+	}
+
+	/**
+	 * Checks if this is a gateway error (502 or 504)
+	 */
+	isGatewayError(): boolean {
+		return (
+			this.reason === ServerErrorReason.BAD_GATEWAY ||
+			this.reason === ServerErrorReason.GATEWAY_TIMEOUT
+		)
+	}
+}
+
+/**
+ * Base class for communication-related errors (network, timeout)
+ * This provides a common type for errors related to communication issues
+ *
+ * Note: This class inherits all the functionality of RetryableApiError including:
+ * - isRetryable(): Always returns true
+ * - All status, code, and metadata handling methods
+ *
+ * Use isCommunicationError() type guard to check if an error is related to network or timeout
+ */
+export class RetryableCommunicationError extends RetryableApiError {
+	/**
+	 * Cause of the communication error
+	 */
+	cause: 'network' | 'timeout'
+
+	constructor(
+		status: number,
+		code: ApiErrorCode,
+		cause: 'network' | 'timeout',
+		body?: unknown,
+		message?: string,
+		metadata?: ErrorResponseMetadata,
+	) {
+		super(status, body, message, code, undefined, metadata)
+		this.name = 'RetryableCommunicationError'
+		this.cause = cause
+		Object.setPrototypeOf(this, RetryableCommunicationError.prototype)
+	}
+
+	/**
+	 * Determines if this is a network error
+	 */
+	isNetworkError(): boolean {
+		return this.cause === 'network'
+	}
+
+	/**
+	 * Determines if this is a timeout error
+	 */
+	isTimeoutError(): boolean {
+		return this.cause === 'timeout'
 	}
 }
 
 /**
  * Network error (no status code)
  */
-export class SchwabNetworkError extends RetryableApiError {
+export class SchwabNetworkError extends RetryableCommunicationError {
 	constructor(
 		body?: unknown,
 		message?: string,
@@ -567,10 +655,10 @@ export class SchwabNetworkError extends RetryableApiError {
 		// Use 0 as status code since there's no HTTP status for network errors
 		super(
 			0,
+			ApiErrorCode.NETWORK,
+			'network',
 			body,
 			message || 'Schwab Network Error',
-			ApiErrorCode.NETWORK,
-			undefined,
 			metadata,
 		)
 		this.name = 'SchwabNetworkError'
@@ -581,7 +669,7 @@ export class SchwabNetworkError extends RetryableApiError {
 /**
  * Timeout error
  */
-export class SchwabTimeoutError extends RetryableApiError {
+export class SchwabTimeoutError extends RetryableCommunicationError {
 	constructor(
 		body?: unknown,
 		message?: string,
@@ -590,10 +678,10 @@ export class SchwabTimeoutError extends RetryableApiError {
 		// Use 408 as status code for timeout
 		super(
 			408,
+			ApiErrorCode.TIMEOUT,
+			'timeout',
 			body,
 			message || 'Schwab Request Timeout',
-			ApiErrorCode.TIMEOUT,
-			undefined,
 			metadata,
 		)
 		this.name = 'SchwabTimeoutError'
@@ -648,16 +736,53 @@ export function isServerErrorWithAnyStatus(
 	return e instanceof SchwabServerError && statuses.includes(e.status)
 }
 
+/**
+ * Check if an error is a server error with a specific reason
+ */
+export function isServerErrorWithReason(
+	e: unknown,
+	reason: ServerErrorReason,
+): e is SchwabServerError {
+	return e instanceof SchwabServerError && e.reason === reason
+}
+
 export function isAuthError(e: unknown): e is SchwabAuthError {
 	return e instanceof SchwabAuthError
 }
 
-export function isNetworkError(e: unknown): e is SchwabNetworkError {
-	return e instanceof SchwabNetworkError
+/**
+ * Type guard to check if an error is a communication error (network or timeout)
+ */
+export function isCommunicationError(
+	e: unknown,
+): e is RetryableCommunicationError {
+	return e instanceof RetryableCommunicationError
 }
 
-export function isTimeoutError(e: unknown): e is SchwabTimeoutError {
-	return e instanceof SchwabTimeoutError
+/**
+ * Type guard to check if an error is a network error, either through direct instance
+ * or through the RetryableCommunicationError with cause='network'
+ */
+export function isNetworkError(
+	e: unknown,
+): e is SchwabNetworkError | RetryableCommunicationError {
+	if (e instanceof SchwabNetworkError) {
+		return true
+	}
+	return e instanceof RetryableCommunicationError && e.cause === 'network'
+}
+
+/**
+ * Type guard to check if an error is a timeout error, either through direct instance
+ * or through the RetryableCommunicationError with cause='timeout'
+ */
+export function isTimeoutError(
+	e: unknown,
+): e is SchwabTimeoutError | RetryableCommunicationError {
+	if (e instanceof SchwabTimeoutError) {
+		return true
+	}
+	return e instanceof RetryableCommunicationError && e.cause === 'timeout'
 }
 
 export function isUnauthorizedError(e: unknown): e is SchwabAuthorizationError {
@@ -894,6 +1019,7 @@ export function createSchwabApiError(
 	// Create appropriate error type based on status code
 	switch (status) {
 		case 0:
+			// Network error - no HTTP status available
 			return new SchwabNetworkError(body, message, metadata)
 		case 400:
 			return new ClientApiError(
@@ -925,6 +1051,7 @@ export function createSchwabApiError(
 				metadata,
 			)
 		case 408:
+			// Timeout error
 			return new SchwabTimeoutError(body, message, metadata)
 		case 429:
 			return new SchwabRateLimitError(body, message, parsedError, metadata)
@@ -932,6 +1059,7 @@ export function createSchwabApiError(
 		case 502:
 		case 503:
 		case 504:
+			// All server errors use the consolidated SchwabServerError class
 			return new SchwabServerError(status, body, message, parsedError, metadata)
 		default:
 			// For status codes not explicitly handled, decide based on range
@@ -945,11 +1073,11 @@ export function createSchwabApiError(
 					metadata,
 				)
 			} else if (status >= 500 && status < 600) {
-				return new RetryableApiError(
+				// All 5xx errors use the consolidated SchwabServerError class
+				return new SchwabServerError(
 					status,
 					body,
 					message,
-					undefined,
 					parsedError,
 					metadata,
 				)
@@ -1015,50 +1143,48 @@ export class SchwabNotFoundError extends ClientApiError {
 }
 
 /**
- * 503 - Service Unavailable - Server is overloaded or down for maintenance
+ * Factory function to create a service unavailable error (503)
+ * Replacement for SchwabServiceUnavailableError class
  * Used by middleware/with-retry.ts
  */
-export class SchwabServiceUnavailableError extends SchwabServerError {
-	constructor(
-		body?: unknown,
-		message?: string,
-		parsedError?: ErrorResponseSchema,
-		metadata?: ErrorResponseMetadata,
-	) {
-		super(
-			503,
-			body,
-			message || 'Schwab Service Unavailable Error',
-			parsedError,
-			metadata,
-		)
-		this.name = 'SchwabServiceUnavailableError'
-		Object.setPrototypeOf(this, SchwabServiceUnavailableError.prototype)
-	}
+export function createServiceUnavailableError(
+	body?: unknown,
+	message?: string,
+	parsedError?: ErrorResponseSchema,
+	metadata?: ErrorResponseMetadata,
+): SchwabServerError {
+	return new SchwabServerError(
+		503,
+		body,
+		message || 'Schwab Service Unavailable Error',
+		parsedError,
+		metadata,
+	)
 }
 
 /**
- * 502/504 - Gateway Error - Errors from upstream services
+ * Factory function to create a gateway error (502/504)
+ * Replacement for SchwabGatewayError class
  * Used by middleware/with-retry.ts
  */
-export class SchwabGatewayError extends SchwabServerError {
-	constructor(
-		status: number = 502,
-		body?: unknown,
-		message?: string,
-		parsedError?: ErrorResponseSchema,
-		metadata?: ErrorResponseMetadata,
-	) {
-		super(
-			status,
-			body,
-			message || 'Schwab Gateway Error',
-			parsedError,
-			metadata,
-		)
-		this.name = 'SchwabGatewayError'
-		Object.setPrototypeOf(this, SchwabGatewayError.prototype)
+export function createGatewayError(
+	status: number = 502,
+	body?: unknown,
+	message?: string,
+	parsedError?: ErrorResponseSchema,
+	metadata?: ErrorResponseMetadata,
+): SchwabServerError {
+	if (status !== 502 && status !== 504) {
+		status = 502 // Default to 502 if an invalid status is provided
 	}
+
+	return new SchwabServerError(
+		status,
+		body,
+		message || 'Schwab Gateway Error',
+		parsedError,
+		metadata,
+	)
 }
 
 /**
@@ -1076,6 +1202,22 @@ export function handleApiError(error: unknown, context?: string): never {
 		throw new SchwabTimeoutError(
 			{ message: 'Request timed out' },
 			context ? `${context}: Request timed out` : 'Request timed out',
+		)
+	}
+
+	// Handle network errors specifically
+	if (
+		error instanceof Error &&
+		'code' in error &&
+		['ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN'].includes(
+			(error as any).code,
+		)
+	) {
+		throw new SchwabNetworkError(
+			{ message: error.message },
+			context
+				? `${context}: Network error - ${error.message}`
+				: `Network error - ${error.message}`,
 		)
 	}
 

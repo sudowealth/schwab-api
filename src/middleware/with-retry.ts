@@ -3,10 +3,12 @@ import {
 	SchwabError,
 	SchwabRateLimitError,
 	SchwabServerError,
-	SchwabServiceUnavailableError,
-	SchwabGatewayError,
+	createServiceUnavailableError,
+	createGatewayError,
 	SchwabApiError,
+	isAuthError,
 	extractErrorMetadata,
+	isCommunicationError,
 } from '../errors'
 import { type Middleware } from './compose'
 import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
@@ -160,7 +162,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 							)
 							break
 						case 503:
-							error = new SchwabServiceUnavailableError(
+							error = createServiceUnavailableError(
 								errorBody,
 								`withRetry: Service unavailable (attempt ${attempts}/${maxRetries + 1})`,
 								undefined,
@@ -168,7 +170,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 							)
 							break
 						case 502:
-							error = new SchwabGatewayError(
+							error = createGatewayError(
 								502,
 								errorBody,
 								`withRetry: Bad gateway (attempt ${attempts}/${maxRetries + 1})`,
@@ -177,7 +179,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 							)
 							break
 						case 504:
-							error = new SchwabGatewayError(
+							error = createGatewayError(
 								504,
 								errorBody,
 								`withRetry: Gateway timeout (attempt ${attempts}/${maxRetries + 1})`,
@@ -266,9 +268,30 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 					)
 				}
 
-				// Check if the error is retryable
-				if (lastError instanceof SchwabApiError && !lastError.isRetryable()) {
-					throw lastError // Non-retryable error, rethrow immediately
+				// Handle authentication errors with their own isRetryable method
+				if (isAuthError(lastError) && !lastError.isRetryable()) {
+					throw lastError // Non-retryable auth error, rethrow immediately
+				}
+				// Handle communication errors (network/timeout) specially
+				else if (isCommunicationError(lastError)) {
+					// Communication errors are always retryable, but we still check
+					// to maintain consistent behavior
+					if (!lastError.isRetryable()) {
+						throw lastError
+					}
+					// Add debug logging for communication errors
+					const errorType =
+						lastError.cause === 'network' ? 'Network' : 'Timeout'
+					console.warn(
+						`${errorType} error (${attempts}/${maxRetries + 1}). Will retry...`,
+					)
+				}
+				// Handle API errors with their built-in isRetryable method
+				else if (
+					lastError instanceof SchwabApiError &&
+					!lastError.isRetryable()
+				) {
+					throw lastError // Non-retryable API error, rethrow immediately
 				}
 
 				if (attempts > maxRetries) {
