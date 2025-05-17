@@ -4,7 +4,7 @@ import { z } from 'zod'
  * SchawbDate utility type
  * This type can be used to represent a Schwab date in any of its forms
  */
-export type SchwabDate = Date | string | number
+type SchwabDate = Date | string | number
 
 /**
  * Type of date representation to use
@@ -23,7 +23,7 @@ export enum DateFormatType {
 /**
  * Configuration options for parsing dates
  */
-export interface DateParserOptions {
+interface DateParserOptions {
 	/** Output format type */
 	outputFormat?: DateFormatType
 	/** Whether to include timezone offset in ISO strings */
@@ -41,31 +41,9 @@ const DEFAULT_OPTIONS: DateParserOptions = {
 }
 
 /**
- * Type guard to check if a value is a valid date string (YYYY-MM-DD)
- */
-export function isDateString(value: unknown): value is string {
-	return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
-}
-
-/**
- * Type guard to check if a value is a valid ISO 8601 date string
- */
-export function isISODateString(value: unknown): value is string {
-	if (typeof value !== 'string') return false
-	try {
-		// ISO string is strictly formatted, checking Date.parse is not enough
-		const regex =
-			/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/
-		return regex.test(value) && !isNaN(Date.parse(value))
-	} catch {
-		return false
-	}
-}
-
-/**
  * Type guard to check if a value is a valid epoch timestamp in milliseconds
  */
-export function isEpochMilliseconds(value: unknown): value is number {
+function isEpochMilliseconds(value: unknown): value is number {
 	return typeof value === 'number' && Number.isInteger(value) && value > 0
 }
 
@@ -78,7 +56,7 @@ export function isEpochMilliseconds(value: unknown): value is number {
  * @param options - Configuration options
  * @returns The date in the specified format
  */
-export function parseSchwabDate(
+function parseSchwabDate(
 	value: SchwabDate | null | undefined,
 	options: DateParserOptions = DEFAULT_OPTIONS,
 ): Date | string | number | null {
@@ -172,67 +150,3 @@ export const dateStringSchema = z
 	.transform((value) =>
 		parseSchwabDate(value, { outputFormat: DateFormatType.DATE_OBJECT }),
 	)
-
-/**
- * Creates a Zod schema that can handle multiple date formats
- *
- * @param options - Options for date transformation
- * @returns A zod schema that can handle multiple date formats
- */
-export function createFlexibleDateSchema(
-	options: DateParserOptions = DEFAULT_OPTIONS,
-) {
-	return z.union([
-		z.date(),
-		z
-			.number()
-			.int()
-			.transform((val) => parseSchwabDate(val, options)),
-		z.string().transform((val) => parseSchwabDate(val, options)),
-	])
-}
-
-/**
- * Gets the current date in the specified format
- *
- * @param options - Configuration options
- * @returns The current date in the specified format
- */
-export function getCurrentDate(
-	options: DateParserOptions = DEFAULT_OPTIONS,
-): Date | string | number {
-	return parseSchwabDate(new Date(), options) as Date | string | number
-}
-
-/**
- * Formats a date as an ISO string with the specified precision
- *
- * @param date - The date to format
- * @param precision - The number of decimal places for milliseconds (0-3)
- * @returns The formatted ISO string
- */
-export function formatISOWithPrecision(
-	date: SchwabDate,
-	precision: number = 3,
-): string {
-	const dateObj = parseSchwabDate(date, {
-		outputFormat: DateFormatType.DATE_OBJECT,
-	}) as Date
-
-	if (precision === 0) {
-		// No milliseconds
-		return dateObj.toISOString().replace(/\.\d{3}Z$/, 'Z')
-	} else if (precision > 0 && precision < 3) {
-		// Truncate milliseconds to the specified precision
-		const isoString = dateObj.toISOString()
-		const millisPart = isoString.substring(
-			isoString.lastIndexOf('.') + 1,
-			isoString.lastIndexOf('Z'),
-		)
-		const truncatedMillis = millisPart.substring(0, precision)
-		return isoString.replace(millisPart, truncatedMillis)
-	}
-
-	// Default full precision
-	return dateObj.toISOString()
-}

@@ -5,7 +5,6 @@ import {
 	handleApiError,
 	extractErrorMetadata,
 } from '../errors'
-import { type Middleware, compose } from '../middleware/compose'
 import {
 	type SchwabApiConfig,
 	getSchwabApiConfigDefaults,
@@ -13,9 +12,7 @@ import {
 } from './config'
 
 // Global fetch handler that will be used as a fallback
-export const globalFetch = fetch
-
-export { type Middleware, compose }
+const globalFetch = fetch
 
 export type HttpMethod =
 	| 'GET'
@@ -25,11 +22,6 @@ export type HttpMethod =
 	| 'PATCH'
 	| 'OPTIONS'
 	| 'HEAD'
-
-export type InferPathParams<S> = S extends ZodType<infer P> ? P : undefined
-export type InferQueryParams<S> = S extends ZodType<infer Q> ? Q : undefined
-export type InferBody<S> = S extends ZodType<infer B> ? B : undefined
-export type InferResponse<S> = S extends ZodType<infer R> ? R : undefined
 
 export interface EndpointMetadata<
 	PType = unknown, // Inferred type for path params
@@ -113,7 +105,7 @@ function log(
  * Primary implementation for making API requests
  * All API requests should use this function
  */
-export async function schwabFetchWithContext<
+async function schwabFetchWithContext<
 	P,
 	Q,
 	B,
@@ -495,7 +487,7 @@ export function createEndpoint<P, Q, B, R, M extends HttpMethod, E = unknown>(
 /**
  * Build a URL for an API endpoint with the provided context
  */
-export function buildUrlWithContext(
+function buildUrlWithContext(
 	context: RequestContext,
 	endpointTemplate: string,
 	pathParams?: Record<string, string | number> | undefined,
@@ -593,6 +585,3 @@ export function buildUrlWithContext(
 	log(context, 'debug', `Constructed URL: ${url.toString()}`)
 	return url
 }
-
-// The buildUrl function is maintained for backward compatibility
-export const buildUrl = buildUrlWithContext

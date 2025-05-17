@@ -1,12 +1,11 @@
 import {
 	API_URLS,
 	type API_VERSIONS,
-	type ENVIRONMENTS,
 	TIMEOUTS,
+	type ENVIRONMENTS,
 } from '../constants'
 
 type ApiVersion = keyof typeof API_VERSIONS
-export type Environment = keyof typeof ENVIRONMENTS
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none'
 
 export interface SchwabApiConfig {
@@ -20,7 +19,7 @@ export interface SchwabApiConfig {
 	 * API environment
 	 * @default ENVIRONMENTS.PRODUCTION
 	 */
-	environment: Environment
+	environment: keyof typeof ENVIRONMENTS
 
 	/**
 	 * Enable logging for API requests and responses
@@ -65,15 +64,6 @@ export function getSchwabApiConfigDefaults(): SchwabApiConfig {
 }
 
 /**
- * Resolves the base URL for the specified environment
- * @param environment The environment to resolve the base URL for
- * @returns The base URL for the specified environment
- */
-export function resolveEnvironmentBaseUrl(environment: Environment): string {
-	return environment === 'PRODUCTION' ? API_URLS.PRODUCTION : API_URLS.SANDBOX
-}
-
-/**
  * Resolves the environment configuration to determine the appropriate base URL
  * This is the central function for environment/URL resolution
  *
@@ -88,5 +78,5 @@ export function resolveBaseUrl(config: Partial<SchwabApiConfig> = {}): string {
 
 	// Otherwise, derive the baseUrl from the environment
 	const environment = config.environment || DEFAULT_API_CONFIG.environment
-	return resolveEnvironmentBaseUrl(environment)
+	return environment === 'PRODUCTION' ? API_URLS.PRODUCTION : API_URLS.SANDBOX
 }

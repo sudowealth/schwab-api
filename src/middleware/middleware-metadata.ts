@@ -2,7 +2,7 @@
  * Metadata structure for communication between middleware components
  * This information is carried along with requests and responses to coordinate actions
  */
-export interface MiddlewareMetadata {
+interface MiddlewareMetadata {
 	/**
 	 * Rate limit information
 	 */
@@ -73,7 +73,7 @@ export interface MiddlewareMetadata {
 /**
  * Symbol used to store middleware metadata on Request and Response objects
  */
-export const MIDDLEWARE_METADATA = Symbol('MIDDLEWARE_METADATA')
+const MIDDLEWARE_METADATA = Symbol('MIDDLEWARE_METADATA')
 
 /**
  * Gets middleware metadata from a Request or Response
