@@ -21,6 +21,22 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
+    },
+    "./auth": {
+      "types": "./dist/src/auth/index.d.ts",
+      "default": "./dist/src/auth/index.js"
+    },
+    "./market-data": {
+      "types": "./dist/src/market-data/index.d.ts",
+      "default": "./dist/src/market-data/index.js"
+    },
+    "./trader": {
+      "types": "./dist/src/trader/index.d.ts",
+      "default": "./dist/src/trader/index.js"
+    },
+    "./schemas": {
+      "types": "./dist/src/schemas/index.d.ts",
+      "default": "./dist/src/schemas/index.js"
     }
   },
   "scripts": {
