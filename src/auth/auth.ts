@@ -65,95 +65,23 @@ export interface AuthFactoryConfig {
 // Re-export the FullAuthClient type for convenience
 export type { FullAuthClient }
 
-/**
- * Creates a comprehensive auth client that combines all authentication functionality:
- * - Generate an authorization URL for user login
- * - Exchange authorization codes for tokens
- * - Refresh tokens when needed
- *
- * This is the recommended approach for most applications, providing a simplified
- * interface for the complete OAuth flow.
- *
- * ## Token Refresh Handling
- *
- * Schwab refresh tokens expire after 7 days. When this happens, your application will
- * receive a `TOKEN_EXPIRED` error when attempting to refresh. When this occurs, you must
- * initiate a new authorization flow by:
- *
- * 1. Capturing the `SchwabAuthError` with code 'TOKEN_EXPIRED'
- * 2. Redirecting the user to re-authenticate using the authorization URL
- * 3. Exchanging the new authorization code for new tokens
- *
- * Example error handling:
- * ```typescript
- * try {
- *   const newTokens = await auth.refresh(oldRefreshToken);
- *   // Update stored tokens with newTokens
- * } catch (error) {
- *   if (error instanceof SchwabAuthError && error.code === 'TOKEN_EXPIRED') {
- *     // Refresh token has expired, redirect user to re-authenticate
- *     const { authUrl } = auth.getAuthorizationUrl();
- *     // Redirect user to authUrl
- *   } else {
- *     // Handle other errors
- *   }
- * }
- * ```
- */
-export function createSchwabAuthClient(
-	opts: AuthClientOptions,
-): FullAuthClient {
-	// Create an instance of the BaseTokenHandler
-	const handler = new BaseTokenHandler(opts)
-
-	// Return a unified interface that provides a simpler API
-	return {
-		// Simple wrapper for exchangeCode
-		async exchangeCode(code: string): Promise<TokenSet> {
-			return handler.exchangeCode(code)
-		},
-
-		// Simple wrapper for refreshTokens
-		async refresh(
-			refreshToken: string,
-			options?: { force?: boolean },
-		): Promise<TokenSet> {
-			return handler.refreshTokens({
-				refreshToken,
-				force: options?.force,
-			})
-		},
-
-		// Pass through the authorization URL generator
-		getAuthorizationUrl: handler.getAuthorizationUrl.bind(handler),
-
-		// Pass through load if available
-		load: opts.load,
-
-		// Pass through the onRefresh hook
-		onRefresh: handler.onRefresh.bind(handler),
-	}
-}
 
 /**
- * Token manager for OAuth flow that uses the integrated auth client.
- * This class leverages BaseTokenHandler's implementation of ITokenLifecycleManager
- * and focuses on delegating to the auth client.
+ * Token manager for OAuth flow that leverages BaseTokenHandler's implementation.
+ * This class extends BaseTokenHandler to provide a simplified interface
+ * for token management in the OAuth flow.
  */
 class OAuthTokenManager extends BaseTokenHandler {
-	private authClient: ReturnType<typeof createSchwabAuthClient>
-
 	constructor(options: AuthClientOptions) {
 		super(options)
-		this.authClient = createSchwabAuthClient(options)
 	}
 
 	/**
 	 * Exchange an authorization code for tokens
-	 * Uses the authClient for code exchange
+	 * Uses BaseTokenHandler's implementation
 	 */
 	async exchangeCode(code: string): Promise<TokenSet> {
-		this.tokenSet = await this.authClient.exchangeCode(code)
+		this.tokenSet = await super.exchangeCode(code)
 		// Update refresh token created timestamp
 		this.refreshTokenCreatedAt = Date.now()
 		return this.tokenSet
@@ -161,18 +89,15 @@ class OAuthTokenManager extends BaseTokenHandler {
 
 	/**
 	 * Register a callback for token refresh events
-	 * Delegates to both BaseTokenHandler and authClient
+	 * Uses BaseTokenHandler's onRefresh implementation
 	 */
 	onRefresh(callback: (tokenSet: TokenSet) => void): void {
-		// Register with the base handler
 		super.onRefresh(callback)
-		// Also register with the auth client
-		this.authClient.onRefresh?.(callback)
 	}
 
 	/**
-	 * Refreshes tokens using the auth client's refresh method
-	 * Provides a simplified interface compared to the base implementation
+	 * Refreshes tokens if needed
+	 * Provides a simplified interface using BaseTokenHandler's implementation
 	 */
 	async refreshIfNeeded(options?: RefreshOptions): Promise<TokenData> {
 		// Get current tokens
@@ -182,8 +107,9 @@ class OAuthTokenManager extends BaseTokenHandler {
 			throw new Error('No refresh token available')
 		}
 
-		// Refresh the tokens through the auth client
-		this.tokenSet = await this.authClient.refresh(currentTokens.refreshToken, {
+		// Refresh the tokens through the base handler
+		this.tokenSet = await super.refreshTokens({
+			refreshToken: currentTokens.refreshToken,
 			force: options?.force,
 		})
 

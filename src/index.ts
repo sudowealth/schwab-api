@@ -48,7 +48,7 @@ export {
  * You can provide authentication in multiple ways:
  * - Use a static token string for simple scripts
  * - Use an object implementing ITokenLifecycleManager
- * - Use the built-in OAuth flow with createSchwabAuthClient
+ * - Use the built-in OAuth flow with createSchwabAuth
  */
 export {
 	createApiClient,
@@ -63,7 +63,7 @@ export {
  * You can use these to implement the full OAuth flow with authorization URL
  * generation, code exchange, and token refresh.
  *
- * For most applications, use createSchwabAuthClient for a unified approach.
+ * For most applications, use createSchwabAuth for a unified approach.
  */
 export type { TokenSet } from './auth/types'
 

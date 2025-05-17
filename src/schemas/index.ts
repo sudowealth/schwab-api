@@ -1,3 +1,11 @@
+// Base schemas - explicitly re-export to avoid naming conflicts
+export { 
+  AssetTypeEnum,
+  BaseInstrumentSchema
+} from './base'
+export type { BaseInstrument } from './base'
+
+// Feature-specific schemas
 export * from '../market-data/instruments/schema'
 export * from '../market-data/marketHours/schema'
 export * from '../market-data/movers/schema'
