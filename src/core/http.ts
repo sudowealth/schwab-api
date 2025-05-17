@@ -468,14 +468,10 @@ export async function schwabFetchWithContext<
  * Create an endpoint function using the provided context
  * This is the primary way to create API endpoint functions
  */
-export function createEndpointWithContext<
-	P,
-	Q,
-	B,
-	R,
-	M extends HttpMethod,
-	E = unknown,
->(context: RequestContext, meta: EndpointMetadata<P, Q, B, R, M, E>) {
+export function createEndpoint<P, Q, B, R, M extends HttpMethod, E = unknown>(
+	context: RequestContext,
+	meta: EndpointMetadata<P, Q, B, R, M, E>,
+) {
 	return (
 		accessToken: string,
 		options: SchwabFetchRequestOptions<P, Q, B> = {},
@@ -598,7 +594,5 @@ export function buildUrlWithContext(
 	return url
 }
 
-// For backward compatibility only - will be removed in a future version
-// Using barrel export to avoid additional file changes for now
-export const createEndpoint = createEndpointWithContext
+// The buildUrl function is maintained for backward compatibility
 export const buildUrl = buildUrlWithContext

@@ -1,5 +1,5 @@
 import { TRADER } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -11,7 +11,7 @@ import {
 	GetAccountNumbersResponseBody,
 } from './schema'
 
-export const getAccounts = createEndpointWithContext<
+export const getAccounts = createEndpoint<
 	never,
 	GetAccountsRequestQueryParams,
 	never,
@@ -27,7 +27,7 @@ export const getAccounts = createEndpointWithContext<
 	description: 'Retrieves all accounts associated with the user.',
 })
 
-export const getAccountByNumber = createEndpointWithContext<
+export const getAccountByNumber = createEndpoint<
 	GetAccountByNumberRequestPathParams,
 	GetAccountByNumberRequestQueryParams,
 	never,
@@ -44,7 +44,7 @@ export const getAccountByNumber = createEndpointWithContext<
 	description: 'Retrieves a specific account by account number.',
 })
 
-export const getAccountNumbers = createEndpointWithContext<
+export const getAccountNumbers = createEndpoint<
 	never,
 	never,
 	never,

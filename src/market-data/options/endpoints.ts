@@ -1,5 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -9,7 +9,7 @@ import {
 	OptionExpirationChainResponseBodySchema,
 } from './schema'
 
-export const getOptionChain = createEndpointWithContext<
+export const getOptionChain = createEndpoint<
 	never, // No Path Params
 	GetOptionChainRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
@@ -25,7 +25,7 @@ export const getOptionChain = createEndpointWithContext<
 	description: 'Get option chain for an optionable symbol.',
 })
 
-export const getOptionExpirationChain = createEndpointWithContext<
+export const getOptionExpirationChain = createEndpoint<
 	never, // No Path Params
 	GetOptionExpirationChainRequestQueryParamsSchema, // Query Params
 	never, // No Request Body

@@ -8,7 +8,7 @@ import {
 import {
 	createRequestContext,
 	type RequestContext,
-	createEndpointWithContext,
+	createEndpoint,
 	type EndpointMetadata,
 	type HttpMethod,
 } from './core/http'
@@ -206,7 +206,7 @@ export interface SchwabApiClient {
 		E = unknown,
 	>(
 		meta: EndpointMetadata<P, Q, B, R, M, E>,
-	): ReturnType<typeof createEndpointWithContext<P, Q, B, R, M, E>>
+	): ReturnType<typeof createEndpoint<P, Q, B, R, M, E>>
 }
 
 /**
@@ -397,7 +397,7 @@ export function createApiClient(
 		// Factory function to create endpoint functions using the shared context
 		createEndpoint: <P, Q, B, R, M extends HttpMethod, E>(
 			meta: EndpointMetadata<P, Q, B, R, M, E>,
-		) => createEndpointWithContext(context, meta),
+		) => createEndpoint(context, meta),
 
 		// Unified discovery object for comprehensive API access
 		all: {

@@ -735,15 +735,15 @@ const quotes = await client.marketData.quotes.getQuotes({
 #### For Contributors and Custom Endpoint Creation
 
 If you're creating custom endpoints or contributing to the library, use the
-shared context and createEndpointWithContext function:
+shared context and createEndpoint function:
 
 ```typescript
 import { getSharedContext } from '../core/shared-context'
-import { createEndpointWithContext } from '../core/http'
+import { createEndpoint } from '../core/http'
 import { ErrorResponseSchema } from '../errors'
 
 // Create an endpoint using the shared context
-export const getCustomData = createEndpointWithContext<
+export const getCustomData = createEndpoint<
 	PathParamsType,
 	QueryParamsType,
 	BodyType,

@@ -1,5 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -7,7 +7,7 @@ import {
 	GetPriceHistoryResponseBodySchema,
 } from './schema'
 
-export const getPriceHistory = createEndpointWithContext<
+export const getPriceHistory = createEndpoint<
 	never, // No Path Params
 	GetPriceHistoryRequestQueryParamsSchema, // Query Params
 	never, // No Request Body

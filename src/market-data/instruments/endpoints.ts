@@ -1,5 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -9,7 +9,7 @@ import {
 	GetInstrumentByCusipResponseBodySchema,
 } from './schema'
 
-export const getInstruments = createEndpointWithContext<
+export const getInstruments = createEndpoint<
 	never, // No Path Params
 	GetInstrumentsRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
@@ -25,7 +25,7 @@ export const getInstruments = createEndpointWithContext<
 	description: 'Get Instruments by symbols and projections.',
 })
 
-export const getInstrumentByCusip = createEndpointWithContext<
+export const getInstrumentByCusip = createEndpoint<
 	GetInstrumentByCusipRequestPathParamsSchema, // Path Params
 	never, // No Query Params
 	never, // No Request Body

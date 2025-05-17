@@ -967,34 +967,6 @@ export function createSchwabApiError(
 }
 
 /**
- * Deprecated specialized server error factory functions
- * These are maintained for backward compatibility but new code should use
- * createSchwabApiError directly
- * @deprecated Use createSchwabApiError directly with appropriate status code
- */
-export function createSchwabServerError(
-	body?: unknown,
-	message?: string,
-	parsedError?: ErrorResponseSchema,
-	metadata?: ErrorResponseMetadata,
-): SchwabServerError {
-	return new SchwabServerError(500, body, message, parsedError, metadata)
-}
-
-/**
- * Factory for rate limit errors to improve consistency
- * @deprecated Use createSchwabApiError with status 429 directly
- */
-export function createRateLimitError(
-	body?: unknown,
-	message?: string,
-	parsedError?: ErrorResponseSchema,
-	metadata?: ErrorResponseMetadata,
-): SchwabRateLimitError {
-	return new SchwabRateLimitError(body, message, parsedError, metadata)
-}
-
-/**
  * 400 - Bad Request - Invalid request, missing required parameters, etc.
  * Used by create-api-client
  */

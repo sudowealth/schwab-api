@@ -1,5 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -8,7 +8,7 @@ import {
 	GetMoversResponseBodySchema,
 } from './schema'
 
-export const getMovers = createEndpointWithContext<
+export const getMovers = createEndpoint<
 	GetMoversRequestPathParamsSchema, // Path Params
 	GetMoversRequestQueryParamsSchema, // Query Params
 	never, // No Request Body

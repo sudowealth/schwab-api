@@ -1,5 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -10,7 +10,7 @@ import {
 	GetMarketHoursByMarketIdResponseBodySchema,
 } from './schema'
 
-export const getMarketHours = createEndpointWithContext<
+export const getMarketHours = createEndpoint<
 	never, // No Path Params
 	GetMarketHoursRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
@@ -26,7 +26,7 @@ export const getMarketHours = createEndpointWithContext<
 	description: 'Get Market Hours for different markets.',
 })
 
-export const getMarketHoursByMarketId = createEndpointWithContext<
+export const getMarketHoursByMarketId = createEndpoint<
 	GetMarketHoursByMarketIdRequestPathParamsSchema, // Path Params
 	GetMarketHoursByMarketIdRequestQueryParamsSchema, // Query Params
 	never, // No Request Body

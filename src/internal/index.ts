@@ -10,7 +10,7 @@ export {
 	createRequestContext,
 	buildUrlWithContext,
 	schwabFetchWithContext,
-	createEndpointWithContext,
+	createEndpoint,
 	globalFetch,
 	type RequestContext,
 	type HttpMethod,

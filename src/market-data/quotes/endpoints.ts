@@ -1,5 +1,5 @@
 import { MARKET_DATA } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -19,7 +19,7 @@ import {
  *
  * @see extractQuoteErrors
  */
-export const getQuotes = createEndpointWithContext<
+export const getQuotes = createEndpoint<
 	never, // No Path Params
 	GetQuotesRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
@@ -45,7 +45,7 @@ export const getQuotes = createEndpointWithContext<
  *
  * @see hasSymbolError
  */
-export const getQuoteBySymbolId = createEndpointWithContext<
+export const getQuoteBySymbolId = createEndpoint<
 	GetQuoteBySymbolIdRequestPathParamsSchema, // Path Params
 	GetQuoteBySymbolIdRequestQueryParamsSchema, // Query Params
 	never, // No Request Body

@@ -1,5 +1,5 @@
 import { TRADER } from '../../constants'
-import { createEndpointWithContext } from '../../core/http'
+import { createEndpoint } from '../../core/http'
 import { getSharedContext } from '../../core/shared-context'
 import { ErrorResponseSchema } from '../../errors'
 import {
@@ -10,7 +10,7 @@ import {
 	GetTransactionByIdResponseBody,
 } from './schema'
 
-export const getTransactions = createEndpointWithContext<
+export const getTransactions = createEndpoint<
 	GetTransactionsRequestPathParams,
 	GetTransactionsRequestQueryParams,
 	never,
@@ -28,7 +28,7 @@ export const getTransactions = createEndpointWithContext<
 		'Retrieves transactions for a specific account within a date range.',
 })
 
-export const getTransactionById = createEndpointWithContext<
+export const getTransactionById = createEndpoint<
 	GetTransactionByIdRequestPathParams,
 	never,
 	never,
