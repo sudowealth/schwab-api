@@ -67,6 +67,9 @@ export {
  */
 export type { TokenSet } from './auth/types'
 
+// Add new export for createSchwabAuth and AuthStrategy
+export { createSchwabAuth, AuthStrategy } from './auth'
+
 /**
  * Token Management Utilities
  *
