@@ -15,6 +15,7 @@ or transactions.**
 ## Table of Contents
 
 - [Key Features](#key-features)
+- [Architecture Overview](#architecture-overview)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage Examples](#usage)
@@ -50,6 +51,50 @@ or transactions.**
 - **Comprehensive Error Handling**: Detailed error types with rich debugging
   context
 
+## Architecture Overview
+
+The Schwab API client has been refactored to provide a clear and modular structure. The codebase is organized into distinct directories, each corresponding to a specific domain of API functionality:
+
+-   **`/auth`**: Handles all OAuth 2.0 authentication logic, including token generation, refresh, and lifecycle management. This module ensures secure and reliable access to the Schwab API. It introduces `createSchwabAuth` for creating authentication clients and `buildTokenManager` for more granular control over token behavior, especially regarding concurrency.
+-   **`/core`**: Contains the foundational building blocks of the client, such as the API client itself (`createApiClient`), middleware pipeline (`buildMiddlewarePipeline`), error handling, and request/response processing utilities.
+-   **`/market-data`**: Provides access to market data endpoints, including:
+    -   `quotes`: Fetching real-time or delayed quotes for various symbols.
+    -   `price-history`: Retrieving historical price data.
+    -   `instruments`: Searching and retrieving instrument details.
+    -   `movers`: Getting market movers.
+    -   `options`: Accessing options chain data.
+-   **`/trader`**: Manages trading-related functionalities, such as:
+    -   `accounts`: Retrieving account information and balances.
+    -   `orders`: Placing, modifying, and canceling orders.
+    -   `transactions`: Fetching transaction history.
+
+This modular design promotes better separation of concerns and makes it easier to navigate and extend the library.
+
+### Naming Conventions
+
+-   The `createSchwabAuth` function creates an authentication client.
+-   The `buildTokenManager` function is used internally by `createSchwabAuth` but can also be used directly to construct token managers, particularly when dealing with custom token storage or refresh logic that requires concurrency.
+
+### Concurrency Protection
+
+Token refresh operations are automatically protected against race conditions. When you use `createSchwabAuth` with an authentication strategy that supports token refresh (like `AuthStrategy.CODE_FLOW` or a custom manager with refresh capabilities), the underlying token manager is wrapped with a `ConcurrentTokenManager`. This ensures that multiple concurrent API calls will not trigger multiple simultaneous token refresh attempts, preventing potential issues and ensuring a stable token lifecycle.
+
+You can access the various API domains through the client instance:
+
+```typescript
+import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+
+// Assuming auth is configured (see Quick Start or Usage Examples)
+const auth = createSchwabAuth({ /* ... your auth config ... */ });
+const client = createApiClient({ auth });
+
+// Access market data endpoints
+const quotes = await client.all.marketData.quotes.getQuotes({ queryParams: { symbols: ['AAPL'] } });
+
+// Access trader endpoints
+const accounts = await client.all.trader.accounts.getAccounts();
+```
+
 ## Installation
 
 ```bash
@@ -60,39 +105,111 @@ yarn add schwab-api
 pnpm add schwab-api
 ```
 
-**Compatibility**: Tested with Node.js 16+ and TypeScript 4.5+.
-
 ## Quick Start
 
-```typescript
-import { createApiClient } from 'schwab-api'
+> **Prerequisites**:
+>
+> 1. You must have a Schwab developer account. You can register at @https://developer.schwab.com/register.
+> 2. Create an application at @https://developer.schwab.com/dashboard/apps.
+> 3. In your application settings, provide your callback URL.
+> 4. Obtain the Client ID (App Key) and Client Secret from your application page. These will be used as environment variables (e.g., `SCHWAB_CLIENT_ID` and `SCHWAB_CLIENT_SECRET`).
 
-// Create API client with a static token
-const client = createApiClient({
-	config: { environment: 'SANDBOX' },
-	auth: 'YOUR_ACCESS_TOKEN', // Simple string token for quick start
-})
+The quickest way to get started is by using `createSchwabAuth` along with `createApiClient`. This example demonstrates using a static access token. For more robust authentication, such as OAuth 2.0 Code Flow, refer to the "Usage Examples" section.
+
+```typescript
+// Minimal Hello World
+import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+
+(async () => {
+  const auth = createSchwabAuth({ strategy: AuthStrategy.STATIC, accessToken: 'YOUR_TOKEN' }); // Replace YOUR_TOKEN with a valid token
+  const client = createApiClient({ auth, config: { environment: 'SANDBOX' } }); // For actual live data, set environment: 'PRODUCTION'. Ensure your OAuth credentials are also configured for production use in your Schwab developer dashboard.
+  const quotes = await client.marketData.quotes.getQuotes({ queryParams: { symbols: ['AAPL'] }});
+  console.log(quotes);
+})();
+```
+
+```typescript
+import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
 
 async function main() {
+	// 1. Initialize Authentication
+	// For this quick start, we'll use a static token.
+	// Replace 'YOUR_ACCESS_TOKEN' with your actual token.
+	const auth = createSchwabAuth({
+		strategy: AuthStrategy.STATIC,
+		accessToken: 'YOUR_ACCESS_TOKEN',
+	});
+
+	// Alternatively, for OAuth 2.0 Code Flow (more common for applications):
+	// Make sure SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET are defined in your environment (e.g., in .env or your hosting platform's config).
+	const auth = createSchwabAuth({
+		strategy: AuthStrategy.CODE_FLOW,
+		oauthConfig: {
+			clientId: process.env.SCHWAB_CLIENT_ID!, // Ensure these are set in your environment
+			clientSecret: process.env.SCHWAB_CLIENT_SECRET!,
+			redirectUri: 'https://example.com/callback', // Must match your Schwab app config
+			// Optional: Implement load/save for token persistence
+			load: async () => { /* load TokenData from storage */ return null; },
+			save: async (tokenData) => { /* save TokenData to storage */ },
+		},
+	});
+	// For CODE_FLOW, you would then redirect the user to:
+	const { authUrl } = auth.getAuthorizationUrl();
+	// And after they authorize, exchange the code:
+	const tokenData = await auth.exchangeCode('THE_CODE_FROM_REDIRECT');
+	
+
+	// Or, using a custom token manager:
+	const customManager = { // Implement ITokenLifecycleManager
+		async getAccessToken() { return 'custom_token'; },
+		async refreshIfNeeded() { return false; }, // Or implement refresh logic
+		supportsRefresh: () => false,
+	};
+	const auth = createSchwabAuth({
+		strategy: AuthStrategy.CUSTOM,
+		tokenManager: customManager,
+	});
+
+	// 2. Create API Client
+	// The 'auth' object created above is passed directly.
+	// Concurrency for token refresh is handled automatically if the auth strategy supports it.
+	const client = createApiClient({
+		config: { environment: 'SANDBOX' }, // Or 'PRODUCTION'. For actual live data, set environment: 'PRODUCTION'. Ensure your OAuth credentials are also configured for production use in your Schwab developer dashboard.
+		auth,
+	});
+
 	try {
-		// Get market quotes for multiple symbols
-		// Note: The token is handled internally by the client via middleware
+		// 3. Make API Calls
+		// Example: Get market quotes for multiple symbols
+		// The token is handled internally by the client.
 		const quotesResponse = await client.marketData.quotes.getQuotes({
 			queryParams: { symbols: ['AAPL', 'MSFT', 'GOOG'] },
-		})
-		console.log('Quotes:', quotesResponse)
+		});
+		console.log('Quotes:', JSON.stringify(quotesResponse, null, 2));
+
+		// Example: Get account information (if your token has trader access)
+		const accountsResponse = await client.trader.accounts.getAccounts();
+		console.log('Accounts:', JSON.stringify(accountsResponse, null, 2));
+
 	} catch (error) {
 		// See Error Handling section for more details
 		if (client.errors.isSchwabApiError(error)) {
-			console.error('API Error:', error.message)
+			console.error('API Error:', error.message);
+			console.error('HTTP Status:', error.status);
+			console.error('Response Body:', JSON.stringify(error.body, null, 2));
+			if (error.isRetryable && error.isRetryable()) {
+				console.log('This error might be retryable. You can safely retry this request.');
+			}
 		} else {
-			console.error('Unexpected error:', error)
+			console.error('Unexpected error:', error);
 		}
 	}
 }
 
-main()
+main();
 ```
+
+This example provides a basic structure. For more detailed examples, including the full OAuth 2.0 flow and token persistence, please see the [Usage Examples](#usage) section.
 
 ## Usage
 
@@ -153,6 +270,7 @@ For web applications that need to authenticate users:
 import { createSchwabAuth, AuthStrategy, createApiClient } from 'schwab-api'
 
 // Create an auth client with OAuth configuration
+// Make sure SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET are defined in your environment (e.g., in .env or your hosting platform's config).
 const auth = createSchwabAuth({
 	strategy: AuthStrategy.CODE_FLOW,
 	oauthConfig: {
@@ -315,151 +433,94 @@ const staticClient = createApiClient({
 
 ## API Coverage
 
-The Schwab API client provides comprehensive access to all major API endpoints.
-Each method corresponds to a specific Schwab API endpoint with appropriate
-typing and schema validation.
+The client aims to cover the primary Schwab API domains. Endpoints are organized into namespaces accessible via the `client` instance, such as `client.marketData` and `client.trader`.
 
 ### Market Data
 
-- **Quotes**: Real-time and delayed quotes for securities
-  ```typescript
-  // Maps to GET /v1/marketdata/quotes
-  const quotes = await client.marketData.quotes.getQuotes({
-  	queryParams: { symbols: ['AAPL', 'MSFT', 'GOOG'] },
-  })
-  ```
-- **Instruments**: Lookup information about financial instruments
-  ```typescript
-  // Maps to GET /v1/marketdata/instruments
-  const instrument = await client.marketData.instruments.searchInstruments({
-  	queryParams: {
-  		symbol: 'AAPL',
-  		projection: 'fundamental', // Options: 'symbol-search', 'symbol-regex', 'desc-search', 'desc-regex', 'fundamental'
-  	},
-  })
-  ```
-- **Price History**: Historical price data with customizable periods
+Access market data endpoints through `client.marketData.<namespace>`. Each namespace corresponds to a specific set of functionalities:
 
-  ```typescript
-  // Maps to GET /v1/marketdata/{symbol}/pricehistory
-  const history = await client.marketData.priceHistory.getPriceHistory({
-  	symbol: 'AAPL', // Path parameter for the API endpoint
-  	queryParams: {
-  		periodType: 'day', // Options: 'day', 'month', 'year', 'ytd'
-  		period: 10, // Number of periods
-  		frequencyType: 'minute', // Options: 'minute', 'daily', 'weekly', 'monthly'
-  		frequency: 5, // Frequency of candles
-  	},
-  })
-  ```
+-   **Instruments**: Search and retrieve instrument details. Use `getInstruments` for searching by symbol (including regex) or description. For a direct lookup of a single instrument by its CUSIP, use `getInstrumentByCusip`.
+    ```typescript
+    // Example: Search for instruments using a symbol pattern (regex-like)
+    const searchResults = await client.marketData.instruments.getInstruments({
+      queryParams: {
+        symbol: 'SCHW.*', // Schwab API supports a regex-like syntax for symbols
+        projection: 'symbol-search' // 'symbol-search', 'desc-search', 'symbol-regex', 'desc-regex', 'fundamental'
+      }
+    });
+    console.log('Search Results:', searchResults);
 
-- **Options**: Options chain data and analytics
-  ```typescript
-  // Maps to GET /v1/marketdata/chains
-  const options = await client.marketData.options.getOptionChain({
-  	queryParams: {
-  		symbol: 'AAPL',
-  		strikeCount: 3, // Number of strikes above and below ATM
-  		includeQuotes: true, // Include underlying quote data
-  		// Other available parameters:
-  		// strategy: 'SINGLE',   // Options: 'SINGLE', 'ANALYTICAL', 'COVERED', 'VERTICAL', etc.
-  		// range: 'ITM',        // Options: 'ITM', 'OTM', 'ATM', etc.
-  	},
-  })
-  ```
-- **Movers**: Market movers by index and movement type
-  ```typescript
-  // Maps to GET /v1/marketdata/{index}/movers
-  const movers = await client.marketData.movers.getMovers({
-  	index: '$SPX.X', // Path parameter: '$SPX.X', '$DJI', '$COMPX', etc.
-  	queryParams: {
-  		direction: 'up', // Options: 'up', 'down', 'up_and_down'
-  		change: 'percent', // Options: 'percent', 'value'
-  	},
-  })
-  ```
-- **Market Hours**: Trading hours for markets and products
-  ```typescript
-  // Maps to GET /v1/marketdata/hours
-  const hours = await client.marketData.marketHours.getMarketHours({
-  	queryParams: {
-  		markets: ['EQUITY', 'OPTION'], // Options: 'EQUITY', 'OPTION', 'FUTURE', 'BOND', 'FOREX'
-  		date: '2023-09-01', // Format: YYYY-MM-DD
-  	},
-  })
-  ```
+    // Example: Get a specific instrument by its CUSIP
+    // const cusipDetails = await client.marketData.instruments.getInstrumentByCusip({ 
+    //   cusip: '037833100' // Example CUSIP for Apple Inc.
+    // });
+    // console.log('CUSIP Details:', cusipDetails);
+    ```
+-   **Movers**: Get market movers for a specific index.
+    ```typescript
+    const movers = await client.marketData.movers.getMovers({
+      index: '$DJI',
+      queryParams: { sort: 'PERCENT_CHANGE_UP', freq: 'DAILY' }
+    });
+    ```
+-   **Options Chains**: Retrieve option chains for a given symbol.
+    ```typescript
+    const optionChains = await client.marketData.options.getOptionChains({
+      queryParams: { symbol: 'AAPL', contractType: 'CALL' }
+    });
+    ```
+-   **Price History**: Fetch historical price data.
+    ```typescript
+    const history = await client.marketData.priceHistory.getPriceHistory({
+      queryParams: { symbol: 'MSFT', periodType: 'month', frequencyType: 'daily' }
+    });
+    ```
+-   **Quotes**: Get real-time or delayed quotes.
+    ```typescript
+    const quotes = await client.marketData.quotes.getQuotes({
+      queryParams: { symbols: ['GOOG', 'AMZN'], fields: 'quote,fundamental' }
+    });
+    ```
+-   **Market Hours**: Retrieve market hours for specified markets.
+    ```typescript
+    const hours = await client.marketData.marketHours.getMarketHours({
+        queryParams: { markets: ['equity', 'option'], date: '2024-07-04'}
+    });
+    ```
 
 ### Trading
 
-- **Accounts**: Account information and balances
+Access trading-related endpoints through `client.trader.<namespace>`. This includes account management, order placement, and transaction history:
 
-  ```typescript
-  // Maps to GET /v1/accounts
-  const accounts = await client.trader.accounts.getAccounts()
+-   **Accounts**: Manage account information.
+    ```typescript
+    // Example: Get all accounts
+    const accounts = await client.trader.accounts.getAccounts({ queryParams: { fields: 'positions' } });
+    // Example: Get a specific account by number
+    const specificAccount = await client.trader.accounts.getAccount({ accountNumber: '123456789' });
+    ```
+-   **Orders**: Place, preview, modify, and cancel orders. Note: use `accountNumber` for identifying accounts.
+    ```typescript
+    // Example: Get orders for an account
+    const orders = await client.trader.orders.getOrdersForAccount({
+      accountNumber: 'YOUR_ACCOUNT_NUMBER',
+      queryParams: { maxResults: 10, status: 'FILLED' }
+    });
+    // Example: Place an order (ensure body matches Schwab schema)
+    // const placeOrderResponse = await client.trader.orders.placeOrder({
+    //   accountNumber: 'YOUR_ACCOUNT_NUMBER',
+    //   body: { /* ... order details ... */ }
+    // });
+    ```
+-   **Transactions**: Fetch transaction history for an account.
+    ```typescript
+    const transactions = await client.trader.transactions.getTransactions({
+      accountNumber: 'YOUR_ACCOUNT_NUMBER',
+      queryParams: { types: 'TRADE', startDate: '2024-01-01T00:00:00Z', endDate: '2024-01-31T23:59:59Z' }
+    });
+    ```
 
-  // Maps to GET /v1/accounts/{accountId}
-  const specificAccount = await client.trader.accounts.getAccount({
-  	accountId: 'YOUR_ACCOUNT_ID', // Path parameter for the API endpoint
-  })
-  ```
-
-- **Orders**: Order placement, modification, and retrieval
-
-  ```typescript
-  // Maps to GET /v1/accounts/{accountId}/orders
-  const orders = await client.trader.orders.getOrders({
-  	accountId: 'YOUR_ACCOUNT_ID', // Path parameter
-  	queryParams: {
-  		// Optional parameters for filtering orders
-  		// fromEnteredTime: '2023-01-01',
-  		// toEnteredTime: '2023-09-01',
-  		// status: 'FILLED'        // Options: 'AWAITING_PARENT_ORDER', 'AWAITING_CONDITION', 'AWAITING_MANUAL_REVIEW', etc.
-  	},
-  })
-
-  // Maps to POST /v1/accounts/{accountId}/orders
-  const orderResult = await client.trader.orders.placeOrder({
-  	accountId: 'YOUR_ACCOUNT_ID', // Path parameter
-  	body: {
-  		// Schema follows Schwab API order specification
-  		orderType: 'LIMIT', // Options: 'MARKET', 'LIMIT', 'STOP', 'STOP_LIMIT', etc.
-  		session: 'NORMAL', // Options: 'NORMAL', 'AM', 'PM', 'SEAMLESS'
-  		price: 150.0, // Required for LIMIT orders
-  		duration: 'DAY', // Options: 'DAY', 'GOOD_TILL_CANCEL', 'FILL_OR_KILL'
-  		orderStrategyType: 'SINGLE', // Options: 'SINGLE', 'OCO', 'TRIGGER'
-  		orderLegCollection: [
-  			{
-  				instruction: 'BUY', // Options: 'BUY', 'SELL', 'BUY_TO_COVER', 'SELL_SHORT', etc.
-  				quantity: 1,
-  				instrument: {
-  					symbol: 'AAPL',
-  					assetType: 'EQUITY', // Options: 'EQUITY', 'OPTION', 'INDEX', 'MUTUAL_FUND', etc.
-  				},
-  			},
-  		],
-  	},
-  })
-  ```
-
-- **Transactions**: Historical transaction information
-  ```typescript
-  // Maps to GET /v1/accounts/{accountId}/transactions
-  const transactions = await client.trader.transactions.getTransactions({
-  	accountId: 'YOUR_ACCOUNT_ID', // Path parameter
-  	queryParams: {
-  		type: 'ALL', // Options: 'ALL', 'TRADE', 'DIVIDEND', 'INTEREST', etc.
-  		startDate: '2023-01-01', // Format: YYYY-MM-DD
-  		endDate: '2023-09-01', // Format: YYYY-MM-DD
-  	},
-  })
-  ```
-- **User Preferences**: User preference settings
-  ```typescript
-  // Maps to GET /v1/accounts/{accountId}/preferences
-  const preferences = await client.trader.userPreference.getUserPreferences({
-  	accountId: 'YOUR_ACCOUNT_ID', // Path parameter
-  })
-  ```
+This structure reflects the `processNamespace` approach used internally to organize and expose API endpoints, making them discoverable and easy to use.
 
 ## Making API Calls
 
@@ -482,9 +543,9 @@ try {
 
 	// Get orders for an account
 	if (accounts.length > 0) {
-		const firstAccountHash = accounts[0].securitiesAccount.hashedAccountId
+		const firstAccountHash = accounts[0].securitiesAccount.hashedAccountId // This is a hashed ID, ensure your endpoint function can handle it or use the plain account number
 		const orders = await client.trader.orders.getOrders({
-			accountId: firstAccountHash,
+			accountNumber: firstAccountHash, // Or use the actual account number string if the endpoint expects that
 		})
 		console.log(`Orders for account ${firstAccountHash}:`, orders)
 	}
@@ -524,7 +585,7 @@ const isRetryable = client.all.errors.isRetryableError(error)
 const errorCategory = client.all.errors.getErrorCategory(error)
 
 // You can also use it to access any part of the API
-const marketHours = await client.all.marketData.marketHours.getMarketHours({
+const marketHoursResponse = await client.all.marketData.marketHours.getMarketHours({
 	queryParams: {
 		markets: ['EQUITY'],
 		date: '2023-09-01',
@@ -543,23 +604,126 @@ full API surface.
 
 ### Token Persistence
 
-The `save` and `load` functions provided to `createSchwabAuthClient` allow you
-to persist tokens between application restarts:
+When using OAuth 2.0 (e.g., `AuthStrategy.CODE_FLOW` with `createSchwabAuth`), it's crucial to persist the `TokenData` (which includes the access token, refresh token, and expiration times) to avoid requiring the user to re-authenticate every time your application starts or their session expires.
 
-1. **save(tokens)**: Called automatically whenever:
+The `createSchwabAuth` function (when using `AuthStrategy.CODE_FLOW` or `AuthStrategy.CUSTOM` with a manager that supports persistence) accepts `load` and `save` async functions in its `oauthConfig` (for CODE_FLOW) or directly in `AuthClientOptions` for a custom `ITokenLifecycleManager`. 
 
-   - New tokens are obtained via `exchangeCodeForTokens()`
-   - Tokens are refreshed via `refreshTokens()`
+-   **`save(tokenData: TokenData): Promise<void>`**: Called after a new token is obtained or an existing token is refreshed. You should store the `tokenData` securely (e.g., in a database, encrypted file, or secure storage). The `tokenData` object includes `accessToken`, `refreshToken`, `issuedAt`, `expiresIn`, `scope`, and `tokenType`.
+-   **`load(): Promise<TokenData | null>`**: Called when the auth client is initialized to retrieve previously stored tokens. Return `null` if no tokens are found, prompting a new authentication flow.
 
-2. **load()**: Called automatically when:
-   - `refreshTokens()` is invoked and there's no in-memory token
-   - Used to retrieve previously saved tokens for refresh operations
+**Example of `load` and `save`:**
 
-This persistence mechanism prevents users from having to re-authenticate every
-time your application restarts, as long as the refresh token hasn't expired.
+```typescript
+import { createSchwabAuth, AuthStrategy, TokenData } from 'schwab-api';
+import fs from 'fs/promises'; // Example using Node.js fs
 
-In production applications, you should use a secure storage mechanism
-appropriate for your platform (e.g., encrypted storage, secure key vault, etc.).
+const TOKEN_FILE_PATH = './schwab-tokens.json';
+
+const auth = createSchwabAuth({
+  strategy: AuthStrategy.CODE_FLOW,
+  oauthConfig: {
+    clientId: process.env.SCHWAB_CLIENT_ID!,
+    clientSecret: process.env.SCHWAB_CLIENT_SECRET!,
+    redirectUri: 'https://example.com/callback',
+    async save(tokenData: TokenData): Promise<void> {
+      console.log('Saving tokens...');
+      await fs.writeFile(TOKEN_FILE_PATH, JSON.stringify(tokenData, null, 2), 'utf8');
+    },
+    async load(): Promise<TokenData | null> {
+      try {
+        console.log('Loading tokens...');
+        const data = await fs.readFile(TOKEN_FILE_PATH, 'utf8');
+        return JSON.parse(data) as TokenData;
+      } catch (error) {
+        // Ignore error if file doesn't exist or is invalid, proceed to auth
+        console.warn('Could not load tokens:', error);
+        return null;
+      }
+    },
+  },
+});
+
+// ... rest of your auth flow (getAuthorizationUrl, exchangeCode)
+```
+
+### Token Management and Concurrency
+
+The library provides robust token management, especially concerning concurrent API calls and token refreshes.
+
+-   **Automatic Concurrency Protection**: When you use `createSchwabAuth` with an authentication strategy that supports token refresh (like `AuthStrategy.CODE_FLOW` or a custom `ITokenLifecycleManager` that implements `refreshIfNeeded` and `supportsRefresh`), the token manager is automatically wrapped in a `ConcurrentTokenManager`. This wrapper ensures that if multiple API calls are made simultaneously and the access token has expired or is about to expire, only a single refresh attempt will be made. Other concurrent requests will wait for the new token, preventing multiple refresh calls that could lead to errors or token invalidation.
+
+-   **`buildTokenManager`**: This utility function is used internally by `createSchwabAuth` but can also be used directly if you need to construct a token manager with specific behaviors outside of the standard `createSchwabAuth` flow. It also applies the `ConcurrentTokenManager` wrapper if the underlying manager supports refresh.
+
+-   **Custom Token Managers**: If you implement a custom `ITokenLifecycleManager`, the library will still wrap it with `ConcurrentTokenManager` as long as your `supportsRefresh()` method returns `true`. This means you don't need to implement concurrency protection yourself within your custom manager for the refresh logic.
+
+    ```typescript
+    import { ITokenLifecycleManager, TokenData, buildTokenManager, createSchwabAuth, AuthStrategy } from 'schwab-api';
+
+    class MyCustomTokenManager implements ITokenLifecycleManager {
+      privatecurrentTokenData: TokenData | null = null;
+
+      constructor() {
+        // Initialize with loading tokens, e.g., from a secure async storage
+        this.loadInitialToken();
+      }
+
+      private async loadInitialToken() {
+        // Replace with your actual async loading mechanism
+        // this.currentTokenData = await yourAsyncStorage.getItem('myToken');
+      }
+
+      async getTokenData(): Promise<TokenData | null> {
+        return this.currentTokenData;
+      }
+
+      async getAccessToken(): Promise<string | null> {
+        // Basic example: assumes tokenData is populated
+        if (this.currentTokenData && new Date().getTime() < (this.currentTokenData.issuedAt + (this.currentTokenData.expiresIn * 1000) - 60000)) {
+            return this.currentTokenData.accessToken;
+        }
+        // If expired or missing, refreshIfNeeded should be called by the pipeline
+        return null; 
+      }
+
+      supportsRefresh(): boolean {
+        return true; // Indicate that this manager can refresh tokens
+      }
+
+      async refreshIfNeeded(): Promise<boolean> {
+        // Implement your token refresh logic here
+        // For example, call your backend to get a new set of tokens
+        console.log('CustomTokenManager: Attempting to refresh token...');
+        // const newTokens = await callMyBackendToRefresh(this.currentTokenData?.refreshToken);
+        // if (newTokens) {
+        //   this.currentTokenData = newTokens;
+        //   // Persist new tokens if necessary
+        //   // await yourAsyncStorage.setItem('myToken', newTokens);
+        //   console.log('CustomTokenManager: Token refreshed successfully.');
+        //   return true;
+        // }
+        console.log('CustomTokenManager: Token refresh failed or not supported in this example.');
+        return false;
+      }
+
+      // Optional: if you want to handle save/load directly within the manager
+      // async save(tokenData: TokenData): Promise<void> { /* ... */ }
+      // async load(): Promise<TokenData | null> { /* ... */ }
+    }
+
+    // Using it with createSchwabAuth:
+    const customManager = new MyCustomTokenManager();
+    const authClient = createSchwabAuth({
+        strategy: AuthStrategy.CUSTOM,
+        tokenManager: customManager 
+        // The `customManager` will be automatically wrapped in ConcurrentTokenManager
+        // because `supportsRefresh()` returns true.
+    });
+
+    // Or using buildTokenManager directly (less common for end-users)
+    // const concurrentCustomManager = buildTokenManager({ 
+    //   tokenManager: customManager 
+    // });
+    ```
 
 ### Refresh Token Expiration
 
@@ -624,197 +788,227 @@ not a limitation of your application.
 
 ## Error Handling
 
-The Schwab API client provides a comprehensive error handling system with rich
-debugging context and consistent error types.
+The Schwab API client provides robust error handling mechanisms to help you manage various issues that can occur during API interactions.
+
+### SchwabApiError
+
+Most errors originating from the Schwab API (e.g., invalid requests, authentication failures, server errors) are thrown as instances of `SchwabApiError`. This error class provides detailed context about the failure:
+
+-   `message`: A human-readable error message.
+-   `details`: An object often containing the raw error response from Schwab, including specific error codes or descriptions.
+-   `originalStatus`: The HTTP status code of the response (e.g., 400, 401, 500).
+-   `isRetryable`: A boolean indicating if the error is considered transient and potentially resolvable by retrying the request.
 
 ```typescript
-try {
-	await client.trader.accounts.getAccounts()
-} catch (error) {
-	// Use type guards to identify error types
-	if (client.errors.isSchwabAuthError(error)) {
-		if (error.code === 'TOKEN_EXPIRED') {
-			// Refresh token has expired (after 7 days)
-			// Must re-authenticate via authorization flow
-			console.error('Auth token expired, user must re-authenticate')
-		} else {
-			console.error('Auth Error:', error.message, error.code)
-		}
-	} else if (client.errors.isSchwabApiError(error)) {
-		// Get debugging context for API errors
-		console.error(`API Error: ${error.message}`)
-		console.error(`Status: ${error.status}`)
-		console.error(`Request ID: ${error.getRequestId()}`)
-		console.error(`Debug Context: ${error.getDebugContext()}`)
-	} else if (client.errors.isSchwabRateLimitError(error)) {
-		// Handle rate limit errors specially
-		console.error(`Rate limit exceeded. Retry after: ${error.retryAfterMs}ms`)
-		// Optionally implement backoff logic
-	} else {
-		// Handle unexpected errors
-		console.error('Unexpected error:', error)
-	}
+// In your try-catch block
+if (client.errors.isSchwabApiError(error)) {
+  console.error('Schwab API Error:', error.message);
+  console.error('HTTP Status:', error.status);
+  console.error('Response Body:', JSON.stringify(error.body, null, 2));
+  if (error.isRetryable && error.isRetryable()) {
+    console.log('This error might be retryable. You can safely retry this request.');
+  }
+} else {
+  console.error('An unexpected error occurred:', error);
 }
 ```
+
+### Specialized Error Classes
+
+In addition to the general `SchwabApiError`, the client may throw more specialized error classes for specific scenarios, such as:
+
+-   `SchwabAuthError`: For errors related to the OAuth authentication process (e.g., failed token exchange).
+-   `SchwabRateLimitError`: Specifically for 429 (Too Many Requests) errors.
+-   `SchwabGatewayError`: For 502, 503, 504 errors indicating gateway issues.
+-   `SchwabTimeoutError`: For network timeouts during requests.
+
+These specialized errors inherit from `SchwabApiError` and can be checked using their respective type guards (e.g., `client.errors.isSchwabRateLimitError(error)`).
+
+### Retry Strategies and Middleware
+
+The client incorporates a retry mechanism as part of its default middleware pipeline. This is primarily handled by the `withRetry` middleware, which automatically retries requests that fail due to common transient issues like network errors or specific server-side problems (e.g., 5xx status codes, 429 if configured).
+
+You can customize the retry behavior through the `middleware` option in `createApiClient`:
+
+```typescript
+const client = createApiClient({
+  // ... other configurations (auth, etc.)
+  middleware: {
+    retry: {
+      maxAttempts: 5, // Total number of attempts (1 initial + 4 retries)
+      maxDelayMs: 60000, // Maximum delay between retries (e.g., 60 seconds)
+      backoffFactor: 2, // Factor by which the delay increases (e.g., 1s, 2s, 4s, ...)
+      initialDelayMs: 1000, // Initial delay before the first retry
+      advanced: {
+        // If true, the client will respect the 'Retry-After' header sent by Schwab for 429 errors.
+        respectRetryAfter: true, 
+        // Custom function to determine if an error should be retried.
+        // By default, it retries network errors, 429s, and 5xx errors.
+        shouldRetry: (error, attemptNumber) => {
+          if (client.errors.isSchwabApiError(error) && error.originalStatus === 503) {
+            return attemptNumber < 3; // Only retry 503 errors twice
+          }
+          // Ensure isSchwabApiError check before accessing properties like isRetryable
+          let defaultShould = false;
+          if (client.errors.isSchwabApiError(error)) {
+            defaultShould = client.middlewareHelpers.defaultShouldRetry(error, attemptNumber, { maxAttempts: 5 });
+          }
+          return defaultShould;
+        }
+      }
+    }
+  }
+});
+```
+
+This configuration allows you to fine-tune aspects like the number of retry attempts, delay strategy (exponential backoff), and whether to honor `Retry-After` headers, which is particularly important for rate limiting.
+
+### Partial Success (Symbol-Level Errors)
+
+As detailed in the [Handling Partial Success in Quote Endpoints](#handling-partial-success-in-quote-endpoints) section, errors related to individual symbols within a multi-symbol quote request are handled differently. These are not thrown as top-level `SchwabApiError`s but are instead embedded in the success response. You should use the utility functions provided in `client.marketData.quotes` to identify and manage these symbol-specific issues.
 
 ### Handling Partial Success in Quote Endpoints
 
-**Note**: This partial success pattern is specific to the quotes endpoints and
-does not apply to other endpoints.
+When requesting quotes for multiple symbols (e.g., `client.marketData.quotes.getQuotes({ queryParams: { symbols: ['AAPL', 'INVALID', 'MSFT'] } })`), the API might return a partial success (HTTP 200 or 207) if some symbols are valid but others are not. In such cases, the response body will contain data for valid symbols and error information for invalid ones.
 
-The quotes endpoints are unique in that they can return a successful HTTP 200
-response that contains a mix of valid quotes and individual symbol errors. This
-"partial success" pattern is different from standard errors that would throw a
-`SchwabApiError`.
+The library provides utility functions to help manage these scenarios, located within the `client.marketData.quotes` namespace (originating from `src/market-data/quotes/index.ts`).
+
+-   **`hasSymbolError(responseBody: QuotesResponse, symbol: string): boolean`**: Checks if a specific symbol has an error in the quotes response.
+-   **`extractQuoteErrors(responseBody: QuotesResponse): QuoteSymbolError[]`**: Extracts all symbol-level errors from the response.
+
+**Example:**
 
 ```typescript
-// Get quotes for multiple symbols
-const response = await client.marketData.quotes.getQuotes({
-	queryParams: {
-		symbols: ['AAPL', 'MSFT', 'INVALID', 'XYZ123'],
-	},
-})
+import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+// Assuming client is already initialized as shown in Quick Start or Usage Examples
+// const client = ...;
 
-// Check for symbol-level errors
-const errorInfo = client.marketData.quotes.extractQuoteErrors(response)
+async function fetchAndProcessQuotes(client) {
+  try {
+    const response = await client.marketData.quotes.getQuotes({
+      queryParams: { symbols: ['AAPL', 'INVALID_SYMBOL', 'MSFT'] },
+    });
 
-if (errorInfo.hasErrors) {
-	console.log(`Found ${errorInfo.errorCount} symbol errors:`)
+    // The overall request might be successful (e.g. HTTP 200 or 207 Multi-Status)
+    // but individual symbols can have errors.
+    console.log('Raw Response:', JSON.stringify(response, null, 2));
 
-	// List the invalid symbols
-	console.log('Invalid symbols:', errorInfo.invalidSymbols)
+    // Check for errors for a specific symbol
+    if (client.marketData.quotes.hasSymbolError(response, 'INVALID_SYMBOL')) {
+      console.warn('INVALID_SYMBOL has an error in the response.');
+    }
 
-	// Access individual symbol errors
-	for (const [symbol, errorData] of Object.entries(errorInfo.symbolErrors)) {
-		console.log(`Error for ${symbol}:`, errorData.description)
-	}
+    // Extract all symbol-level errors
+    const errors = client.marketData.quotes.extractQuoteErrors(response);
+    if (errors.length > 0) {
+      console.warn('Errors found for the following symbols:');
+      errors.forEach(error => {
+        console.warn(`- Symbol: ${error.symbol}, Message: ${error.message}, Code: ${error.code}`);
+      });
+    }
 
-	// Continue processing valid quotes
-	for (const [symbol, data] of Object.entries(response)) {
-		if (!client.marketData.quotes.hasSymbolError(response, symbol)) {
-			console.log(`Quote for ${symbol}:`, data.mark || data.lastPrice)
-		}
-	}
+    // Process valid quotes (filter out those with errors if necessary)
+    const validQuotes = Object.values(response).filter(quote => 
+      quote && typeof quote === 'object' && quote.assetType && !client.marketData.quotes.hasSymbolError(response, quote.symbol)
+    );
+    console.log('Valid Quotes:', validQuotes);
+
+  } catch (error) {
+    // Handle top-level API errors (e.g., network issues, auth problems)
+    if (client.errors.isSchwabApiError(error)) {
+      console.error('Schwab API Error:', error.message, error.details);
+    } else {
+      console.error('An unexpected error occurred:', error);
+    }
+  }
 }
+
+// Example usage (ensure client is initialized with auth)
+// const auth = createSchwabAuth({ strategy: AuthStrategy.STATIC, accessToken: 'YOUR_TOKEN' });
+// const client = createApiClient({ auth });
+// fetchAndProcessQuotes(client);
 ```
 
-This approach allows your application to gracefully handle partial failures
-while still processing valid data.
-
-For more details on error handling, see
-[Error Handling and Debugging](./docs/error-handling.md).
+This allows you to gracefully handle responses where some requested symbols could not be processed, while still utilizing the data for the symbols that were successful.
 
 ## Advanced Configuration
 
-### Creating API Endpoints
+The `createApiClient` function offers several options for advanced customization, including environment settings, custom fetch implementations, and middleware configuration.
 
-The Schwab API client provides a unified approach for creating API endpoints
-across different domains. Instead of each domain module creating its own
-`RequestContext`, endpoints can use the shared context from the API client. This
-ensures that all endpoints benefit from the same middleware pipeline and
-configuration.
+### Middleware Pipeline
 
-#### For API Client Users
+The client uses a middleware pipeline to handle common tasks like authentication, rate limiting, and retries. This pipeline is built using `buildMiddlewarePipeline` and is configurable via the `middleware` option in `createApiClient`.
 
-When using the API client, all endpoints are already configured and ready to
-use:
+By default, the pipeline includes:
+-   **Authentication**: Automatically injects the access token into requests.
+-   **Rate Limiting**: Handles `429 Too Many Requests` errors (if `respectRetryAfter` is enabled for retries, it often covers this).
+-   **Retries**: Implements exponential backoff for transient network errors and specific server-side errors (e.g., `5xx`).
+
+#### Customizing Built-in Middleware
+
+You can customize the behavior of the built-in middleware or disable them entirely by passing a configuration object to the `middleware` property.
 
 ```typescript
-// Create API client with default configuration
+import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+
+// Assuming auth is configured
+const auth = createSchwabAuth({ strategy: AuthStrategy.STATIC, accessToken: 'YOUR_TOKEN' });
+
 const client = createApiClient({
-	config: { environment: 'SANDBOX' },
-	auth: 'your-access-token',
-})
+  auth,
+  config: { environment: 'PRODUCTION' },
+  middleware: {
+    // Disable rate limiting middleware entirely
+    rateLimit: false,
+    // Customize retry behavior
+    retry: {
+      maxAttempts: 5,
+      maxDelayMs: 30000, // Max delay between retries
+      // Advanced options for more granular control
+      advanced: {
+        shouldRetry: (error, attempt) => {
+          // Custom logic to decide if an error should be retried
+          // For example, only retry on 503 errors
+          if (client.errors.isSchwabApiError(error) && error.originalStatus === 503) {
+            return true;
+          }
+          // Ensure isSchwabApiError check before accessing properties like isRetryable
+          let defaultShould = false;
+          if (client.errors.isSchwabApiError(error)) {
+            defaultShould = client.middlewareHelpers.defaultShouldRetry(error, attempt, { maxAttempts: 5 });
+          }
+          return defaultShould;
+        },
+        getRetryDelayMs: (error, attempt) => {
+          // Custom delay logic
+          return attempt * 1000; // e.g., 1s, 2s, 3s...
+        },
+        respectRetryAfter: true, // Honor Retry-After header from Schwab (recommended)
+      }
+    },
+    // You can also disable token injection if handling auth entirely separately, though not common
+    // tokenInjector: false,
+  }
+});
 
-// Use pre-configured endpoints
-const quotes = await client.marketData.quotes.getQuotes({
-	queryParams: { symbols: ['AAPL', 'MSFT'] },
-})
-```
-
-#### For Contributors and Custom Endpoint Creation
-
-If you're creating custom endpoints or contributing to the library, use the
-shared context and createEndpoint function:
-
-```typescript
-import { getSharedContext } from '../core/shared-context'
-import { createEndpoint } from '../core/http'
-import { ErrorResponseSchema } from '../errors'
-
-// Create an endpoint using the shared context
-export const getCustomData = createEndpoint<
-	PathParamsType,
-	QueryParamsType,
-	BodyType,
-	ResponseType,
-	'GET',
-	ErrorResponseSchema
->(getSharedContext(), {
-	method: 'GET',
-	path: '/v1/custom/endpoint',
-	pathSchema: PathParamsSchema,
-	querySchema: QueryParamsSchema,
-	responseSchema: ResponseSchema,
-	errorSchema: ErrorResponseSchema,
-	description: 'Description of the endpoint',
-})
-```
-
-This approach ensures that all endpoints use the same configuration, middleware,
-and error handling.
-
-### Customizing Middleware
-
-The Schwab API client uses a middleware pipeline for request processing. By
-default, `createApiClient` sets up a standard pipeline with token
-authentication, rate limiting, and retry functionality.
-
-You can customize this pipeline to add your own middleware or modify the default
-ones:
-
-```typescript
-import {
-	createApiClient,
-	withTokenAuth,
-	withRateLimit,
-	withRetry,
-	compose,
-} from 'schwab-api'
-
-// Define custom logging middleware
-const withLogging = (next) => async (request) => {
-	console.log(`Making request to ${request.url}`)
-	const startTime = Date.now()
-
-	try {
-		const response = await next(request)
-		const duration = Date.now() - startTime
-		console.log(`Request to ${request.url} completed in ${duration}ms`)
-		return response
-	} catch (error) {
-		console.error(`Request to ${request.url} failed:`, error)
-		throw error
-	}
+// Example call
+async function exampleCall() {
+  try {
+    const quotes = await client.marketData.quotes.getQuotes({ queryParams: { symbols: ['AAPL'] } });
+    console.log(quotes);
+  } catch (error) {
+    console.error('Failed after custom retries:', error);
+  }
 }
 
-// Create client with custom middleware pipeline
-const client = createApiClient({
-	token: tokenManager,
-	config: { environment: 'PRODUCTION' },
-	// Override the default middleware pipeline with your own
-	middleware: compose(
-		withTokenAuth(tokenManager), // Add auth headers
-		withLogging, // Add your custom middleware
-		withRateLimit(5, 1000), // Max 5 requests per second
-		withRetry({ max: 3, baseMs: 1000 }), // Retry failed requests
-	),
-})
+exampleCall();
 ```
 
-**Important**: When you provide a custom middleware pipeline, you are
-responsible for including all necessary middleware components. The default
-middleware is not automatically applied in this case.
+This approach replaces older methods of chaining individual middleware functions like `withRetry` or `withRateLimit` directly. The `middleware` configuration object provides a centralized way to manage these aspects. The pipeline also automatically uses concurrency-protected token refresh if an authentication manager that supports refresh (e.g., via `createSchwabAuth` with `AuthStrategy.CODE_FLOW`) is provided.
+
+### Custom Fetch Implementation
+
+The client uses a custom fetch implementation to handle network requests. This allows for more granular control over request and response processing.
 
 ## API Reference
 
@@ -852,20 +1046,18 @@ use.
 ### Authentication
 
 - `createSchwabAuth(config)`: Unified authentication factory (recommended)
-
   - `config.strategy`: Specify authentication strategy
     (`AuthStrategy.CODE_FLOW`, `AuthStrategy.STATIC`, or `AuthStrategy.CUSTOM`)
   - `config.accessToken`: Required for STATIC strategy
   - `config.tokenManager`: Required for CUSTOM strategy
   - `config.oauthConfig`: Required for CODE_FLOW strategy
-
-- `createSchwabAuthClient(options)`: Original OAuth client (still supported)
-  - `auth.getAuthorizationUrl()`: Generate auth URL
-  - `auth.exchangeCode(code)`: Exchange code for tokens
-  - `auth.refresh(refreshToken)`: Refresh access token
-  - `auth.onRefresh(callback)`: Register refresh callback
-  - `auth.isRefreshTokenNearingExpiration()`: Check if refresh token is near
-    expiration
+  // Properties of the auth object returned by createSchwabAuth:
+  - `auth.getAuthorizationUrl()`: Generate auth URL (for CODE_FLOW)
+  - `auth.exchangeCode(code)`: Exchange code for tokens (for CODE_FLOW)
+  - `auth.refresh()`: Attempt to refresh access token (if manager supportsRefresh)
+  - `auth.onRefresh(callback)`: Register a callback triggered after a successful token refresh.
+  - `auth.isRefreshTokenNearingExpiration()`: Check if refresh token is near expiration (if applicable).
+  - `auth.getTokenData()`: Retrieve the current TokenData (if available).
 
 ### API Client Creation
 
@@ -904,68 +1096,4 @@ request pipeline:
 
 - `withTokenAuth(tokenManager)`: Add auth headers and auto-refresh
 - `withRateLimit(options)`: Add rate limiting (enabled by default)
-- `withRetry(options)`: Add retry with exponential backoff (enabled by default)
-- `compose(...middleware)`: Utility to compose multiple middleware functions
-
-#### Middleware Types
-
-- `Middleware`: Type definition for middleware functions
-- `TokenAuthOptions`: Configuration options for token auth middleware
-- `RateLimitOptions`: Configuration options for rate limiting middleware
-- `RetryOptions`: Configuration options for retry middleware
-
-### Internal Implementation Details
-
-The library now maintains a clear separation between public APIs and internal
-implementation details. Internal utilities and helper functions are not exported
-from the main module, which:
-
-1. Reduces the public API surface
-2. Makes it clearer which parts of the API are stable and supported
-3. Allows for more flexibility in refactoring internal components
-4. Prevents users from accidentally depending on implementation details
-
-This modular architecture ensures that your code will continue to work with
-future updates, as long as you rely only on the documented public API.
-
-## Documentation
-
-The Schwab API client includes detailed documentation to help you understand and
-use its features:
-
-- [Error Handling and Debugging](./docs/error-handling.md): Comprehensive error
-  handling system with rich debugging context
-- [Middleware Integration](./docs/middleware.md): How to use and customize the
-  middleware pipeline
-- [Token Architecture](./docs/token-architecture.md): Understanding the token
-  management system
-- [Token Refresh](./docs/token-refresh.md): How token refresh works and handling
-  edge cases
-- [Default Features](./docs/default-features.md): Built-in features enabled by
-  default
-
-## Development
-
-- Clone the repository.
-- Install dependencies: `npm install`
-- Build: `npm run build`
-- Test: `npm run test`
-
-### Installing Beta Versions
-
-To install the latest beta release:
-
-```bash
-npm install schwab-api@beta
-```
-
-### Publishing Beta Releases
-
-This project uses semantic-release for automated versioning and publishing.
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on publishing beta
-releases with semantic-release.
-
-## License
-
-MIT
+- `

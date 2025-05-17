@@ -5,7 +5,6 @@ export * from './types'
 // Primary auth interfaces and factory (recommended approach)
 export {
 	createSchwabAuth,
-	createSchwabAuthClient,
 	AuthStrategy,
 	type AuthFactoryConfig,
 	type FullAuthClient,
