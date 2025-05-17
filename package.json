@@ -21,10 +21,6 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
-    },
-    "./schemas": {
-      "types": "./dist/src/schemas/index.d.ts",
-      "default": "./dist/src/schemas/index.js"
     }
   },
   "scripts": {

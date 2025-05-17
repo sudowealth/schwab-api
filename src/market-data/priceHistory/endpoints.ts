@@ -1,19 +1,20 @@
 import { MARKET_DATA } from '../../constants'
-import { ErrorResponseSchema } from '../../core/errors'
-import { createEndpoint } from '../../core/http'
+import { createEndpointWithContext } from '../../core/http'
+import { getSharedContext } from '../../core/shared-context'
+import { ErrorResponseSchema } from '../../errors'
 import {
 	GetPriceHistoryRequestQueryParamsSchema,
 	GetPriceHistoryResponseBodySchema,
 } from './schema'
 
-export const getPriceHistory = createEndpoint<
+export const getPriceHistory = createEndpointWithContext<
 	never, // No Path Params
 	GetPriceHistoryRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
 	GetPriceHistoryResponseBodySchema, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
->({
+>(getSharedContext(), {
 	method: 'GET',
 	path: MARKET_DATA.PRICE_HISTORY.GET_PRICE_HISTORY,
 	querySchema: GetPriceHistoryRequestQueryParamsSchema,

@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import {
+	isoDateTimeSchema,
+	DateFormatType,
+	dateTransformer,
+} from '../../utils/date-utils'
 
 export const assetType = z.enum([
 	'EQUITY',
@@ -128,7 +133,7 @@ const TransactionFixedIncome = TransactionBaseInstrument.extend({
 		'ASSET_BACKED_SECURITY',
 		'UNKNOWN',
 	]),
-	maturityDate: z.string().datetime(),
+	maturityDate: isoDateTimeSchema,
 	factor: z.number(), // Not marked required
 	multiplier: z.number(), // Not marked required
 	variableRate: z.number(), // Not marked required
@@ -148,9 +153,9 @@ const Future = TransactionBaseInstrument.extend({
 	symbol: z.string(), // Required per spec
 	activeContract: z.boolean().default(false),
 	type: z.enum(['STANDARD', 'UNKNOWN']),
-	expirationDate: z.string().datetime(),
-	lastTradingDate: z.string().datetime(), // Assuming optional
-	firstNoticeDate: z.string().datetime(), // Assuming optional
+	expirationDate: isoDateTimeSchema,
+	lastTradingDate: isoDateTimeSchema, // Assuming optional
+	firstNoticeDate: isoDateTimeSchema, // Assuming optional
 	multiplier: z.number(),
 })
 
@@ -176,9 +181,9 @@ const TransactionMutualFund = TransactionBaseInstrument.extend({
 		'NO_LOAD_TAXABLE',
 		'UNKNOWN',
 	]),
-	exchangeCutoffTime: z.string().datetime(), // Not marked required
-	purchaseCutoffTime: z.string().datetime(), // Not marked required
-	redemptionCutoffTime: z.string().datetime(), // Not marked required
+	exchangeCutoffTime: isoDateTimeSchema, // Not marked required
+	purchaseCutoffTime: isoDateTimeSchema, // Not marked required
+	redemptionCutoffTime: isoDateTimeSchema, // Not marked required
 })
 
 const TransactionAPIOptionDeliverable = z.object({
@@ -197,7 +202,7 @@ const TransactionOption = TransactionBaseInstrument.extend({
 	description: z.string(),
 	instrumentId: z.number().int().optional(),
 	netChange: z.number().optional(),
-	expirationDate: z.string().datetime(),
+	expirationDate: isoDateTimeSchema,
 	optionDeliverables: z.array(TransactionAPIOptionDeliverable),
 	optionPremiumMultiplier: z.number().int(),
 	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']),
@@ -258,15 +263,15 @@ const TransferItem = z.object({
 // Define Transaction after its dependencies UserDetails and TransferItem
 const Transaction = z.object({
 	activityId: z.number().int(),
-	time: z.string().datetime(),
+	time: isoDateTimeSchema,
 	user: UserDetails,
 	description: z.string(),
 	accountNumber: z.string(),
 	type: TransactionType,
 	status: z.enum(['VALID', 'INVALID', 'PENDING', 'UNKNOWN']),
 	subAccount: z.enum(['CASH', 'MARGIN', 'SHORT', 'DIV', 'INCOME', 'UNKNOWN']),
-	tradeDate: z.string().datetime(),
-	settlementDate: z.string().datetime(),
+	tradeDate: isoDateTimeSchema,
+	settlementDate: isoDateTimeSchema,
 	positionId: z.number().int(),
 	orderId: z.number().int(),
 	netAmount: z.number(),
@@ -307,15 +312,12 @@ export type GetTransactionsResponseBody = z.infer<
 export const GetTransactionsRequestPathParams = z.object({
 	accountNumber: z.string().describe('The encrypted ID of the account'),
 })
-const iso8601DateTimeFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/
 
 export const GetTransactionsRequestQueryParams = z.object({
 	startDate: z
 		.string()
-		.regex(
-			iso8601DateTimeFormat,
-			"Valid ISO-8601 format is yyyy-MM-dd'T'HH:mm:ss.SSSZ. Example: 2024-03-28T21:10:42.000Z",
-		)
+		.datetime({ offset: true, precision: 3 })
+		.transform(dateTransformer({ outputFormat: DateFormatType.ISO_STRING }))
 		.default(() => {
 			const date = new Date()
 			date.setDate(date.getDate() - 59)
@@ -326,10 +328,8 @@ export const GetTransactionsRequestQueryParams = z.object({
 		),
 	endDate: z
 		.string()
-		.regex(
-			iso8601DateTimeFormat,
-			"Valid ISO-8601 format is yyyy-MM-dd'T'HH:mm:ss.SSSZ. Example: 2024-05-10T21:10:42.000Z",
-		)
+		.datetime({ offset: true, precision: 3 })
+		.transform(dateTransformer({ outputFormat: DateFormatType.ISO_STRING }))
 		.default(() => {
 			const date = new Date()
 			return date.toISOString()

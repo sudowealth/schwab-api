@@ -12,14 +12,12 @@ export const API_URLS = {
 // API Versions
 export const API_VERSIONS = {
 	v1: 'v1',
-	v2: 'v2',
 }
 
 // OAuth endpoints
 export const OAUTH_ENDPOINTS = {
 	AUTHORIZE: '/oauth/authorize',
 	TOKEN: '/oauth/token',
-	REVOKE: '/oauth/revoke',
 }
 
 // Market Data endpoints
@@ -67,7 +65,6 @@ export const TRADER = {
 		GET_ORDERS_FOR_ACCOUNT: ACCOUNT_ORDERS_BASE_PATH,
 		GET_ORDER: `${ACCOUNT_ORDERS_BASE_PATH}/{orderId}`,
 		PLACE_ORDER: ACCOUNT_ORDERS_BASE_PATH,
-		PREVIEW_ORDER: `${ACCOUNT_ORDERS_BASE_PATH}/previewOrder`, // Schwab says this is coming soon
 		REPLACE_ORDER: `${ACCOUNT_ORDERS_BASE_PATH}/{orderId}`,
 		CANCEL_ORDER: `${ACCOUNT_ORDERS_BASE_PATH}/{orderId}`,
 	},
@@ -98,9 +95,7 @@ export const ENVIRONMENTS = {
 	SANDBOX: 'sandbox',
 }
 
-// Default timeouts (in ms)
+// Default timeout (in ms)
 export const TIMEOUTS = {
 	DEFAULT_REQUEST: 30000, // 30 seconds
-	LONG_REQUEST: 60000, // 60 seconds
-	SHORT_REQUEST: 10000, // 10 seconds
 }

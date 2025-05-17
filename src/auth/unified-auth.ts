@@ -1,25 +1,15 @@
-import { createAuthClient } from './auth-client'
-import { createExtendedAuthClient } from './token-service'
-import { type AuthClientOptions, type TokenSet } from './types'
+import { BaseTokenHandler } from './token-handler'
+import {
+	type AuthClientOptions,
+	type TokenSet,
+	type FullAuthClient,
+} from './types'
+
+// Re-export the FullAuthClient type to fix import issues
+export type { FullAuthClient }
 
 /**
- * Interface for a full auth client with both authorization URL generation
- * and token management capabilities.
- */
-export interface FullAuthClient {
-	// Exchange methods from extended client
-	exchangeCode(code: string): Promise<TokenSet>
-	refresh(refreshToken: string): Promise<TokenSet>
-
-	// Authorization method from base client
-	getAuthorizationUrl(opts?: { scope?: string[] }): { authUrl: string }
-
-	// Optional hook for refresh events
-	onRefresh?(callback: (tokenSet: TokenSet) => void): void
-}
-
-/**
- * Creates a comprehensive auth client that combines both base and extended functionality:
+ * Creates a comprehensive auth client that combines all authentication functionality:
  * - Generate an authorization URL for user login
  * - Exchange authorization codes for tokens
  * - Refresh tokens when needed
@@ -56,22 +46,34 @@ export interface FullAuthClient {
 export function createSchwabAuthClient(
 	opts: AuthClientOptions,
 ): FullAuthClient {
-	// Create base client for authorization URL generation
-	const baseClient = createAuthClient(opts)
+	// Create an instance of the BaseTokenHandler
+	const handler = new BaseTokenHandler(opts)
 
-	// Create extended client for token exchange and refresh
-	const extendedClient = createExtendedAuthClient(baseClient)
-
-	// Return a unified interface with capabilities from both clients
+	// Return a unified interface that provides a simpler API
 	return {
-		// Methods from extended client
-		exchangeCode: extendedClient.exchangeCode,
-		refresh: extendedClient.refresh,
+		// Simple wrapper for exchangeCode
+		async exchangeCode(code: string): Promise<TokenSet> {
+			return handler.exchangeCode(code)
+		},
 
-		// Method from base client
-		getAuthorizationUrl: baseClient.getAuthorizationUrl.bind(baseClient),
+		// Simple wrapper for refreshTokens
+		async refresh(
+			refreshToken: string,
+			options?: { force?: boolean },
+		): Promise<TokenSet> {
+			return handler.refreshTokens({
+				refreshToken,
+				force: options?.force,
+			})
+		},
 
-		// Optional onRefresh hook
-		onRefresh: baseClient.onRefresh?.bind(baseClient),
+		// Pass through the authorization URL generator
+		getAuthorizationUrl: handler.getAuthorizationUrl.bind(handler),
+
+		// Pass through load if available
+		load: opts.load,
+
+		// Pass through the onRefresh hook
+		onRefresh: handler.onRefresh.bind(handler),
 	}
 }

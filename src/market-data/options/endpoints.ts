@@ -1,6 +1,7 @@
 import { MARKET_DATA } from '../../constants'
-import { ErrorResponseSchema } from '../../core/errors'
-import { createEndpoint } from '../../core/http'
+import { createEndpointWithContext } from '../../core/http'
+import { getSharedContext } from '../../core/shared-context'
+import { ErrorResponseSchema } from '../../errors'
 import {
 	GetOptionChainRequestQueryParamsSchema,
 	OptionChainSchema,
@@ -8,14 +9,14 @@ import {
 	OptionExpirationChainResponseBodySchema,
 } from './schema'
 
-export const getOptionChain = createEndpoint<
+export const getOptionChain = createEndpointWithContext<
 	never, // No Path Params
 	GetOptionChainRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
 	OptionChainSchema, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
->({
+>(getSharedContext(), {
 	method: 'GET',
 	path: MARKET_DATA.OPTIONS.GET_OPTION_CHAIN,
 	querySchema: GetOptionChainRequestQueryParamsSchema,
@@ -24,14 +25,14 @@ export const getOptionChain = createEndpoint<
 	description: 'Get option chain for an optionable symbol.',
 })
 
-export const getOptionExpirationChain = createEndpoint<
+export const getOptionExpirationChain = createEndpointWithContext<
 	never, // No Path Params
 	GetOptionExpirationChainRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
 	OptionExpirationChainResponseBodySchema, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
->({
+>(getSharedContext(), {
 	method: 'GET',
 	path: MARKET_DATA.OPTIONS.GET_OPTION_EXPIRATION_CHAIN,
 	querySchema: GetOptionExpirationChainRequestQueryParamsSchema,

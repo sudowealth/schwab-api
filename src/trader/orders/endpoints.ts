@@ -1,6 +1,6 @@
 import { TRADER } from '../../constants'
-import { ErrorResponseSchema } from '../../core/errors'
-import { createEndpoint } from '../../core/http'
+import { createRequestContext, createEndpoint } from '../../core/http'
+import { ErrorResponseSchema } from '../../errors'
 import {
 	GetOrdersRequestQueryParams,
 	GetOrdersResponseBody,
@@ -14,6 +14,9 @@ import {
 	ReplaceOrderResponseBody,
 } from './schema'
 
+// Create a default context to use with our endpoints
+const context = createRequestContext()
+
 export const getOrders = createEndpoint<
 	never,
 	GetOrdersRequestQueryParams,
@@ -21,7 +24,7 @@ export const getOrders = createEndpoint<
 	GetOrdersResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'GET',
 	path: TRADER.ORDERS.GET_ORDERS,
 	querySchema: GetOrdersRequestQueryParams,
@@ -37,9 +40,9 @@ export const getOrdersByAccount = createEndpoint<
 	GetOrdersResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'GET',
-	path: TRADER.ORDERS.GET_ORDERS,
+	path: TRADER.ORDERS.GET_ORDERS_FOR_ACCOUNT,
 	pathSchema: GetOrdersByAccountRequestPathParams,
 	querySchema: GetOrdersByAccountRequestQueryParams,
 	responseSchema: GetOrdersResponseBody,
@@ -54,7 +57,7 @@ export const placeOrderForAccount = createEndpoint<
 	PlaceOrderResponseBody,
 	'POST',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'POST',
 	path: TRADER.ORDERS.PLACE_ORDER,
 	pathSchema: GetOrdersByAccountRequestPathParams,
@@ -71,7 +74,7 @@ export const getOrderByOrderId = createEndpoint<
 	GetOrderByOrderIdResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'GET',
 	path: TRADER.ORDERS.GET_ORDER,
 	pathSchema: GetOrderByOrderIdRequestPathParams,
@@ -87,7 +90,7 @@ export const cancelOrder = createEndpoint<
 	CancelOrderResponseBody,
 	'DELETE',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'DELETE',
 	path: TRADER.ORDERS.CANCEL_ORDER,
 	pathSchema: GetOrderByOrderIdRequestPathParams,
@@ -103,7 +106,7 @@ export const replaceOrder = createEndpoint<
 	ReplaceOrderResponseBody,
 	'PUT',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'PUT',
 	path: TRADER.ORDERS.REPLACE_ORDER,
 	pathSchema: GetOrderByOrderIdRequestPathParams,

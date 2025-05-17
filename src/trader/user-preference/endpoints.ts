@@ -1,8 +1,10 @@
 import { TRADER } from '../../constants'
-import { ErrorResponseSchema } from '../../core/errors'
-import { createEndpoint } from '../../core/http'
+import { createRequestContext, createEndpoint } from '../../core/http'
+import { ErrorResponseSchema } from '../../errors'
 import { GetUserPreferenceResponseBody } from './schema'
 
+// Create a default context to use with our endpoints
+const context = createRequestContext()
 export const getUserPreference = createEndpoint<
 	never,
 	never,
@@ -10,7 +12,7 @@ export const getUserPreference = createEndpoint<
 	GetUserPreferenceResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+>(context, {
 	method: 'GET',
 	path: TRADER.USER_PREFERENCES.GET_USER_PREFERENCES,
 	responseSchema: GetUserPreferenceResponseBody,

@@ -1,30 +1,16 @@
 import { type ZodType, type ZodTypeDef } from 'zod'
-import { type Middleware, compose } from '../middleware/compose'
-import { type SchwabApiConfig, getSchwabApiConfigDefaults } from './config'
 import {
 	SchwabApiError,
-	SchwabAuthorizationError,
-	SchwabInvalidRequestError,
-	SchwabServerError,
 	createSchwabApiError,
-} from './errors'
-
-// Thread-local client instance fetch handler (will be set by create-api-client)
-let threadLocalFetch: ((req: Request) => Promise<Response>) | null = null
-
-// Thread-local configuration (will be set by create-api-client)
-let threadLocalConfig: SchwabApiConfig | null = null
-
-// Context management functions for internal use only
-export function setThreadLocalFetch(
-	fetchFn: (req: Request) => Promise<Response>,
-): void {
-	threadLocalFetch = fetchFn
-}
-
-export function setThreadLocalConfig(config: SchwabApiConfig): void {
-	threadLocalConfig = config
-}
+	handleApiError,
+	extractErrorMetadata,
+} from '../errors'
+import { type Middleware, compose } from '../middleware/compose'
+import {
+	type SchwabApiConfig,
+	getSchwabApiConfigDefaults,
+	resolveBaseUrl,
+} from './config'
 
 // Global fetch handler that will be used as a fallback
 export const globalFetch = fetch
@@ -60,11 +46,10 @@ export interface EndpointMetadata<
 	bodySchema?: ZodType<BType, ZodTypeDef, any> // Schema that outputs BType
 	responseSchema: ZodType<RType, ZodTypeDef, any> // Schema that outputs RType
 	errorSchema?: ZodType<ErrorType, ZodTypeDef, any> // Schema for error responses
-	isPublic?: boolean // Indicates if the endpoint requires auth
 	description?: string
 }
 
-// Placeholder for SchwabFetchRequestOptions (to be defined)
+// Options for API requests
 export interface SchwabFetchRequestOptions<
 	P = unknown,
 	Q = unknown,
@@ -77,21 +62,33 @@ export interface SchwabFetchRequestOptions<
 	init?: Omit<RequestInit, 'body' | 'method'>
 }
 
+// Request context containing config and fetch function
+export interface RequestContext {
+	config: SchwabApiConfig
+	fetchFn: (req: Request) => Promise<Response>
+}
+
 /**
- * Get the effective API configuration
- * This will prioritize thread-local configuration over default configuration
+ * Create a new request context with the given config and fetch function
  */
-export function getEffectiveConfig(): SchwabApiConfig {
-	return threadLocalConfig || getSchwabApiConfigDefaults()
+export function createRequestContext(
+	config: SchwabApiConfig = getSchwabApiConfigDefaults(),
+	fetchFn: (req: Request) => Promise<Response> = globalFetch,
+): RequestContext {
+	return {
+		config,
+		fetchFn,
+	}
 }
 
 // Utility function for logging
 function log(
+	context: RequestContext,
 	level: 'debug' | 'info' | 'warn' | 'error',
 	message: string,
 	data?: any,
 ) {
-	const config = getEffectiveConfig()
+	const { config } = context
 	if (!config.enableLogging) return
 
 	const logLevels = {
@@ -112,22 +109,11 @@ function log(
 	}
 }
 
-// Utility function to handle API errors
-function handleApiError(error: unknown, context: string): never {
-	if (error instanceof SchwabApiError) throw error
-
-	const status =
-		error instanceof Error && 'status' in error ? (error as any).status : 500
-
-	throw createSchwabApiError(
-		status,
-		error,
-		`${context}: ${error instanceof Error ? error.message : String(error)}`,
-	)
-}
-
-// Fully implemented schwabFetch
-export async function schwabFetch<
+/**
+ * Primary implementation for making API requests
+ * All API requests should use this function
+ */
+export async function schwabFetchWithContext<
 	P,
 	Q,
 	B,
@@ -135,18 +121,20 @@ export async function schwabFetch<
 	M extends HttpMethod,
 	E = unknown,
 >(
-	accessToken: string | null, // Null for public endpoints
+	context: RequestContext,
+	accessToken: string | null, // Authentication token required for all endpoints
 	endpoint: EndpointMetadata<P, Q, B, R, M, E>,
 	options?: SchwabFetchRequestOptions<P, Q, B>,
 ): Promise<R> {
-	const config = getEffectiveConfig()
-	log('info', `Requesting: ${endpoint.method} ${endpoint.path}`)
-	log('debug', 'Request details:', { endpoint, options })
+	const { config, fetchFn } = context
+	log(context, 'info', `Requesting: ${endpoint.method} ${endpoint.path}`)
+	log(context, 'debug', 'Request details:', { endpoint, options })
 
-	if (!endpoint.isPublic && !accessToken) {
-		throw new SchwabAuthorizationError(
+	if (!accessToken) {
+		throw createSchwabApiError(
+			401,
 			undefined,
-			`Access token is required for non-public endpoint ${endpoint.method} ${endpoint.path}`,
+			`Access token is required for endpoint ${endpoint.method} ${endpoint.path}`,
 		)
 	}
 
@@ -191,10 +179,11 @@ export async function schwabFetch<
 				}
 			} catch (e) {
 				// If error formatting fails, just use the default message
-				log('warn', 'Failed to format validation errors', e)
+				log(context, 'warn', 'Failed to format validation errors', e)
 			}
 
-			throw new SchwabInvalidRequestError(
+			throw createSchwabApiError(
+				400,
 				parsed.error.format(),
 				`Invalid path parameters for ${method} ${endpointTemplate}${validationDetails}`,
 			)
@@ -202,6 +191,7 @@ export async function schwabFetch<
 		validatedPathParams = parsed.data as P
 	} else if (pathParams && Object.keys(pathParams).length > 0) {
 		log(
+			context,
 			'warn',
 			`Path parameters provided for ${method} ${endpointTemplate}, but no pathSchema is defined.`,
 		)
@@ -237,10 +227,11 @@ export async function schwabFetch<
 				}
 			} catch (e) {
 				// If error formatting fails, just use the default message
-				log('warn', 'Failed to format validation errors', e)
+				log(context, 'warn', 'Failed to format validation errors', e)
 			}
 
-			throw new SchwabInvalidRequestError(
+			throw createSchwabApiError(
+				400,
 				parsed.error.format(),
 				`Invalid query parameters for ${method} ${endpointTemplate}${validationDetails}`,
 			)
@@ -248,12 +239,14 @@ export async function schwabFetch<
 		validatedQueryParams = parsed.data as Q
 	} else if (queryParams && Object.keys(queryParams).length > 0) {
 		log(
+			context,
 			'warn',
 			`Query parameters provided for ${method} ${endpointTemplate}, but no querySchema is defined.`,
 		)
 	}
 
-	const url = buildUrl(
+	const url = buildUrlWithContext(
+		context,
 		endpointTemplate,
 		validatedPathParams as Record<string, string | number> | undefined,
 		validatedQueryParams as Record<string, any> | undefined,
@@ -289,10 +282,11 @@ export async function schwabFetch<
 				}
 			} catch (e) {
 				// If error formatting fails, just use the default message
-				log('warn', 'Failed to format validation errors', e)
+				log(context, 'warn', 'Failed to format validation errors', e)
 			}
 
-			throw new SchwabInvalidRequestError(
+			throw createSchwabApiError(
+				400,
 				parsed.error.format(),
 				`Invalid request body for ${method} ${endpointTemplate}${validationDetails}`,
 			)
@@ -300,6 +294,7 @@ export async function schwabFetch<
 		validatedBody = parsed.data as B
 	} else if (body) {
 		log(
+			context,
 			'warn',
 			`Request body provided for ${method} ${endpointTemplate}, but no bodySchema is defined.`,
 		)
@@ -308,9 +303,7 @@ export async function schwabFetch<
 	const headers: Record<string, string> = {
 		...(options?.headers ?? {}), // User-provided headers
 		Accept: 'application/json',
-		...(accessToken && !endpoint.isPublic
-			? { Authorization: `Bearer ${accessToken}` }
-			: {}),
+		...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 	}
 
 	const requestInit: RequestInit = {
@@ -327,17 +320,14 @@ export async function schwabFetch<
 		headers['Content-Type'] = 'application/json'
 	}
 
-	log('debug', `Fetching URL: ${url.toString()}`, { requestInit })
+	log(context, 'debug', `Fetching URL: ${url.toString()}`, { requestInit })
 
 	try {
-		// Use thread-local fetch if available, otherwise fall back to global fetch
-		const fetchFunction = threadLocalFetch || globalFetch
-
 		// Add timeout support
 		const controller = new AbortController()
 		const timeoutId = setTimeout(() => controller.abort(), config.timeout)
 
-		const response = await fetchFunction(
+		const response = await fetchFn(
 			new Request(url.toString(), {
 				...requestInit,
 				signal: controller.signal,
@@ -348,6 +338,7 @@ export async function schwabFetch<
 		clearTimeout(timeoutId)
 
 		log(
+			context,
 			'info',
 			`Response status: ${response.status} for ${method} ${endpointTemplate}`,
 		)
@@ -359,7 +350,7 @@ export async function schwabFetch<
 			try {
 				errorBody = await response.json()
 
-				// If we have an error schema, validate the error response
+				// If we have an endpoint-specific error schema, validate against that first
 				if (errorSchema) {
 					const parsedError = errorSchema.safeParse(errorBody)
 					if (parsedError.success) {
@@ -368,6 +359,7 @@ export async function schwabFetch<
 				}
 			} catch (e) {
 				log(
+					context,
 					'warn',
 					`Could not parse error response body as JSON for ${method} ${endpointTemplate}`,
 					e,
@@ -379,26 +371,6 @@ export async function schwabFetch<
 			// Prepare a more detailed error message
 			let detailedErrorMessage = `API Error for ${method} ${endpointTemplate}: ${response.statusText}`
 
-			// Extract validation details from errorBody if available
-			if (errorBody && typeof errorBody === 'object') {
-				if ('errors' in errorBody && Array.isArray(errorBody.errors)) {
-					const errorDetails = errorBody.errors
-						.map((err: any) => {
-							let detail = ''
-							if (err.title) detail += `${err.title}`
-							if (err.detail) detail += ` - ${err.detail}`
-							if (err.source && err.source.parameter)
-								detail += ` (parameter: ${err.source.parameter})`
-							return detail
-						})
-						.join('; ')
-
-					if (errorDetails) {
-						detailedErrorMessage += ` - Details: ${errorDetails}`
-					}
-				}
-			}
-
 			// Add query parameters to error message for debugging
 			if (
 				validatedQueryParams &&
@@ -407,10 +379,16 @@ export async function schwabFetch<
 				detailedErrorMessage += ` - Query params: ${JSON.stringify(validatedQueryParams)}`
 			}
 
+			// Extract metadata from response headers for better error handling
+			const metadata = extractErrorMetadata(response)
+
+			// Create an error with the appropriate type and structured details
+			// parseErrorResponse is called inside createSchwabApiError to populate the parsedError field
 			throw createSchwabApiError(
 				response.status,
 				errorBody,
 				detailedErrorMessage,
+				metadata,
 			)
 		}
 
@@ -419,12 +397,17 @@ export async function schwabFetch<
 			response.status === 204 ||
 			response.headers.get('content-length') === '0'
 		) {
-			log('info', `Empty response body for ${method} ${endpointTemplate}.`)
+			log(
+				context,
+				'info',
+				`Empty response body for ${method} ${endpointTemplate}.`,
+			)
 			return undefined as R
 		}
 
 		const responseData = await response.json()
 		log(
+			context,
 			'debug',
 			`Response data for ${method} ${endpointTemplate}:`,
 			responseData,
@@ -443,8 +426,10 @@ export async function schwabFetch<
 					? validationErrors.substring(0, SENSITIVE_MAX_ERROR_LENGTH) +
 						'... (truncated)'
 					: validationErrors
-			throw new SchwabServerError(
-				parsedResponse.error.format(), // Keep the original body for programmatic access
+
+			throw createSchwabApiError(
+				500,
+				parsedResponse.error.format(),
 				`Invalid response data structure for ${method} ${endpointTemplate}. Validation errors: ${truncatedErrors}`,
 			)
 		}
@@ -453,14 +438,19 @@ export async function schwabFetch<
 	} catch (error) {
 		// Handle AbortError separately
 		if (error instanceof DOMException && error.name === 'AbortError') {
-			throw new SchwabApiError(
+			throw createSchwabApiError(
 				408, // Request Timeout
 				{ message: 'Request timed out' },
 				`Request timeout after ${config.timeout}ms for ${method} ${endpointTemplate}`,
 			)
 		}
 
-		log('error', `Fetch failed for ${method} ${endpointTemplate}:`, error)
+		log(
+			context,
+			'error',
+			`Fetch failed for ${method} ${endpointTemplate}:`,
+			error,
+		)
 
 		if (error instanceof SchwabApiError) {
 			throw error
@@ -474,49 +464,48 @@ export async function schwabFetch<
 	}
 }
 
-export function createEndpoint<P, Q, B, R, M extends HttpMethod, E = unknown>(
-	meta: EndpointMetadata<P, Q, B, R, M, E>,
-) {
-	return (
-		accessToken: string,
-		options: SchwabFetchRequestOptions<P, Q, B> = {},
-	): Promise<R> => {
-		if (!meta.isPublic && !accessToken) {
-			throw new SchwabAuthorizationError(
-				undefined,
-				'Access token is required for this endpoint.',
-			)
-		}
-		const tokenToUse = meta.isPublic ? null : accessToken
-		return schwabFetch<P, Q, B, R, M, E>(tokenToUse, meta, options)
-	}
-}
-
-// Specific function for public endpoints
-export function createPublicEndpoint<
+/**
+ * Create an endpoint function using the provided context
+ * This is the primary way to create API endpoint functions
+ */
+export function createEndpointWithContext<
 	P,
 	Q,
 	B,
 	R,
 	M extends HttpMethod,
 	E = unknown,
->(
-	meta: Omit<EndpointMetadata<P, Q, B, R, M, E>, 'isPublic'> & {
-		isPublic: true
-	},
-): (opts?: SchwabFetchRequestOptions<P, Q, B>) => Promise<R> {
-	return (opts?: SchwabFetchRequestOptions<P, Q, B>): Promise<R> => {
-		return schwabFetch<P, Q, B, R, M, E>(null, meta, opts)
+>(context: RequestContext, meta: EndpointMetadata<P, Q, B, R, M, E>) {
+	return (
+		accessToken: string,
+		options: SchwabFetchRequestOptions<P, Q, B> = {},
+	): Promise<R> => {
+		if (!accessToken) {
+			throw createSchwabApiError(
+				401,
+				undefined,
+				'Access token is required for this endpoint.',
+			)
+		}
+		return schwabFetchWithContext<P, Q, B, R, M, E>(
+			context,
+			accessToken,
+			meta,
+			options,
+		)
 	}
 }
 
-// --- URL Builder ---
-export function buildUrl(
+/**
+ * Build a URL for an API endpoint with the provided context
+ */
+export function buildUrlWithContext(
+	context: RequestContext,
 	endpointTemplate: string,
 	pathParams?: Record<string, string | number> | undefined,
 	queryParams?: Record<string, any> | undefined,
 ): URL {
-	const config = getEffectiveConfig()
+	const { config } = context
 
 	// 1. Substitute Path Parameters
 	let finalEndpointPath = endpointTemplate
@@ -550,6 +539,7 @@ export function buildUrl(
 
 			if (!replaced) {
 				log(
+					context,
 					'warn',
 					`Path parameter '${key}' provided but not found in template '${endpointTemplate}'`,
 				)
@@ -571,14 +561,16 @@ export function buildUrl(
 	if (curlyMatches || colonMatches) {
 		const remainingCurly = curlyMatches ? curlyMatches.join(', ') : 'none'
 		const remainingColon = colonMatches ? colonMatches.join(', ') : 'none'
-		throw new SchwabInvalidRequestError(
+		throw createSchwabApiError(
+			400,
 			undefined,
 			`Unsubstituted placeholders remain in path: ${finalEndpointPath}. Check if all required path parameters were provided. Remaining (curly): ${remainingCurly}. Remaining (colon): ${remainingColon}.`,
 		)
 	}
 
-	// 2. Construct URL with versioning and query parameters
-	const baseUrl = config.baseUrl
+	// 2. Use the centralized base URL resolution
+	// This ensures consistent URL resolution across the codebase
+	const baseUrl = resolveBaseUrl(config)
 
 	// Add API version to path if not already present
 	if (
@@ -602,6 +594,11 @@ export function buildUrl(
 		})
 	}
 
-	log('debug', `Constructed URL: ${url.toString()}`)
+	log(context, 'debug', `Constructed URL: ${url.toString()}`)
 	return url
 }
+
+// For backward compatibility only - will be removed in a future version
+// Using barrel export to avoid additional file changes for now
+export const createEndpoint = createEndpointWithContext
+export const buildUrl = buildUrlWithContext

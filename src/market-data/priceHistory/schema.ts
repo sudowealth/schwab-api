@@ -1,4 +1,10 @@
 import { z } from 'zod'
+import {
+	dateStringSchema,
+	epochMillisSchema,
+	DateFormatType,
+	dateTransformer,
+} from '../../utils/date-utils'
 
 // Enum for periodType query parameter
 export const PriceHistoryPeriodTypeEnum = z.enum([
@@ -92,6 +98,7 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 		.number()
 		.int()
 		.optional()
+		.transform(dateTransformer({ outputFormat: DateFormatType.DATE_OBJECT }))
 		.describe(
 			'The start date, Time in milliseconds since the UNIX epoch eg 1451624400000. \n' +
 				'If not specified startDate will be (endDate - period) excluding weekends and holidays.',
@@ -100,6 +107,7 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 		.number()
 		.int()
 		.optional()
+		.transform(dateTransformer({ outputFormat: DateFormatType.DATE_OBJECT }))
 		.describe(
 			'The end date, Time in milliseconds since the UNIX epoch eg 1451624400000. \n' +
 				'If not specified, the endDate will default to the market close of previous business day.',
@@ -124,10 +132,8 @@ export const PriceHistoryCandleSchema = z.object({
 	low: z.number().describe('Low price for the period'),
 	close: z.number().describe('Close price for the period'),
 	volume: z.number().int().describe('Volume for the period'),
-	datetime: z.number().int().describe('Timestamp in EPOCH milliseconds'),
-	datetimeISO8601: z
-		.string()
-		.regex(/^\\d{4}-\\d{2}-\\d{2}$/, 'YYYY-MM-DD format')
+	datetime: epochMillisSchema.describe('Timestamp in EPOCH milliseconds'),
+	datetimeISO8601: dateStringSchema
 		.optional()
 		.describe('Timestamp in YYYY-MM-DD format'),
 })
@@ -146,14 +152,10 @@ export const GetPriceHistoryResponseBodySchema = z.object({
 		.number()
 		.optional()
 		.describe("Previous session's close price"),
-	previousCloseDate: z
-		.number()
-		.int()
+	previousCloseDate: epochMillisSchema
 		.optional()
 		.describe("Previous session's close date (epoch ms)"),
-	previousCloseDateISO8601: z
-		.string()
-		.regex(/^\\d{4}-\d{2}-\\d{2}$/, 'YYYY-MM-DD format')
+	previousCloseDateISO8601: dateStringSchema
 		.optional()
 		.describe("Previous session's close date (YYYY-MM-DD)"),
 })

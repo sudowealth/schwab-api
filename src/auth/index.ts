@@ -1,8 +1,21 @@
 export * from './urls'
 export * from './token'
 export * from './types'
-export * from './errors'
-export { createAuthClient } from './auth-client'
-export { TokenManager, type TokenService } from './token-manager'
-export { createTokenService, createExtendedAuthClient } from './token-service'
-export { createSchwabAuthClient, type FullAuthClient } from './unified-auth'
+
+// Primary auth interfaces and factory (recommended approach)
+export {
+	createSchwabAuth,
+	createSchwabAuthClient,
+	AuthStrategy,
+	type AuthFactoryConfig,
+	type FullAuthClient,
+} from './auth'
+
+// Export token utilities
+export * from './token-utils'
+
+// Core token handling components
+export { BaseTokenHandler, mapTokenResponse } from './token-handler'
+
+// Token management architecture components
+export * from './token-lifecycle-manager'

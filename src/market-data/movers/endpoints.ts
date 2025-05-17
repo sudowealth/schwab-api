@@ -1,20 +1,21 @@
 import { MARKET_DATA } from '../../constants'
-import { ErrorResponseSchema } from '../../core/errors'
-import { createEndpoint } from '../../core/http'
+import { createEndpointWithContext } from '../../core/http'
+import { getSharedContext } from '../../core/shared-context'
+import { ErrorResponseSchema } from '../../errors'
 import {
 	GetMoversRequestPathParamsSchema,
 	GetMoversRequestQueryParamsSchema,
 	GetMoversResponseBodySchema,
 } from './schema'
 
-export const getMovers = createEndpoint<
+export const getMovers = createEndpointWithContext<
 	GetMoversRequestPathParamsSchema, // Path Params
 	GetMoversRequestQueryParamsSchema, // Query Params
 	never, // No Request Body
 	GetMoversResponseBodySchema, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
->({
+>(getSharedContext(), {
 	method: 'GET',
 	path: MARKET_DATA.MOVERS.GET_MOVERS,
 	pathSchema: GetMoversRequestPathParamsSchema,
