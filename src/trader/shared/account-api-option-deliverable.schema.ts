@@ -8,6 +8,4 @@ export const AccountAPIOptionDeliverable = z.object({
 	apiCurrencyType: ApiCurrencyType,
 	assetType: assetType,
 })
-export type AccountAPIOptionDeliverable = z.infer<
-	typeof AccountAPIOptionDeliverable
->
+export type AccountAPIOptionDeliverable = z.infer<typeof AccountAPIOptionDeliverable>
