@@ -7,7 +7,7 @@
  *
  * Example:
  * ```
- * import { createApiClient } from 'schwab-api'
+ * import { createApiClient } from '@sudowealth/schwab-api'
  * const client = createApiClient({ config: {}, auth: '' })
  * // Use client.trader.accounts etc.
  * ```

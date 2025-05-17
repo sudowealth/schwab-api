@@ -82,7 +82,7 @@ Token refresh operations are automatically protected against race conditions. Wh
 You can access the various API domains through the client instance:
 
 ```typescript
-import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+import { createApiClient, createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api';
 
 // Assuming auth is configured (see Quick Start or Usage Examples)
 const auth = createSchwabAuth({ /* ... your auth config ... */ });
@@ -118,7 +118,7 @@ The quickest way to get started is by using `createSchwabAuth` along with `creat
 
 ```typescript
 // Minimal Hello World
-import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+import { createApiClient, createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api';
 
 (async () => {
   const auth = createSchwabAuth({ strategy: AuthStrategy.STATIC, accessToken: 'YOUR_TOKEN' }); // Replace YOUR_TOKEN with a valid token
@@ -129,7 +129,7 @@ import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
 ```
 
 ```typescript
-import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+import { createApiClient, createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api';
 
 async function main() {
 	// 1. Initialize Authentication
@@ -222,7 +222,7 @@ The recommended way to authenticate is using the `createSchwabAuth()` function
 which provides a consistent interface for all authentication strategies:
 
 ```typescript
-import { createSchwabAuth, AuthStrategy, createApiClient } from 'schwab-api'
+import { createSchwabAuth, AuthStrategy, createApiClient } from '@sudowealth/schwab-api'
 
 // Create an auth client with your preferred strategy
 const auth = createSchwabAuth({
@@ -267,7 +267,7 @@ const accounts = await client.trader.accounts.getAccounts()
 For web applications that need to authenticate users:
 
 ```typescript
-import { createSchwabAuth, AuthStrategy, createApiClient } from 'schwab-api'
+import { createSchwabAuth, AuthStrategy, createApiClient } from '@sudowealth/schwab-api'
 
 // Create an auth client with OAuth configuration
 // Make sure SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET are defined in your environment (e.g., in .env or your hosting platform's config).
@@ -303,7 +303,7 @@ const accounts = await client.trader.accounts.getAccounts()
 For scripts or applications that already have an access token:
 
 ```typescript
-import { createSchwabAuth, AuthStrategy, createApiClient } from 'schwab-api'
+import { createSchwabAuth, AuthStrategy, createApiClient } from '@sudowealth/schwab-api'
 
 // Method 1: Using createSchwabAuth
 const auth = createSchwabAuth({
@@ -339,7 +339,7 @@ import {
 	AuthStrategy,
 	createApiClient,
 	ITokenLifecycleManager,
-} from 'schwab-api'
+} from '@sudowealth/schwab-api'
 
 // Create a custom token manager
 class CustomTokenManager implements ITokenLifecycleManager {
@@ -409,7 +409,7 @@ You can also pass auth configuration directly to createApiClient for more
 concise code:
 
 ```typescript
-import { createApiClient, AuthStrategy } from 'schwab-api'
+import { createApiClient, AuthStrategy } from '@sudowealth/schwab-api'
 
 // Pass auth configuration directly to createApiClient
 const client = createApiClient({
@@ -567,7 +567,7 @@ The client provides a unified discovery approach through the `all` namespace,
 giving you access to everything in one place without needing additional imports:
 
 ```typescript
-import { createApiClient } from 'schwab-api'
+import { createApiClient } from '@sudowealth/schwab-api'
 
 const client = createApiClient({
 	config: { environment: 'SANDBOX' },
@@ -614,7 +614,7 @@ The `createSchwabAuth` function (when using `AuthStrategy.CODE_FLOW` or `AuthStr
 **Example of `load` and `save`:**
 
 ```typescript
-import { createSchwabAuth, AuthStrategy, TokenData } from 'schwab-api';
+import { createSchwabAuth, AuthStrategy, TokenData } from '@sudowealth/schwab-api';
 import fs from 'fs/promises'; // Example using Node.js fs
 
 const TOKEN_FILE_PATH = './schwab-tokens.json';
@@ -657,7 +657,7 @@ The library provides robust token management, especially concerning concurrent A
 -   **Custom Token Managers**: If you implement a custom `ITokenLifecycleManager`, the library will still wrap it with `ConcurrentTokenManager` as long as your `supportsRefresh()` method returns `true`. This means you don't need to implement concurrency protection yourself within your custom manager for the refresh logic.
 
     ```typescript
-    import { ITokenLifecycleManager, TokenData, buildTokenManager, createSchwabAuth, AuthStrategy } from 'schwab-api';
+    import { ITokenLifecycleManager, TokenData, buildTokenManager, createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api';
 
     class MyCustomTokenManager implements ITokenLifecycleManager {
       privatecurrentTokenData: TokenData | null = null;
@@ -879,7 +879,7 @@ The library provides utility functions to help manage these scenarios, located w
 **Example:**
 
 ```typescript
-import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+import { createApiClient, createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api';
 // Assuming client is already initialized as shown in Quick Start or Usage Examples
 // const client = ...;
 
@@ -949,7 +949,7 @@ By default, the pipeline includes:
 You can customize the behavior of the built-in middleware or disable them entirely by passing a configuration object to the `middleware` property.
 
 ```typescript
-import { createApiClient, createSchwabAuth, AuthStrategy } from 'schwab-api';
+import { createApiClient, createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api';
 
 // Assuming auth is configured
 const auth = createSchwabAuth({ strategy: AuthStrategy.STATIC, accessToken: 'YOUR_TOKEN' });
@@ -1019,7 +1019,7 @@ The Schwab API client provides a single, consistent entry point through the
 functionality:
 
 ```typescript
-import { createApiClient } from 'schwab-api'
+import { createApiClient } from '@sudowealth/schwab-api'
 
 // Create your API client
 const client = createApiClient({
