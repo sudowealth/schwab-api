@@ -646,6 +646,23 @@ const auth = createSchwabAuth({
 // ... rest of your auth flow (getAuthorizationUrl, exchangeCode)
 ```
 
+### openid-client Integration
+
+This package now relies on [`openid-client`](https://github.com/panva/node-openid-client)
+to perform the OAuth code exchange and refresh tokens. The `createSchwabAuth`
+helper wraps `openid-client` so you typically won't interact with it directly.
+Using `AuthStrategy.CODE_FLOW` still results in automatic token refresh when
+tokens are nearing expiration.
+
+Import paths remain the same and should reference the package root:
+
+```typescript
+import { createSchwabAuth, AuthStrategy } from '@sudowealth/schwab-api'
+```
+
+Any additional OpenID configuration can be provided through the `oauthConfig`
+options when creating the auth client.
+
 ### Token Management and Concurrency
 
 The library provides robust token management, especially concerning concurrent API calls and token refreshes.
