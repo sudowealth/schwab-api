@@ -53,9 +53,17 @@ export async function exchangeCodeForTokenWithContext(
 	const fetchFn = context.fetchFn
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
+	// Ensure code is trimmed and properly encoded
+	const authCode = opts.code.trim()
+	tokenLogWithContext(
+		context,
+		'info',
+		`Code value for exchange: ${authCode.slice(0, 5)}... (length: ${authCode.length})`,
+	)
+
 	const body = new URLSearchParams()
 	body.append('grant_type', OAUTH_GRANT_TYPES.AUTHORIZATION_CODE)
-	body.append('code', opts.code)
+	body.append('code', authCode)
 	body.append('redirect_uri', opts.redirectUri)
 	// client_id and client_secret are sent in Authorization header (Basic Auth)
 
@@ -65,6 +73,13 @@ export async function exchangeCodeForTokenWithContext(
 		context,
 		'info',
 		`Exchanging code for token at: ${tokenEndpoint}`,
+	)
+	
+	// Debug log to help diagnose issues
+	tokenLogWithContext(
+		context,
+		'info',
+		`Token exchange details: redirect_uri=${opts.redirectUri}`,
 	)
 
 	try {
@@ -90,11 +105,32 @@ export async function exchangeCodeForTokenWithContext(
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
+		// Log response status and headers for debugging
+		tokenLogWithContext(
+			context, 
+			'info', 
+			`Token exchange response status: ${response.status}`,
+		)
+
 		let data;
 		try {
 			data = await response.json()
 		} catch (parseError) {
 			tokenLogWithContext(context, 'error', 'Failed to parse token response:', parseError)
+			
+			// Try to get text content for better debugging
+			try {
+				const textContent = await response.text()
+				tokenLogWithContext(context, 'error', 'Raw response content:', { 
+					text: textContent.slice(0, 200),
+					status: response.status,
+					statusText: response.statusText,
+				})
+			} catch (textError) {
+				// Unable to get text content
+				tokenLogWithContext(context, 'error', 'Unable to get text content:', textError)
+			}
+			
 			throw createSchwabApiError(
 				response.status || 400,
 				{ parseError: 'Invalid JSON response' },
@@ -175,6 +211,20 @@ export async function refreshTokenWithContext(
 			data = await response.json()
 		} catch (parseError) {
 			tokenLogWithContext(context, 'error', 'Failed to parse token refresh response:', parseError)
+			
+			// Try to get text content for better debugging
+			try {
+				const textContent = await response.text()
+				tokenLogWithContext(context, 'error', 'Raw response content:', { 
+					text: textContent.slice(0, 200),
+					status: response.status, 
+					statusText: response.statusText,
+				})
+			} catch (textError) {
+				// Unable to get text content
+				tokenLogWithContext(context, 'error', 'Unable to get text content:', textError)
+			}
+			
 			throw createSchwabApiError(
 				response.status || 400,
 				{ parseError: 'Invalid JSON response' },
