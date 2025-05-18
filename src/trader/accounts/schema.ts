@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { assetType, ApiCurrencyType, AccountAPIOptionDeliverable } from '../shared'
+import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 export const AccountsBaseInstrument = z.object({
 	assetType: assetType,

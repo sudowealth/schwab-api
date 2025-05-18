@@ -3,12 +3,12 @@ import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for projection parameter
 export const InstrumentProjectionEnum = z.enum([
-        'symbol-search',
-        'symbol-regex',
-        'desc-search',
-        'desc-regex',
-        'search',
-        'fundamental',
+	'symbol-search',
+	'symbol-regex',
+	'desc-search',
+	'desc-regex',
+	'search',
+	'fundamental',
 ])
 export type InstrumentProjectionEnum = z.infer<typeof InstrumentProjectionEnum>
 
