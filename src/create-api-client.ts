@@ -194,6 +194,10 @@ function processNamespace<T extends Record<string, any>>(
 ): any {
 	// Consider a more specific return type if possible, e.g., Processed<T>
 	const result: any = {}
+	
+	// First pass - process all Meta objects and prepare for endpoint creation
+	const endpointsToCreate: { [key: string]: EndpointMetadata<any, any, any, any, any, any> } = {}
+	
 	for (const key in ns) {
 		if (Object.prototype.hasOwnProperty.call(ns, key)) {
 			const value = ns[key]
@@ -215,7 +219,10 @@ function processNamespace<T extends Record<string, any>>(
 					)
 				) {
 					const endpointName = key.substring(0, key.length - 'Meta'.length)
-					result[endpointName] = clientCreateEndpoint(value as EndpointMetadata)
+					endpointsToCreate[endpointName] = value as EndpointMetadata
+					
+					// Also keep the original Meta object
+					result[key] = value
 				} else {
 					// Recursively process sub-namespaces (like 'quotes' within 'marketData')
 					result[key] = processNamespace(value, clientCreateEndpoint)
@@ -226,6 +233,12 @@ function processNamespace<T extends Record<string, any>>(
 			}
 		}
 	}
+	
+	// Second pass - create all endpoints
+	for (const [endpointName, meta] of Object.entries(endpointsToCreate)) {
+		result[endpointName] = clientCreateEndpoint(meta)
+	}
+	
 	return result
 }
 
