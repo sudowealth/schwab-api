@@ -866,6 +866,85 @@ API calls and token refreshes.
   // });
   ```
 
+### Cloudflare Workers Compatibility
+
+This library is compatible with Cloudflare Workers and other edge environments. The authentication module has been specially optimized to work in serverless environments that may not have access to Node.js-specific APIs like `Buffer`.
+
+When using the library in Cloudflare Workers:
+
+1. Use a fixed redirect URI string rather than constructing it at runtime:
+   ```javascript
+   // GOOD: Use a fixed string
+   const redirectUri = 'https://your-worker-url.workers.dev/callback';
+   
+   // BAD: Don't construct dynamically
+   // const redirectUri = new URL('/callback', c.req.raw.url).href;
+   ```
+
+2. The library automatically handles Base64 encoding for authentication headers in different environments:
+   ```javascript
+   // The library will choose the appropriate method:
+   // - btoa() in browser/Cloudflare environments
+   // - Buffer.from().toString('base64') in Node.js environments
+   ```
+
+3. Token exchange and refresh operations use direct HTTP requests that are compatible with all JavaScript environments
+
+#### Example Cloudflare Worker Implementation:
+
+```javascript
+// Example Cloudflare Worker using the Schwab API client
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname;
+      
+      // Fixed redirect URI
+      const redirectUri = 'https://your-worker-url.workers.dev/callback';
+      
+      if (path === '/login') {
+        // Initialize the auth client
+        const auth = createSchwabAuth({
+          clientId: env.SCHWAB_CLIENT_ID,
+          clientSecret: env.SCHWAB_CLIENT_SECRET,
+          redirectUri
+        });
+        
+        // Generate the authorization URL
+        const { authUrl } = auth.getAuthorizationUrl();
+        return Response.redirect(authUrl, 302);
+      }
+      
+      if (path === '/callback') {
+        const code = new URL(request.url).searchParams.get('code');
+        
+        const auth = createSchwabAuth({
+          clientId: env.SCHWAB_CLIENT_ID,
+          clientSecret: env.SCHWAB_CLIENT_SECRET,
+          redirectUri
+        });
+        
+        // Exchange the code for tokens
+        const tokenSet = await auth.exchangeCode(code);
+        
+        // Create the API client with the authenticated auth client
+        const client = createApiClient({ auth });
+        
+        // Now you can make API calls
+        // const accounts = await client.trader.accounts.getAccounts();
+        
+        return new Response('Authentication successful!');
+      }
+      
+      return new Response('Not found', { status: 404 });
+    } catch (error) {
+      return new Response(`Error: ${error.message}`, { status: 500 });
+    }
+  }
+};
+```
+
 ### Refresh Token Expiration
 
 **Important**: Schwab refresh tokens have a hard 7-day expiration limit that
