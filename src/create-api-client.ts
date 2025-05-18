@@ -77,7 +77,7 @@ export interface CreateApiClientOptions {
 export interface SchwabApiClient {
 	/**
 	 * Market Data API (quotes, price history, instruments, etc.)
-	 * These namespaces contain both the metadata objects (with 'Meta' suffix) and 
+	 * These namespaces contain both the metadata objects (with 'Meta' suffix) and
 	 * the actual endpoint functions (without 'Meta' suffix) that are created during client initialization.
 	 */
 	marketData: ProcessNamespaceResult<typeof marketDataNs>
@@ -177,10 +177,12 @@ function processNamespace<T extends Record<string, any>>(
 ): ProcessNamespaceResult<T> {
 	// Process the namespace and return a properly typed result
 	const result: any = {}
-	
+
 	// First pass - process all Meta objects and prepare for endpoint creation
-	const endpointsToCreate: { [key: string]: EndpointMetadata<any, any, any, any, any, any> } = {}
-	
+	const endpointsToCreate: {
+		[key: string]: EndpointMetadata<any, any, any, any, any, any>
+	} = {}
+
 	for (const key in ns) {
 		if (Object.prototype.hasOwnProperty.call(ns, key)) {
 			const value = ns[key]
@@ -203,7 +205,7 @@ function processNamespace<T extends Record<string, any>>(
 				) {
 					const endpointName = key.substring(0, key.length - 'Meta'.length)
 					endpointsToCreate[endpointName] = value as EndpointMetadata
-					
+
 					// Also keep the original Meta object
 					result[key] = value
 				} else {
@@ -216,12 +218,12 @@ function processNamespace<T extends Record<string, any>>(
 			}
 		}
 	}
-	
+
 	// Second pass - create all endpoints
 	for (const [endpointName, meta] of Object.entries(endpointsToCreate)) {
 		result[endpointName] = clientCreateEndpoint(meta)
 	}
-	
+
 	// Cast the result to the expected type
 	// This maintains type safety while allowing the actual implementation to be dynamic
 	return result as ProcessNamespaceResult<T>
