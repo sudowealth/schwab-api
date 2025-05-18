@@ -74,10 +74,14 @@ export class OpenIdTokenManager implements FullAuthClient {
 			// Ensure code is properly formatted
 			code = code.trim()
 
+			// Handle URL-encoded '@' character (%40)
+			if (code.endsWith('%40')) {
+				code = code.replace(/%40$/, '@')
+			}
+
 			// Schwab OAuth codes have special format (C0.xxx.xxx@)
 			// Special handling for base64 encoding requirements
 			// The error indicates the code length must be a multiple of 4 for proper base64 encoding
-			// Make sure we don't alter the code if it's not ending with @
 			if (code.endsWith('@')) {
 				// For codes ending with @, special padding is needed to make the length a multiple of 4
 				// Adding '=' characters for proper base64 padding
@@ -95,6 +99,7 @@ export class OpenIdTokenManager implements FullAuthClient {
 			console.info('[INFO] Preparing token exchange request', {
 				codeLength: code.length,
 				codeEndsWithAt: code.endsWith('@'),
+				codeEndsWithEncodedAt: code.endsWith('%40'),
 				codeFinalChar: code.charAt(code.length - 1),
 				redirectUri,
 			})
