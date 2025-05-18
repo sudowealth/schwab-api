@@ -41,6 +41,7 @@
     "market-data"
   ],
   "dependencies": {
+    "openid-client": "^6.5.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {
