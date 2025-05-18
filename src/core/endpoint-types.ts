@@ -38,13 +38,11 @@ export type EndpointFunction<T extends EndpointMetadata> = (
  * Determines the arguments for an endpoint function based on the metadata
  */
 type EndpointFunctionArgs<T extends EndpointMetadata> =
-        HasRequiredParams<T> extends true
-                ? [
-                                options: BuildEndpointOptions<T>,
-                        ]
-                : HasOptionalParams<T> extends true
-                        ? [options?: BuildEndpointOptions<T>]
-                        : []
+	HasRequiredParams<T> extends true
+		? [options: BuildEndpointOptions<T>]
+		: HasOptionalParams<T> extends true
+			? [options?: BuildEndpointOptions<T>]
+			: []
 
 /**
  * Builds the options parameter type based on what's available in the metadata
@@ -126,7 +124,7 @@ type HasRequiredPathParams<T extends EndpointMetadata> =
  * Without direct access to the Zod schema validation, we can't be certain here
  * so we default to assuming query params are optional
  */
-type HasRequiredQueryParams<T extends EndpointMetadata> = false
+type HasRequiredQueryParams<ignored extends EndpointMetadata> = false
 
 /**
  * Checks if the endpoint has a required body

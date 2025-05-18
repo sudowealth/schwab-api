@@ -106,20 +106,20 @@ function log(
  * All API requests should use this function
  */
 async function schwabFetchWithContext<
-        P,
-        Q,
-        B,
-        R,
-        M extends HttpMethod,
-        E = unknown,
+	P,
+	Q,
+	B,
+	R,
+	M extends HttpMethod,
+	E = unknown,
 >(
-        context: RequestContext,
-        endpoint: EndpointMetadata<P, Q, B, R, M, E>,
-        options?: SchwabFetchRequestOptions<P, Q, B>,
+	context: RequestContext,
+	endpoint: EndpointMetadata<P, Q, B, R, M, E>,
+	options?: SchwabFetchRequestOptions<P, Q, B>,
 ): Promise<R> {
-        const { config, fetchFn } = context
-        log(context, 'info', `Requesting: ${endpoint.method} ${endpoint.path}`)
-        log(context, 'debug', 'Request details:', { endpoint, options })
+	const { config, fetchFn } = context
+	log(context, 'info', `Requesting: ${endpoint.method} ${endpoint.path}`)
+	log(context, 'debug', 'Request details:', { endpoint, options })
 
 	const { pathParams, queryParams, body, init = {} } = options ?? {}
 	const {
@@ -283,10 +283,10 @@ async function schwabFetchWithContext<
 		)
 	}
 
-        const headers: Record<string, string> = {
-                ...(options?.headers ?? {}), // User-provided headers
-                Accept: 'application/json',
-        }
+	const headers: Record<string, string> = {
+		...(options?.headers ?? {}), // User-provided headers
+		Accept: 'application/json',
+	}
 
 	const requestInit: RequestInit = {
 		...init,
@@ -451,18 +451,12 @@ async function schwabFetchWithContext<
  * This is the primary way to create API endpoint functions
  */
 export function createEndpoint<P, Q, B, R, M extends HttpMethod, E = unknown>(
-        context: RequestContext,
-        meta: EndpointMetadata<P, Q, B, R, M, E>,
+	context: RequestContext,
+	meta: EndpointMetadata<P, Q, B, R, M, E>,
 ) {
-        return (
-                options: SchwabFetchRequestOptions<P, Q, B> = {},
-        ): Promise<R> => {
-                return schwabFetchWithContext<P, Q, B, R, M, E>(
-                        context,
-                        meta,
-                        options,
-                )
-        }
+	return (options: SchwabFetchRequestOptions<P, Q, B> = {}): Promise<R> => {
+		return schwabFetchWithContext<P, Q, B, R, M, E>(context, meta, options)
+	}
 }
 
 /**

@@ -7,7 +7,9 @@ import { type getQuoteBySymbolIdMeta, type getQuotesMeta } from './endpoints'
 export type GetQuotesFunction = EndpointFunction<typeof getQuotesMeta>
 export declare const getQuotes: GetQuotesFunction
 
-export type GetQuoteBySymbolIdFunction = EndpointFunction<typeof getQuoteBySymbolIdMeta>
+export type GetQuoteBySymbolIdFunction = EndpointFunction<
+	typeof getQuoteBySymbolIdMeta
+>
 export declare const getQuoteBySymbolId: GetQuoteBySymbolIdFunction
 
 /**
