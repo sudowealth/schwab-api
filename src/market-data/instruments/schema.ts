@@ -13,6 +13,24 @@ export const InstrumentProjectionEnum = z.enum([
 ])
 export type InstrumentProjectionEnum = z.infer<typeof InstrumentProjectionEnum>
 
+// Enum for AssetType specifically used in market-data/instruments
+export const InstrumentAssetTypeEnum = z.enum([
+	'BOND',
+	'EQUITY',
+	'ETF',
+	'EXTENDED',
+	'FOREX',
+	'FUTURE',
+	'FUTURE_OPTION',
+	'FUNDAMENTAL',
+	'INDEX',
+	'INDICATOR',
+	'MUTUAL_FUND',
+	'OPTION',
+	'UNKNOWN',
+])
+export type InstrumentAssetTypeEnum = z.infer<typeof InstrumentAssetTypeEnum>
+
 // Market-data specific InstrumentInfo Schema that extends the base schema
 const InstrumentInfoSchema = BaseInstrumentSchema.pick({
 	symbol: true,
