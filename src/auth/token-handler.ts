@@ -16,6 +16,7 @@ import {
 	type AuthClientOptions,
 	type ITokenLifecycleManager,
 	type RefreshOptions,
+	type FullAuthClient,
 } from './types'
 import { buildAuthorizeUrlWithContext } from './urls'
 
@@ -35,7 +36,7 @@ export function mapTokenResponse(response: SchwabTokenResponse): TokenSet {
  * managing OAuth tokens with Schwab API. This class implements ITokenLifecycleManager
  * to provide a consistent interface across the library.
  */
-export class BaseTokenHandler implements ITokenLifecycleManager {
+export class BaseTokenHandler implements ITokenLifecycleManager, Partial<FullAuthClient> {
 	protected clientId: string
 	protected clientSecret: string
 	protected redirectUri: string

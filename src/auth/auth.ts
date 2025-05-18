@@ -106,7 +106,7 @@ export type { FullAuthClient }
  */
 export function createSchwabAuth(
 	config: AuthFactoryConfig,
-): ITokenLifecycleManager {
+): FullAuthClient {
 	const strategy = config.strategy.toLowerCase()
 
 	switch (strategy) {
@@ -116,21 +116,36 @@ export function createSchwabAuth(
 			}
 
 			const oauthManager = new OpenIdTokenManager(config.oauthConfig)
-			return buildTokenManager(oauthManager) as ITokenLifecycleManager
+			return oauthManager as unknown as FullAuthClient
 
 		case AuthStrategy.STATIC.toLowerCase():
 			if (!config.accessToken) {
 				throw new Error('accessToken is required for STATIC strategy')
 			}
 
-			return buildTokenManager(config.accessToken) as ITokenLifecycleManager
+			// Static tokens can't exchange code or refresh
+			const staticManager = buildTokenManager(config.accessToken)
+			// Cast to FullAuthClient but with limited functionality
+			return {
+				...staticManager,
+				getAuthorizationUrl: () => {
+					throw new Error('getAuthorizationUrl is not supported with static tokens')
+				},
+				exchangeCode: () => {
+					throw new Error('exchangeCode is not supported with static tokens')
+				},
+				refresh: () => {
+					throw new Error('refresh is not supported with static tokens')
+				}
+			} as FullAuthClient
 
 		case AuthStrategy.CUSTOM.toLowerCase():
 			if (!config.tokenManager) {
 				throw new Error('tokenManager is required for CUSTOM strategy')
 			}
 
-			return buildTokenManager(config.tokenManager) as ITokenLifecycleManager
+			// Cast to FullAuthClient but let the caller handle missing methods
+			return buildTokenManager(config.tokenManager) as unknown as FullAuthClient
 
 		default:
 			throw new Error(`Unknown authentication strategy: ${config.strategy}`)

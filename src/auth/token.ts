@@ -43,6 +43,26 @@ function tokenLogWithContext(
 }
 
 /**
+ * Specially sanitize a code for Schwab's OAuth requirements
+ * This handles any encoding issues that might come up with special characters
+ */
+function sanitizeAuthCode(code: string): string {
+	// First trim any whitespace
+	const trimmedCode = code.trim();
+	
+	// Schwab's auth code contains special characters like "." and "@"
+	// If the code was already URL decoded, it may need to be handled differently
+	
+	// Handle the @ character at the end if present (base64 padding character)
+	// This should be already URL-encoded as %40 in most cases
+	if (trimmedCode.endsWith('@')) {
+		return trimmedCode.slice(0, -1) + '%40';
+	}
+	
+	return trimmedCode;
+}
+
+/**
  * Exchange an authorization code for an access token using the provided context
  */
 export async function exchangeCodeForTokenWithContext(
@@ -53,8 +73,9 @@ export async function exchangeCodeForTokenWithContext(
 	const fetchFn = context.fetchFn
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
-	// Ensure code is trimmed and properly encoded
-	const authCode = opts.code.trim()
+	// Ensure code is properly formatted for Schwab API requirements
+	const authCode = sanitizeAuthCode(opts.code);
+	
 	tokenLogWithContext(
 		context,
 		'info',
@@ -79,7 +100,7 @@ export async function exchangeCodeForTokenWithContext(
 	tokenLogWithContext(
 		context,
 		'info',
-		`Token exchange details: redirect_uri=${opts.redirectUri}`,
+		`Token exchange details: redirect_uri=${opts.redirectUri}, body=${body.toString()}`,
 	)
 
 	try {
@@ -90,26 +111,48 @@ export async function exchangeCodeForTokenWithContext(
 			config.timeout as number,
 		)
 
+		// Allow for customization of fetch options through config
+		const requestInit: RequestInit = {
+			method: 'POST',
+			headers: {
+				Authorization: authHeader,
+				'Content-Type': MEDIA_TYPES.FORM,
+				'Accept': 'application/json',
+			},
+			body: body,
+			signal: controller.signal,
+		};
+
+		// Debug log the actual request details
+		tokenLogWithContext(
+			context, 
+			'info', 
+			`Token exchange request headers:`, 
+			{
+				Authorization: `Basic ***`, // Don't log the actual credentials
+				'Content-Type': MEDIA_TYPES.FORM,
+				'Accept': 'application/json',
+			}
+		);
+
 		const response = await fetchFn(
-			new Request(tokenEndpoint, {
-				method: 'POST',
-				headers: {
-					Authorization: authHeader,
-					'Content-Type': MEDIA_TYPES.FORM,
-				},
-				body: body,
-				signal: controller.signal,
-			}),
+			new Request(tokenEndpoint, requestInit),
 		)
 
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
 		// Log response status and headers for debugging
+		const responseHeaders: Record<string, string> = {};
+		response.headers.forEach((value, key) => {
+			responseHeaders[key] = value;
+		});
+
 		tokenLogWithContext(
 			context, 
 			'info', 
 			`Token exchange response status: ${response.status}`,
+			{ headers: responseHeaders }
 		)
 
 		let data;
@@ -140,11 +183,26 @@ export async function exchangeCodeForTokenWithContext(
 
 		if (!response.ok) {
 			tokenLogWithContext(context, 'error', 'Token exchange failed:', data)
+			
+			// Check for specific Schwab API error codes
+			if (data && data.error) {
+				if (data.error === 'invalid_grant') {
+					// This typically means the authorization code is invalid or expired
+					tokenLogWithContext(context, 'error', 'Invalid or expired authorization code')
+				} else if (data.error === 'invalid_client') {
+					// This typically means client credentials are incorrect
+					tokenLogWithContext(context, 'error', 'Invalid client credentials (client_id or client_secret)')
+				} else if (data.error === 'invalid_request') {
+					// This could mean missing parameters or invalid redirect_uri
+					tokenLogWithContext(context, 'error', 'Invalid request - check redirect_uri and required parameters')
+				}
+			}
+			
 			// Use createSchwabApiError for consistent error creation
 			throw createSchwabApiError(
 				response.status || 400,
 				data,
-				`Token exchange failed: ${data.error || response.statusText}`,
+				`Token exchange failed: ${data.error || response.statusText} ${data.error_description ? `- ${data.error_description}` : ''}`,
 			)
 		}
 
@@ -181,7 +239,10 @@ export async function refreshTokenWithContext(
 	tokenLogWithContext(context, 'info', `Refreshing token at: ${tokenEndpoint}`)
 
 	// Debug log payload for troubleshooting
-	tokenLogWithContext(context, 'info', 'Token refresh request details:')
+	tokenLogWithContext(context, 'info', 'Token refresh request details:', {
+		tokenEndpoint,
+		refreshTokenLength: opts.refreshToken.length,
+	})
 
 	try {
 		// Add timeout support
@@ -197,6 +258,7 @@ export async function refreshTokenWithContext(
 				headers: {
 					Authorization: authHeader,
 					'Content-Type': MEDIA_TYPES.FORM,
+					'Accept': 'application/json',
 				},
 				body: body,
 				signal: controller.signal,
@@ -205,6 +267,19 @@ export async function refreshTokenWithContext(
 
 		// Clear the timeout
 		clearTimeout(timeoutId)
+
+		// Log response details
+		const responseHeaders: Record<string, string> = {};
+		response.headers.forEach((value, key) => {
+			responseHeaders[key] = value;
+		});
+
+		tokenLogWithContext(
+			context, 
+			'info', 
+			`Token refresh response status: ${response.status}`,
+			{ headers: responseHeaders }
+		)
 
 		let data;
 		try {
@@ -247,6 +322,12 @@ export async function refreshTokenWithContext(
 					401,
 					data,
 					`Token refresh failed: The refresh token format is not supported - ${data.error_description || ''}`,
+				)
+			} else if (data.error === 'invalid_grant') {
+				throw createSchwabApiError(
+					401,
+					data,
+					`Token refresh failed: Invalid or expired refresh token. A new authentication flow is required.`,
 				)
 			} else {
 				// Use createSchwabApiError for consistent error creation

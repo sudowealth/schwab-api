@@ -6,13 +6,14 @@ import {
 	type TokenData,
 	type TokenSet,
 	type RefreshOptions,
+	type FullAuthClient,
 } from './types'
 
 export interface OpenIdManagerOptions extends AuthClientOptions {
 	issuerBaseUrl?: string
 }
 
-export class OpenIdTokenManager implements ITokenLifecycleManager {
+export class OpenIdTokenManager implements ITokenLifecycleManager, Partial<FullAuthClient> {
 	private config: oidc.Configuration
 	private tokenSet?: oidc.TokenEndpointResponse &
 		oidc.TokenEndpointResponseHelpers
