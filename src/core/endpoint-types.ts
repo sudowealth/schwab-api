@@ -38,22 +38,13 @@ export type EndpointFunction<T extends EndpointMetadata> = (
  * Determines the arguments for an endpoint function based on the metadata
  */
 type EndpointFunctionArgs<T extends EndpointMetadata> =
-	HasRequiredParams<T> extends true
-		? [
-				// Access token is always required
-				accessToken: string,
-				options: BuildEndpointOptions<T>,
-			]
-		: HasOptionalParams<T> extends true
-			? [
-					// Access token is always required, options are optional
-					accessToken: string,
-					options?: BuildEndpointOptions<T>,
-				]
-			: [
-					// Just the access token if no other parameters are needed
-					accessToken: string,
-				]
+        HasRequiredParams<T> extends true
+                ? [
+                                options: BuildEndpointOptions<T>,
+                        ]
+                : HasOptionalParams<T> extends true
+                        ? [options?: BuildEndpointOptions<T>]
+                        : []
 
 /**
  * Builds the options parameter type based on what's available in the metadata
