@@ -210,22 +210,28 @@ export function createApiClient(
 
 	let authManager: ITokenLifecycleManager
 	if (typeof options.auth === 'string') {
-		authManager = authNs.createSchwabAuth({
+		const auth = authNs.createSchwabAuth({
 			strategy: authNs.AuthStrategy.STATIC,
 			accessToken: options.auth,
 		})
+		// Cast to ensure type compatibility (all FullAuthClient implements ITokenLifecycleManager properties)
+		authManager = auth as unknown as ITokenLifecycleManager
 	} else if (options.auth && 'strategy' in options.auth) {
-		authManager = authNs.createSchwabAuth(
+		const auth = authNs.createSchwabAuth(
 			options.auth as authNs.AuthFactoryConfig,
 		)
+		// Cast to ensure type compatibility
+		authManager = auth as unknown as ITokenLifecycleManager
 	} else if (options.auth) {
 		authManager = options.auth as ITokenLifecycleManager
 	} else {
 		// Default to a simple static token manager if no auth provided
-		authManager = authNs.createSchwabAuth({
+		const auth = authNs.createSchwabAuth({
 			strategy: authNs.AuthStrategy.STATIC,
 			accessToken: '',
 		})
+		// Cast to ensure type compatibility
+		authManager = auth as unknown as ITokenLifecycleManager
 		console.warn(
 			'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
 		)

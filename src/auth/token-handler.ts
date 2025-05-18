@@ -14,7 +14,6 @@ import {
 	type TokenSet,
 	type TokenData,
 	type AuthClientOptions,
-	type ITokenLifecycleManager,
 	type RefreshOptions,
 	type FullAuthClient,
 } from './types'
@@ -36,7 +35,7 @@ export function mapTokenResponse(response: SchwabTokenResponse): TokenSet {
  * managing OAuth tokens with Schwab API. This class implements ITokenLifecycleManager
  * to provide a consistent interface across the library.
  */
-export class BaseTokenHandler implements ITokenLifecycleManager, Partial<FullAuthClient> {
+export class BaseTokenHandler implements FullAuthClient {
 	protected clientId: string
 	protected clientSecret: string
 	protected redirectUri: string
@@ -363,5 +362,19 @@ export class BaseTokenHandler implements ITokenLifecycleManager, Partial<FullAut
 			refreshToken: tokenSet.refreshToken,
 			expiresAt: tokenSet.expiresAt,
 		}
+	}
+
+	/**
+	 * Refresh the tokens using a specific refresh token
+	 * Implementation of FullAuthClient interface
+	 */
+	async refresh(
+		refreshToken: string,
+		options?: { force?: boolean },
+	): Promise<TokenSet> {
+		return this.refreshTokens({
+			refreshToken,
+			force: options?.force,
+		})
 	}
 }

@@ -161,7 +161,7 @@ export interface AuthClientOptions {
  * Interface for a full auth client with both authorization URL generation
  * and token management capabilities.
  */
-export interface FullAuthClient {
+export interface FullAuthClient extends ITokenLifecycleManager {
 	/**
 	 * Exchange an authorization code for tokens
 	 */

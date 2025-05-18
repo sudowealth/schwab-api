@@ -2,7 +2,6 @@ import * as oidc from 'openid-client'
 import { API_URLS, API_VERSIONS } from '../constants'
 import {
 	type AuthClientOptions,
-	type ITokenLifecycleManager,
 	type TokenData,
 	type TokenSet,
 	type RefreshOptions,
@@ -13,7 +12,7 @@ export interface OpenIdManagerOptions extends AuthClientOptions {
 	issuerBaseUrl?: string
 }
 
-export class OpenIdTokenManager implements ITokenLifecycleManager, Partial<FullAuthClient> {
+export class OpenIdTokenManager implements FullAuthClient {
 	private config: oidc.Configuration
 	private tokenSet?: oidc.TokenEndpointResponse &
 		oidc.TokenEndpointResponseHelpers
@@ -132,5 +131,32 @@ export class OpenIdTokenManager implements ITokenLifecycleManager, Partial<FullA
 			return data
 		}
 		return this.mapTokenSet(ts)
+	}
+
+	/**
+	 * Refresh tokens using a specific refresh token
+	 * Implementation of FullAuthClient interface
+	 */
+	async refresh(refreshToken: string): Promise<TokenSet> {
+		// Store the current token set to restore if needed
+		const originalTokenSet = this.tokenSet
+
+		try {
+			if (!refreshToken) {
+				throw new Error('Refresh token is required')
+			}
+
+			// Use the OIDC client to refresh the token
+			this.tokenSet = await oidc.refreshTokenGrant(this.config, refreshToken)
+
+			const data = this.mapTokenSet(this.tokenSet)
+			await this.saveFn?.(data)
+			this.refreshCallbacks.forEach((cb) => cb(data))
+			return data
+		} catch (error) {
+			// Restore the original token set if refresh fails
+			this.tokenSet = originalTokenSet
+			throw error
+		}
 	}
 }

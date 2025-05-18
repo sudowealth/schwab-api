@@ -48,18 +48,18 @@ function tokenLogWithContext(
  */
 function sanitizeAuthCode(code: string): string {
 	// First trim any whitespace
-	const trimmedCode = code.trim();
-	
+	const trimmedCode = code.trim()
+
 	// Schwab's auth code contains special characters like "." and "@"
 	// If the code was already URL decoded, it may need to be handled differently
-	
+
 	// Handle the @ character at the end if present (base64 padding character)
 	// This should be already URL-encoded as %40 in most cases
 	if (trimmedCode.endsWith('@')) {
-		return trimmedCode.slice(0, -1) + '%40';
+		return trimmedCode.slice(0, -1) + '%40'
 	}
-	
-	return trimmedCode;
+
+	return trimmedCode
 }
 
 /**
@@ -74,8 +74,8 @@ export async function exchangeCodeForTokenWithContext(
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	// Ensure code is properly formatted for Schwab API requirements
-	const authCode = sanitizeAuthCode(opts.code);
-	
+	const authCode = sanitizeAuthCode(opts.code)
+
 	tokenLogWithContext(
 		context,
 		'info',
@@ -95,7 +95,7 @@ export async function exchangeCodeForTokenWithContext(
 		'info',
 		`Exchanging code for token at: ${tokenEndpoint}`,
 	)
-	
+
 	// Debug log to help diagnose issues
 	tokenLogWithContext(
 		context,
@@ -117,87 +117,102 @@ export async function exchangeCodeForTokenWithContext(
 			headers: {
 				Authorization: authHeader,
 				'Content-Type': MEDIA_TYPES.FORM,
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			body: body,
 			signal: controller.signal,
-		};
+		}
 
 		// Debug log the actual request details
-		tokenLogWithContext(
-			context, 
-			'info', 
-			`Token exchange request headers:`, 
-			{
-				Authorization: `Basic ***`, // Don't log the actual credentials
-				'Content-Type': MEDIA_TYPES.FORM,
-				'Accept': 'application/json',
-			}
-		);
+		tokenLogWithContext(context, 'info', `Token exchange request headers:`, {
+			Authorization: `Basic ***`, // Don't log the actual credentials
+			'Content-Type': MEDIA_TYPES.FORM,
+			Accept: 'application/json',
+		})
 
-		const response = await fetchFn(
-			new Request(tokenEndpoint, requestInit),
-		)
+		const response = await fetchFn(new Request(tokenEndpoint, requestInit))
 
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
 		// Log response status and headers for debugging
-		const responseHeaders: Record<string, string> = {};
+		const responseHeaders: Record<string, string> = {}
 		response.headers.forEach((value, key) => {
-			responseHeaders[key] = value;
-		});
+			responseHeaders[key] = value
+		})
 
 		tokenLogWithContext(
-			context, 
-			'info', 
+			context,
+			'info',
 			`Token exchange response status: ${response.status}`,
-			{ headers: responseHeaders }
+			{ headers: responseHeaders },
 		)
 
-		let data;
+		let data
 		try {
 			data = await response.json()
 		} catch (parseError) {
-			tokenLogWithContext(context, 'error', 'Failed to parse token response:', parseError)
-			
+			tokenLogWithContext(
+				context,
+				'error',
+				'Failed to parse token response:',
+				parseError,
+			)
+
 			// Try to get text content for better debugging
 			try {
 				const textContent = await response.text()
-				tokenLogWithContext(context, 'error', 'Raw response content:', { 
+				tokenLogWithContext(context, 'error', 'Raw response content:', {
 					text: textContent.slice(0, 200),
 					status: response.status,
 					statusText: response.statusText,
 				})
 			} catch (textError) {
 				// Unable to get text content
-				tokenLogWithContext(context, 'error', 'Unable to get text content:', textError)
+				tokenLogWithContext(
+					context,
+					'error',
+					'Unable to get text content:',
+					textError,
+				)
 			}
-			
+
 			throw createSchwabApiError(
 				response.status || 400,
 				{ parseError: 'Invalid JSON response' },
-				`Token exchange failed: Invalid JSON response`
+				`Token exchange failed: Invalid JSON response`,
 			)
 		}
 
 		if (!response.ok) {
 			tokenLogWithContext(context, 'error', 'Token exchange failed:', data)
-			
+
 			// Check for specific Schwab API error codes
 			if (data && data.error) {
 				if (data.error === 'invalid_grant') {
 					// This typically means the authorization code is invalid or expired
-					tokenLogWithContext(context, 'error', 'Invalid or expired authorization code')
+					tokenLogWithContext(
+						context,
+						'error',
+						'Invalid or expired authorization code',
+					)
 				} else if (data.error === 'invalid_client') {
 					// This typically means client credentials are incorrect
-					tokenLogWithContext(context, 'error', 'Invalid client credentials (client_id or client_secret)')
+					tokenLogWithContext(
+						context,
+						'error',
+						'Invalid client credentials (client_id or client_secret)',
+					)
 				} else if (data.error === 'invalid_request') {
 					// This could mean missing parameters or invalid redirect_uri
-					tokenLogWithContext(context, 'error', 'Invalid request - check redirect_uri and required parameters')
+					tokenLogWithContext(
+						context,
+						'error',
+						'Invalid request - check redirect_uri and required parameters',
+					)
 				}
 			}
-			
+
 			// Use createSchwabApiError for consistent error creation
 			throw createSchwabApiError(
 				response.status || 400,
@@ -258,7 +273,7 @@ export async function refreshTokenWithContext(
 				headers: {
 					Authorization: authHeader,
 					'Content-Type': MEDIA_TYPES.FORM,
-					'Accept': 'application/json',
+					Accept: 'application/json',
 				},
 				body: body,
 				signal: controller.signal,
@@ -269,41 +284,51 @@ export async function refreshTokenWithContext(
 		clearTimeout(timeoutId)
 
 		// Log response details
-		const responseHeaders: Record<string, string> = {};
+		const responseHeaders: Record<string, string> = {}
 		response.headers.forEach((value, key) => {
-			responseHeaders[key] = value;
-		});
+			responseHeaders[key] = value
+		})
 
 		tokenLogWithContext(
-			context, 
-			'info', 
+			context,
+			'info',
 			`Token refresh response status: ${response.status}`,
-			{ headers: responseHeaders }
+			{ headers: responseHeaders },
 		)
 
-		let data;
+		let data
 		try {
 			data = await response.json()
 		} catch (parseError) {
-			tokenLogWithContext(context, 'error', 'Failed to parse token refresh response:', parseError)
-			
+			tokenLogWithContext(
+				context,
+				'error',
+				'Failed to parse token refresh response:',
+				parseError,
+			)
+
 			// Try to get text content for better debugging
 			try {
 				const textContent = await response.text()
-				tokenLogWithContext(context, 'error', 'Raw response content:', { 
+				tokenLogWithContext(context, 'error', 'Raw response content:', {
 					text: textContent.slice(0, 200),
-					status: response.status, 
+					status: response.status,
 					statusText: response.statusText,
 				})
 			} catch (textError) {
 				// Unable to get text content
-				tokenLogWithContext(context, 'error', 'Unable to get text content:', textError)
+				tokenLogWithContext(
+					context,
+					'error',
+					'Unable to get text content:',
+					textError,
+				)
 			}
-			
+
 			throw createSchwabApiError(
 				response.status || 400,
 				{ parseError: 'Invalid JSON response' },
-				`Token refresh failed: Invalid JSON response`
+				`Token refresh failed: Invalid JSON response`,
 			)
 		}
 

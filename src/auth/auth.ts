@@ -104,9 +104,7 @@ export type { FullAuthClient }
  * });
  * ```
  */
-export function createSchwabAuth(
-	config: AuthFactoryConfig,
-): FullAuthClient {
+export function createSchwabAuth(config: AuthFactoryConfig): FullAuthClient {
 	const strategy = config.strategy.toLowerCase()
 
 	switch (strategy) {
@@ -129,14 +127,16 @@ export function createSchwabAuth(
 			return {
 				...staticManager,
 				getAuthorizationUrl: () => {
-					throw new Error('getAuthorizationUrl is not supported with static tokens')
+					throw new Error(
+						'getAuthorizationUrl is not supported with static tokens',
+					)
 				},
 				exchangeCode: () => {
 					throw new Error('exchangeCode is not supported with static tokens')
 				},
 				refresh: () => {
 					throw new Error('refresh is not supported with static tokens')
-				}
+				},
 			} as FullAuthClient
 
 		case AuthStrategy.CUSTOM.toLowerCase():
