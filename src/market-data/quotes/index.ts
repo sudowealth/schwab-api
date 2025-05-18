@@ -1,6 +1,22 @@
 export * from './schema'
 export * from './endpoints'
 
+// Explicitly declare the function type so TypeScript recognizes it
+import { type GetQuotesResponseBodySchema, type GetQuoteBySymbolIdResponseBodySchema } from './schema'
+
+export type GetQuotesFunction = (params: { 
+  symbols: string;
+  fields?: string;
+  indicative?: boolean;
+}) => Promise<GetQuotesResponseBodySchema>
+export declare const getQuotes: GetQuotesFunction
+
+export type GetQuoteBySymbolIdFunction = (params: { 
+  symbol_id: string;
+  fields?: string;
+}) => Promise<GetQuoteBySymbolIdResponseBodySchema>
+export declare const getQuoteBySymbolId: GetQuoteBySymbolIdFunction
+
 /**
  * Extracts and aggregates quote errors from a GetQuotesResponseBody
  *

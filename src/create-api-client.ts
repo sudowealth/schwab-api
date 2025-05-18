@@ -76,6 +76,8 @@ export interface CreateApiClientOptions {
 export interface SchwabApiClient {
 	/**
 	 * Market Data API (quotes, price history, instruments, etc.)
+	 * These namespaces contain both the metadata objects (with 'Meta' suffix) and 
+	 * the actual endpoint functions (without 'Meta' suffix) that are created during client initialization.
 	 */
 	marketData: {
 		instruments: typeof marketDataNs.instruments
@@ -89,6 +91,8 @@ export interface SchwabApiClient {
 
 	/**
 	 * Trader API (accounts, orders, transactions, etc.)
+	 * These namespaces contain both the metadata objects (with 'Meta' suffix) and
+	 * the actual endpoint functions (without 'Meta' suffix) that are created during client initialization.
 	 */
 	trader: {
 		accounts: typeof traderNs.accounts
@@ -147,6 +151,9 @@ export interface SchwabApiClient {
 
 	/**
 	 * Unified discovery object
+	 * Contains all APIs, schemas, auth utilities, and error types in a single object.
+	 * The marketData and trader namespaces contain both metadata objects and
+	 * callable endpoint functions created during client initialization.
 	 */
 	all: {
 		marketData: {
