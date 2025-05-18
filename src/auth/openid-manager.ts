@@ -70,31 +70,52 @@ export class OpenIdTokenManager implements FullAuthClient {
 				| string[]
 				| undefined
 			const redirectUri = (redirectUris ? redirectUris[0] : '') as string
-			
+
 			// Ensure code is properly formatted
 			code = code.trim()
+
+			// Schwab OAuth codes have special format (C0.xxx.xxx@)
+			// Special handling for base64 encoding requirements
+			// The error indicates the code length must be a multiple of 4 for proper base64 encoding
+			// Make sure we don't alter the code if it's not ending with @
 			if (code.endsWith('@')) {
-				// Handle the @ character at the end which might cause encoding issues
-				code = code.slice(0, -1) + '%40'
+				// For codes ending with @, special padding is needed to make the length a multiple of 4
+				// Adding '=' characters for proper base64 padding
+				while (code.length % 4 !== 0) {
+					code += '='
+				}
 			}
-			
+
 			// Get token endpoint and credentials
 			const tokenEndpoint = this.config.serverMetadata().token_endpoint!
 			const clientId = this.config.clientMetadata().client_id
 			const clientSecret = this.config.clientMetadata().client_secret as string
 
+			// Log the details for debugging
+			console.info('[INFO] Preparing token exchange request', {
+				codeLength: code.length,
+				codeEndsWithAt: code.endsWith('@'),
+				codeFinalChar: code.charAt(code.length - 1),
+				redirectUri,
+			})
+
 			// Make direct token request (compatible with Cloudflare Workers environment)
-			const tokenData = await this.makeTokenRequest(tokenEndpoint, {
-				grant_type: 'authorization_code',
-				code,
-				redirect_uri: redirectUri
-			}, clientId, clientSecret);
-			
-			const data = this.mapTokenSet(tokenData);
-			await this.saveFn?.(data);
-			return data;
+			const tokenData = await this.makeTokenRequest(
+				tokenEndpoint,
+				{
+					grant_type: 'authorization_code',
+					code,
+					redirect_uri: redirectUri,
+				},
+				clientId,
+				clientSecret,
+			)
+
+			const data = this.mapTokenSet(tokenData)
+			await this.saveFn?.(data)
+			return data
 		} catch (error) {
-			console.error('[ERROR] Failed exchanging code for token:', error);
+			console.error('[ERROR] Failed exchanging code for token:', error)
 
 			// Check for WWW-Authenticate challenge error and add more diagnostics
 			if (error && (error as any).name === 'WWWAuthenticateChallengeError') {
@@ -103,10 +124,10 @@ export class OpenIdTokenManager implements FullAuthClient {
 					status: (error as any).status,
 					challengeRealm:
 						(error as any).cause?.[0]?.parameters?.realm || 'unknown',
-				});
+				})
 			}
 
-			throw error;
+			throw error
 		}
 	}
 
@@ -115,56 +136,87 @@ export class OpenIdTokenManager implements FullAuthClient {
 	 * This approach works across all environments including Cloudflare Workers
 	 */
 	private async makeTokenRequest(
-		tokenEndpoint: string, 
+		tokenEndpoint: string,
 		params: Record<string, string>,
 		clientId: string,
-		clientSecret: string
+		clientSecret: string,
 	): Promise<oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers> {
 		// Create URLSearchParams from the parameters
-		const urlParams = new URLSearchParams(params);
-		
+		const urlParams = new URLSearchParams(params)
+
 		// Create proper Basic Auth header value that works in all environments
-		let authValue: string;
+		let authValue: string
 		try {
 			// For browser/Cloudflare environment
-			authValue = btoa(`${clientId}:${clientSecret}`);
+			authValue = btoa(`${clientId}:${clientSecret}`)
 		} catch (e) {
 			// For Node.js environment
-			authValue = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+			authValue = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+			console.error('Buffer.from is not available in this environment', e)
 		}
-		
+
 		// Make the direct fetch request
 		const response = await fetch(tokenEndpoint, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
-				'Accept': 'application/json',
-				'Authorization': `Basic ${authValue}`
+				Accept: 'application/json',
+				Authorization: `Basic ${authValue}`,
 			},
-			body: urlParams
-		});
-		
+			body: urlParams,
+		})
+
 		if (!response.ok) {
-			const errorText = await response.text();
+			const errorText = await response.text()
+
+			// Extract more detailed error information if possible
+			let errorDetails = {}
+			try {
+				// Try to parse error as JSON
+				errorDetails = JSON.parse(errorText)
+			} catch (e) {
+				// Not valid JSON, use as-is
+				errorDetails = { error: errorText }
+				console.error('Error parsing error text', e)
+			}
+
+			// Log detailed error information
 			console.error('[ERROR] Token request failed', {
 				status: response.status,
 				statusText: response.statusText,
-				error: errorText
-			});
-			throw new Error(`Token request failed: ${response.status} ${response.statusText} - ${errorText}`);
+				error: errorText,
+				requestUrl: tokenEndpoint,
+				requestMethod: 'POST',
+				grantType: params.grant_type,
+				hasCode: !!params.code,
+				codeLength: params.code ? params.code.length : 0,
+				redirectUri: params.redirect_uri,
+			})
+
+			// Create a more descriptive error
+			const errorObj = new Error(
+				`Token request failed: ${response.status} ${response.statusText} - ${errorText}`,
+			)
+			;(errorObj as any).status = response.status
+			;(errorObj as any).statusText = response.statusText
+			;(errorObj as any).responseBody = errorText
+			;(errorObj as any).details = errorDetails
+			throw errorObj
 		}
-		
+
 		// Parse the response
-		const responseData = await response.json();
-		
+		const responseData = await response.json()
+
 		// Create a token response object that satisfies the TokenEndpointResponseHelpers interface
-		return this.createTokenResponse(responseData);
+		return this.createTokenResponse(responseData)
 	}
-	
+
 	/**
 	 * Creates a token response that satisfies the TokenEndpointResponseHelpers interface
 	 */
-	private createTokenResponse(data: TokenResponseData): oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers {
+	private createTokenResponse(
+		data: TokenResponseData,
+	): oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers {
 		return {
 			access_token: data.access_token,
 			refresh_token: data.refresh_token,
@@ -173,8 +225,8 @@ export class OpenIdTokenManager implements FullAuthClient {
 			scope: data.scope,
 			// Helper methods required by TokenEndpointResponseHelpers
 			claims: () => undefined,
-			expiresIn: () => data.expires_in
-		} as oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers;
+			expiresIn: () => data.expires_in,
+		} as oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers
 	}
 
 	private mapTokenSet(ts: oidc.TokenEndpointResponse): TokenSet {
@@ -200,8 +252,8 @@ export class OpenIdTokenManager implements FullAuthClient {
 					access_token: saved.accessToken,
 					refresh_token: saved.refreshToken,
 					expires_in: expiresIn,
-					token_type: 'Bearer'
-				});
+					token_type: 'Bearer',
+				})
 			}
 		}
 		return this.tokenSet
@@ -232,8 +284,8 @@ export class OpenIdTokenManager implements FullAuthClient {
 		}
 		const expiresIn = ts.expires_in
 		if (options?.force || expiresIn === undefined || expiresIn <= 60) {
-			const result = await this.refresh(ts.refresh_token);
-			return result;
+			const result = await this.refresh(ts.refresh_token)
+			return result
 		}
 		return this.mapTokenSet(ts)
 	}
@@ -255,24 +307,29 @@ export class OpenIdTokenManager implements FullAuthClient {
 			const tokenEndpoint = this.config.serverMetadata().token_endpoint!
 			const clientId = this.config.clientMetadata().client_id
 			const clientSecret = this.config.clientMetadata().client_secret as string
-			
+
 			// Make direct token request
-			const tokenData = await this.makeTokenRequest(tokenEndpoint, {
-				grant_type: 'refresh_token',
-				refresh_token: refreshToken
-			}, clientId, clientSecret);
-			
+			const tokenData = await this.makeTokenRequest(
+				tokenEndpoint,
+				{
+					grant_type: 'refresh_token',
+					refresh_token: refreshToken,
+				},
+				clientId,
+				clientSecret,
+			)
+
 			// Store the new token set
-			this.tokenSet = tokenData;
-			
-			const data = this.mapTokenSet(tokenData);
-			await this.saveFn?.(data);
-			this.refreshCallbacks.forEach((cb) => cb(data));
-			return data;
+			this.tokenSet = tokenData
+
+			const data = this.mapTokenSet(tokenData)
+			await this.saveFn?.(data)
+			this.refreshCallbacks.forEach((cb) => cb(data))
+			return data
 		} catch (error) {
 			// Restore the original token set if refresh fails
-			this.tokenSet = originalTokenSet;
-			throw error;
+			this.tokenSet = originalTokenSet
+			throw error
 		}
 	}
 }
