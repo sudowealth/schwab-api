@@ -15,6 +15,7 @@ export * from './token-utils'
 
 // Core token handling components
 export { BaseTokenHandler, mapTokenResponse } from './token-handler'
+export { OpenIdTokenManager } from './openid-manager'
 
 // Token management architecture components
 export * from './token-lifecycle-manager'
