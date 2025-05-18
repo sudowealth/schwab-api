@@ -76,15 +76,27 @@ export interface CreateApiClientOptions {
 export interface SchwabApiClient {
 	/**
 	 * Market Data API (quotes, price history, instruments, etc.)
-	 * Type will be transformed from marketDataNs
 	 */
-	marketData: any // Placeholder type, to be refined
+	marketData: {
+		instruments: typeof marketDataNs.instruments
+		marketHours: typeof marketDataNs.marketHours
+		movers: typeof marketDataNs.movers
+		options: typeof marketDataNs.options
+		priceHistory: typeof marketDataNs.priceHistory
+		quotes: typeof marketDataNs.quotes
+		shared: typeof marketDataNs.shared
+	}
 
 	/**
 	 * Trader API (accounts, orders, transactions, etc.)
-	 * Type will be transformed from traderNs
 	 */
-	trader: any // Placeholder type, to be refined
+	trader: {
+		accounts: typeof traderNs.accounts
+		orders: typeof traderNs.orders
+		transactions: typeof traderNs.transactions
+		userPreference: typeof traderNs.userPreference
+		shared: typeof traderNs.shared
+	}
 
 	/**
 	 * Schemas for API requests and responses
@@ -137,8 +149,22 @@ export interface SchwabApiClient {
 	 * Unified discovery object
 	 */
 	all: {
-		marketData: any // Placeholder type
-		trader: any // Placeholder type
+		marketData: {
+			instruments: typeof marketDataNs.instruments
+			marketHours: typeof marketDataNs.marketHours
+			movers: typeof marketDataNs.movers
+			options: typeof marketDataNs.options
+			priceHistory: typeof marketDataNs.priceHistory
+			quotes: typeof marketDataNs.quotes
+			shared: typeof marketDataNs.shared
+		}
+		trader: {
+			accounts: typeof traderNs.accounts
+			orders: typeof traderNs.orders
+			transactions: typeof traderNs.transactions
+			userPreference: typeof traderNs.userPreference
+			shared: typeof traderNs.shared
+		}
 		schemas: typeof schemasNs
 		auth: typeof authNs
 		errors: typeof errorsNs
