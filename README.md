@@ -155,7 +155,6 @@ import {
 	createSchwabAuth,
 	AuthStrategy,
 } from '@sudowealth/schwab-api'
-
 ;(async () => {
 	const auth = createSchwabAuth({
 		strategy: AuthStrategy.STATIC,

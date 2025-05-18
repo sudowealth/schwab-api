@@ -10,7 +10,6 @@ export interface ExchangeCodeForTokenOptions {
 	code: string
 	redirectUri: string
 	tokenUrl?: string // default from getTokenUrlWithContext()
-	fetch?: typeof fetch // Optional fetch override
 }
 
 export interface RefreshTokenOptions {
@@ -18,7 +17,6 @@ export interface RefreshTokenOptions {
 	clientSecret: string
 	refreshToken: string
 	tokenUrl?: string // default from getTokenUrlWithContext()
-	fetch?: typeof fetch // Optional fetch override
 }
 
 /**
@@ -52,7 +50,7 @@ export async function exchangeCodeForTokenWithContext(
 	opts: ExchangeCodeForTokenOptions,
 ): Promise<SchwabTokenResponse> {
 	const { config } = context
-	const fetchFn = opts.fetch || context.fetchFn
+	const fetchFn = context.fetchFn
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	const body = new URLSearchParams()
@@ -122,7 +120,7 @@ export async function refreshTokenWithContext(
 	opts: RefreshTokenOptions,
 ): Promise<SchwabTokenResponse> {
 	const { config } = context
-	const fetchFn = opts.fetch || context.fetchFn
+	const fetchFn = context.fetchFn
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	const body = new URLSearchParams()

@@ -94,7 +94,6 @@ export class BaseTokenHandler implements ITokenLifecycleManager {
 				clientSecret: this.clientSecret,
 				code,
 				redirectUri: this.redirectUri,
-				fetch: this.fetchFn,
 			})
 
 			const tokenSet = mapTokenResponse(response)
@@ -204,7 +203,6 @@ export class BaseTokenHandler implements ITokenLifecycleManager {
 				clientId: this.clientId,
 				clientSecret: this.clientSecret,
 				refreshToken: refreshTokenToUse,
-				fetch: this.fetchFn,
 			})
 
 			// Use the new refresh token if provided, otherwise keep the old one
