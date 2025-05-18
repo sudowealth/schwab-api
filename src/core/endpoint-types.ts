@@ -1,6 +1,47 @@
 /**
  * Type utilities for generating endpoint function types from metadata
  */
+// Explicit type imports for endpoint metadata and utility functions
+import {
+	type getInstrumentsMeta,
+	type getInstrumentByCusipMeta,
+} from '../market-data/instruments/endpoints'
+import {
+	type getMarketHoursMeta,
+	type getMarketHoursByMarketIdMeta,
+} from '../market-data/marketHours/endpoints'
+import { type getMoversMeta } from '../market-data/movers/endpoints'
+import {
+	type getOptionChainMeta,
+	type getOptionExpirationChainMeta,
+} from '../market-data/options/endpoints'
+import { type getPriceHistoryMeta } from '../market-data/priceHistory/endpoints'
+import {
+	type extractQuoteErrors,
+	type hasSymbolError,
+} from '../market-data/quotes'
+import {
+	type getQuotesMeta,
+	type getQuoteBySymbolIdMeta,
+} from '../market-data/quotes/endpoints'
+import {
+	type getAccountsMeta,
+	type getAccountByNumberMeta,
+	type getAccountNumbersMeta,
+} from '../trader/accounts/endpoints'
+import {
+	type cancelOrderMeta,
+	type getOrderByOrderIdMeta,
+	type getOrdersByAccountMeta,
+	type getOrdersMeta,
+	type placeOrderForAccountMeta,
+	type replaceOrderMeta,
+} from '../trader/orders/endpoints'
+import {
+	type getTransactionsMeta,
+	type getTransactionByIdMeta,
+} from '../trader/transactions/endpoints'
+import { type getUserPreferenceMeta } from '../trader/user-preference/endpoints'
 import { type EndpointMetadata, type SchwabFetchRequestOptions } from './http'
 
 /**
@@ -124,7 +165,7 @@ type HasRequiredPathParams<T extends EndpointMetadata> =
  * Without direct access to the Zod schema validation, we can't be certain here
  * so we default to assuming query params are optional
  */
-type HasRequiredQueryParams<ignored extends EndpointMetadata> = false
+type HasRequiredQueryParams<T extends EndpointMetadata> = false
 
 /**
  * Checks if the endpoint has a required body
@@ -152,14 +193,14 @@ export type EndpointPair<M extends EndpointMetadata> = {
  */
 export interface ProcessedAccounts {
 	// Metadata objects
-	getAccountsMeta: any
-	getAccountByNumberMeta: any
-	getAccountNumbersMeta: any
+	getAccountsMeta: typeof getAccountsMeta
+	getAccountByNumberMeta: typeof getAccountByNumberMeta
+	getAccountNumbersMeta: typeof getAccountNumbersMeta
 
 	// Endpoint functions
-	getAccounts: EndpointFunction<any>
-	getAccountByNumber: EndpointFunction<any>
-	getAccountNumbers: EndpointFunction<any>
+	getAccounts: EndpointFunction<typeof getAccountsMeta>
+	getAccountByNumber: EndpointFunction<typeof getAccountByNumberMeta>
+	getAccountNumbers: EndpointFunction<typeof getAccountNumbersMeta>
 }
 
 /**
@@ -167,20 +208,20 @@ export interface ProcessedAccounts {
  */
 export interface ProcessedOrders {
 	// Metadata objects
-	getOrdersMeta: any
-	getOrdersByAccountMeta: any
-	placeOrderForAccountMeta: any
-	getOrderByOrderIdMeta: any
-	cancelOrderMeta: any
-	replaceOrderMeta: any
+	getOrdersMeta: typeof getOrdersMeta
+	getOrdersByAccountMeta: typeof getOrdersByAccountMeta
+	placeOrderForAccountMeta: typeof placeOrderForAccountMeta
+	getOrderByOrderIdMeta: typeof getOrderByOrderIdMeta
+	cancelOrderMeta: typeof cancelOrderMeta
+	replaceOrderMeta: typeof replaceOrderMeta
 
 	// Endpoint functions
-	getOrders: EndpointFunction<any>
-	getOrdersByAccount: EndpointFunction<any>
-	placeOrderForAccount: EndpointFunction<any>
-	getOrderByOrderId: EndpointFunction<any>
-	cancelOrder: EndpointFunction<any>
-	replaceOrder: EndpointFunction<any>
+	getOrders: EndpointFunction<typeof getOrdersMeta>
+	getOrdersByAccount: EndpointFunction<typeof getOrdersByAccountMeta>
+	placeOrderForAccount: EndpointFunction<typeof placeOrderForAccountMeta>
+	getOrderByOrderId: EndpointFunction<typeof getOrderByOrderIdMeta>
+	cancelOrder: EndpointFunction<typeof cancelOrderMeta>
+	replaceOrder: EndpointFunction<typeof replaceOrderMeta>
 }
 
 /**
@@ -188,12 +229,12 @@ export interface ProcessedOrders {
  */
 export interface ProcessedTransactions {
 	// Metadata objects
-	getTransactionsMeta: any
-	getTransactionByIdMeta: any
+	getTransactionsMeta: typeof getTransactionsMeta
+	getTransactionByIdMeta: typeof getTransactionByIdMeta
 
 	// Endpoint functions
-	getTransactions: EndpointFunction<any>
-	getTransactionById: EndpointFunction<any>
+	getTransactions: EndpointFunction<typeof getTransactionsMeta>
+	getTransactionById: EndpointFunction<typeof getTransactionByIdMeta>
 }
 
 /**
@@ -201,10 +242,10 @@ export interface ProcessedTransactions {
  */
 export interface ProcessedUserPreference {
 	// Metadata objects
-	getUserPreferenceMeta: any
+	getUserPreferenceMeta: typeof getUserPreferenceMeta
 
 	// Endpoint functions
-	getUserPreference: EndpointFunction<any>
+	getUserPreference: EndpointFunction<typeof getUserPreferenceMeta>
 }
 
 /**
@@ -212,16 +253,16 @@ export interface ProcessedUserPreference {
  */
 export interface ProcessedQuotes {
 	// Metadata objects
-	getQuotesMeta: any
-	getQuoteBySymbolIdMeta: any
+	getQuotesMeta: typeof getQuotesMeta
+	getQuoteBySymbolIdMeta: typeof getQuoteBySymbolIdMeta
 
 	// Endpoint functions
-	getQuotes: EndpointFunction<any>
-	getQuoteBySymbolId: EndpointFunction<any>
+	getQuotes: EndpointFunction<typeof getQuotesMeta>
+	getQuoteBySymbolId: EndpointFunction<typeof getQuoteBySymbolIdMeta>
 
 	// Utility functions
-	extractQuoteErrors: Function
-	hasSymbolError: Function
+	extractQuoteErrors: typeof extractQuoteErrors
+	hasSymbolError: typeof hasSymbolError
 }
 
 /**
@@ -229,12 +270,12 @@ export interface ProcessedQuotes {
  */
 export interface ProcessedInstruments {
 	// Metadata objects
-	getInstrumentsMeta: any
-	getInstrumentByCusipMeta: any
+	getInstrumentsMeta: typeof getInstrumentsMeta
+	getInstrumentByCusipMeta: typeof getInstrumentByCusipMeta
 
 	// Endpoint functions
-	getInstruments: EndpointFunction<any>
-	getInstrumentByCusip: EndpointFunction<any>
+	getInstruments: EndpointFunction<typeof getInstrumentsMeta>
+	getInstrumentByCusip: EndpointFunction<typeof getInstrumentByCusipMeta>
 }
 
 /**
@@ -242,12 +283,14 @@ export interface ProcessedInstruments {
  */
 export interface ProcessedMarketHours {
 	// Metadata objects
-	getMarketHoursMeta: any
-	getMarketHoursByMarketIdMeta: any
+	getMarketHoursMeta: typeof getMarketHoursMeta
+	getMarketHoursByMarketIdMeta: typeof getMarketHoursByMarketIdMeta
 
 	// Endpoint functions
-	getMarketHours: EndpointFunction<any>
-	getMarketHoursByMarketId: EndpointFunction<any>
+	getMarketHours: EndpointFunction<typeof getMarketHoursMeta>
+	getMarketHoursByMarketId: EndpointFunction<
+		typeof getMarketHoursByMarketIdMeta
+	>
 }
 
 /**
@@ -255,10 +298,10 @@ export interface ProcessedMarketHours {
  */
 export interface ProcessedMovers {
 	// Metadata objects
-	getMoversMeta: any
+	getMoversMeta: typeof getMoversMeta
 
 	// Endpoint functions
-	getMovers: EndpointFunction<any>
+	getMovers: EndpointFunction<typeof getMoversMeta>
 }
 
 /**
@@ -266,12 +309,14 @@ export interface ProcessedMovers {
  */
 export interface ProcessedOptions {
 	// Metadata objects
-	getOptionChainMeta: any
-	getOptionExpirationChainMeta: any
+	getOptionChainMeta: typeof getOptionChainMeta
+	getOptionExpirationChainMeta: typeof getOptionExpirationChainMeta
 
 	// Endpoint functions
-	getOptionChain: EndpointFunction<any>
-	getOptionExpirationChain: EndpointFunction<any>
+	getOptionChain: EndpointFunction<typeof getOptionChainMeta>
+	getOptionExpirationChain: EndpointFunction<
+		typeof getOptionExpirationChainMeta
+	>
 }
 
 /**
@@ -279,10 +324,10 @@ export interface ProcessedOptions {
  */
 export interface ProcessedPriceHistory {
 	// Metadata objects
-	getPriceHistoryMeta: any
+	getPriceHistoryMeta: typeof getPriceHistoryMeta
 
 	// Endpoint functions
-	getPriceHistory: EndpointFunction<any>
+	getPriceHistory: EndpointFunction<typeof getPriceHistoryMeta>
 }
 
 /**
