@@ -90,10 +90,20 @@ export async function exchangeCodeForTokenWithContext(
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
-		const data = await response.json()
+		let data;
+		try {
+			data = await response.json()
+		} catch (parseError) {
+			tokenLogWithContext(context, 'error', 'Failed to parse token response:', parseError)
+			throw createSchwabApiError(
+				response.status || 400,
+				{ parseError: 'Invalid JSON response' },
+				`Token exchange failed: Invalid JSON response`
+			)
+		}
 
 		if (!response.ok) {
-			tokenLogWithContext(context, 'error', 'Token exchange failed:')
+			tokenLogWithContext(context, 'error', 'Token exchange failed:', data)
 			// Use createSchwabApiError for consistent error creation
 			throw createSchwabApiError(
 				response.status || 400,
@@ -105,10 +115,10 @@ export async function exchangeCodeForTokenWithContext(
 		tokenLogWithContext(context, 'info', 'Token exchange successful')
 		return data as SchwabTokenResponse
 	} catch (error) {
-		tokenLogWithContext(context, 'error', 'Error during token exchange:')
+		tokenLogWithContext(context, 'error', 'Error during token exchange:', error)
 
-		// Use the centralized error handler with context
-		handleApiError(error, 'Token exchange failed')
+		// Use the centralized error handler with context and make sure to throw
+		throw handleApiError(error, 'Token exchange failed')
 	}
 }
 
@@ -160,10 +170,20 @@ export async function refreshTokenWithContext(
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
-		const data = await response.json()
+		let data;
+		try {
+			data = await response.json()
+		} catch (parseError) {
+			tokenLogWithContext(context, 'error', 'Failed to parse token refresh response:', parseError)
+			throw createSchwabApiError(
+				response.status || 400,
+				{ parseError: 'Invalid JSON response' },
+				`Token refresh failed: Invalid JSON response`
+			)
+		}
 
 		if (!response.ok) {
-			tokenLogWithContext(context, 'error', 'Token refresh failed:')
+			tokenLogWithContext(context, 'error', 'Token refresh failed:', data)
 
 			// Handle special cases for refresh token errors
 			if (data.error === 'refresh_token_authentication_error') {
@@ -191,9 +211,9 @@ export async function refreshTokenWithContext(
 		tokenLogWithContext(context, 'info', 'Token refresh successful')
 		return data as SchwabTokenResponse
 	} catch (error) {
-		tokenLogWithContext(context, 'error', 'Error during token refresh:')
+		tokenLogWithContext(context, 'error', 'Error during token refresh:', error)
 
-		// Use the centralized error handler with context
-		handleApiError(error, 'Token refresh failed')
+		// Use the centralized error handler with context and make sure to throw
+		throw handleApiError(error, 'Token refresh failed')
 	}
 }
