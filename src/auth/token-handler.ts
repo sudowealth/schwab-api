@@ -58,6 +58,92 @@ export class BaseTokenHandler implements FullAuthClient {
 	}
 
 	/**
+	 * Debug helper to log token status (without exposing actual token values)
+	 * Use this to diagnose token issues.
+	 */
+	async debugTokenStatus(): Promise<{
+		hasAccessToken: boolean
+		accessTokenLength?: number
+		hasRefreshToken: boolean
+		refreshTokenLength?: number
+		expiresAt?: number
+		timeToExpiration?: number
+		isExpired?: boolean
+		isNearingExpiration?: boolean
+	}> {
+		// Try to load tokens if needed
+		if (!this.tokenSet && this.loadTokens) {
+			try {
+				console.log('[debugTokenStatus] Loading tokens from storage')
+				this.tokenSet = await this.loadTokens()
+			} catch (error) {
+				console.error('[debugTokenStatus] Error loading tokens:', error)
+			}
+		}
+
+		const now = Date.now()
+		const result = {
+			hasAccessToken: !!this.tokenSet?.accessToken,
+			accessTokenLength: this.tokenSet?.accessToken?.length,
+			hasRefreshToken: !!this.tokenSet?.refreshToken,
+			refreshTokenLength: this.tokenSet?.refreshToken?.length,
+			expiresAt: this.tokenSet?.expiresAt,
+			timeToExpiration: this.tokenSet?.expiresAt
+				? this.tokenSet.expiresAt - now
+				: undefined,
+			isExpired: this.tokenSet?.expiresAt
+				? this.tokenSet.expiresAt <= now
+				: undefined,
+			isNearingExpiration: this.tokenSet?.expiresAt
+				? this.tokenSet.expiresAt <= now + REFRESH_TOKEN_WARNING_THRESHOLD_MS
+				: undefined,
+		}
+
+		console.log('[debugTokenStatus] Token status:', result)
+		return result
+	}
+
+	/**
+	 * Force a token refresh and log detailed information about the process.
+	 * Use this when experiencing 401 errors to ensure tokens are valid.
+	 */
+	async forceTokenRefresh(): Promise<TokenSet> {
+		console.log('[forceTokenRefresh] Starting forced token refresh')
+
+		await this.debugTokenStatus()
+
+		try {
+			// Ensure we have a refresh token to use
+			if (!this.tokenSet?.refreshToken && this.loadTokens) {
+				console.log('[forceTokenRefresh] Loading tokens from storage')
+				this.tokenSet = await this.loadTokens()
+			}
+
+			if (!this.tokenSet?.refreshToken) {
+				throw new SchwabAuthError(
+					AuthErrorCode.TOKEN_EXPIRED,
+					'No refresh token available for forced refresh. Re-authentication required.',
+				)
+			}
+
+			console.log(
+				`[forceTokenRefresh] Using refresh token (length: ${this.tokenSet.refreshToken.length})`,
+			)
+
+			const result = await this.refreshTokens({
+				refreshToken: this.tokenSet.refreshToken,
+				force: true,
+			})
+
+			console.log('[forceTokenRefresh] Successfully refreshed tokens')
+			return result
+		} catch (error) {
+			console.error('[forceTokenRefresh] Error during forced refresh:', error)
+			throw error
+		}
+	}
+
+	/**
 	 * Get the authorization URL for initiating the OAuth flow
 	 */
 	getAuthorizationUrl(opts?: { scope?: string[] }): { authUrl: string } {

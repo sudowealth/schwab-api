@@ -163,6 +163,18 @@ export interface SchwabApiClient {
 	>(
 		meta: EndpointMetadata<P, Q, B, R, M, E>,
 	): ReturnType<typeof coreHttpCreateEndpoint<P, Q, B, R, M, E>>
+
+	/**
+	 * Debug authentication issues and provide detailed information about the current auth state.
+	 * Use this when experiencing 401 Unauthorized errors to diagnose token problems.
+	 * @param options Options for debugging auth
+	 * @returns Debugging information about the auth state
+	 */
+	debugAuth(options?: { forceRefresh?: boolean }): Promise<{
+		tokenStatus: any
+		authManagerType: string
+		supportsRefresh: boolean
+	}>
 }
 
 /**
@@ -320,6 +332,122 @@ export function createApiClient(
 			schemas: schemasNs,
 			auth: authNs,
 			errors: errorsNs,
+		},
+		debugAuth: async (options = {}) => {
+			console.log('[debugAuth] Starting auth diagnostics')
+
+			// Get basic information about the auth manager
+			const authManagerType = authManager.constructor.name
+			const supportsRefresh = authManager.supportsRefresh()
+
+			console.log(`[debugAuth] Auth manager type: ${authManagerType}`)
+			console.log(`[debugAuth] Supports refresh: ${supportsRefresh}`)
+
+			// Get current token status
+			let tokenStatus: any = {}
+
+			try {
+				// Get token data
+				const tokenData = await authManager.getTokenData()
+
+				// Extract basic info without exposing sensitive data
+				tokenStatus = {
+					hasAccessToken: !!tokenData?.accessToken,
+					accessTokenLength: tokenData?.accessToken?.length,
+					hasRefreshToken: !!tokenData?.refreshToken,
+					refreshTokenLength: tokenData?.refreshToken?.length,
+					expiresAt: tokenData?.expiresAt,
+					timeToExpiration: tokenData?.expiresAt
+						? tokenData.expiresAt - Date.now()
+						: undefined,
+					isExpired: tokenData?.expiresAt
+						? tokenData.expiresAt <= Date.now()
+						: undefined,
+				}
+
+				console.log('[debugAuth] Current token status:', tokenStatus)
+
+				// Try to force refresh if requested and refresh is supported
+				if (
+					options.forceRefresh &&
+					supportsRefresh &&
+					authManager.refreshIfNeeded
+				) {
+					console.log('[debugAuth] Attempting force refresh of tokens')
+
+					try {
+						// Force a refresh of the tokens
+						const refreshedTokenData = await authManager.refreshIfNeeded({
+							force: true,
+						})
+
+						tokenStatus.refreshed = true
+						tokenStatus.refreshSuccessful = true
+						tokenStatus.newExpiresAt = refreshedTokenData.expiresAt
+						tokenStatus.newTimeToExpiration = refreshedTokenData.expiresAt
+							? refreshedTokenData.expiresAt - Date.now()
+							: undefined
+
+						console.log('[debugAuth] Force refresh successful:', {
+							newExpiresAt: refreshedTokenData.expiresAt,
+							newAccessTokenLength: refreshedTokenData.accessToken?.length,
+						})
+					} catch (refreshError) {
+						console.error('[debugAuth] Force refresh failed:', refreshError)
+
+						tokenStatus.refreshed = true
+						tokenStatus.refreshSuccessful = false
+						tokenStatus.refreshError =
+							refreshError instanceof Error
+								? refreshError.message
+								: String(refreshError)
+					}
+				}
+			} catch (error) {
+				console.error('[debugAuth] Error getting token data:', error)
+
+				tokenStatus = {
+					error: error instanceof Error ? error.message : String(error),
+					tokenRetrievalFailed: true,
+				}
+			}
+
+			// Test if authorization headers would be applied properly
+			try {
+				console.log('[debugAuth] Testing authorization header creation')
+				const testReq = new Request('https://api.test.url')
+				const accessToken = await authManager.getAccessToken()
+
+				if (accessToken) {
+					tokenStatus.authorizationHeaderTest = {
+						success: true,
+						headerValue: `Bearer ${accessToken.substring(0, 5)}...`,
+					}
+				} else {
+					tokenStatus.authorizationHeaderTest = {
+						success: false,
+						reason: 'No access token available',
+					}
+				}
+			} catch (headerError) {
+				console.error(
+					'[debugAuth] Error testing authorization header:',
+					headerError,
+				)
+				tokenStatus.authorizationHeaderTest = {
+					success: false,
+					error:
+						headerError instanceof Error
+							? headerError.message
+							: String(headerError),
+				}
+			}
+
+			return {
+				tokenStatus,
+				authManagerType,
+				supportsRefresh,
+			}
 		},
 	}
 

@@ -2,9 +2,7 @@ import { z } from 'zod'
 import {
 	dateStringSchema,
 	epochMillisSchema,
-	DateFormatType,
-	dateTransformer,
-	createQueryDateSchema
+	createQueryDateSchema,
 } from '../../utils/date-utils'
 
 // Enum for periodType query parameter
@@ -95,13 +93,13 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 				'- If frequencyType is weekly - valid value is 1. \n' +
 				'- If frequencyType is monthly - valid value is 1.',
 		),
-	startDate: createQueryDateSchema()
-		.describe('The start date, either as YYYY-MM-DD string or milliseconds since epoch'),
-	endDate: createQueryDateSchema()
-		.describe(
-			'The end date, either as YYYY-MM-DD string or milliseconds since epoch. \n' +
-				'If not specified, the endDate will default to the market close of previous business day.',
-		),
+	startDate: createQueryDateSchema().describe(
+		'The start date, either as YYYY-MM-DD string or milliseconds since epoch',
+	),
+	endDate: createQueryDateSchema().describe(
+		'The end date, either as YYYY-MM-DD string or milliseconds since epoch. \n' +
+			'If not specified, the endDate will default to the market close of previous business day.',
+	),
 	needExtendedHoursData: z
 		.boolean()
 		.optional()

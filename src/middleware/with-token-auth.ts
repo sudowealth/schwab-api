@@ -85,14 +85,32 @@ export function withTokenAuth(
 		}
 
 		try {
+			console.log(`[withTokenAuth] Getting access token for ${req.url}`)
+
+			// Debug: Check token provider type
+			console.log(
+				`[withTokenAuth] Token manager type: ${tokenManager.constructor.name}`,
+			)
+
+			// Check if token manager supports refresh
+			const supportsRefresh = tokenManager.supportsRefresh()
+			console.log(
+				`[withTokenAuth] Token manager supports refresh: ${supportsRefresh}`,
+			)
+
 			// Use the unified getAccessToken method which handles refreshing internally
 			// Note: We cannot pass refreshThresholdMs here as the interface doesn't accept parameters
 			// These should be configured at the token manager level instead
 			const accessToken = await tokenManager.getAccessToken()
 
+			// Debug: Log token status (not the actual token)
+			console.log(
+				`[withTokenAuth] Token obtained: ${accessToken ? 'Yes (length: ' + accessToken.length + ')' : 'No'}`,
+			)
+
 			if (!accessToken) {
 				console.warn(
-					`withTokenAuth: No access token available from provider for request to ${req.method} ${req.url}. ` +
+					`[withTokenAuth] No access token available from provider for request to ${req.method} ${req.url}. ` +
 						`Provider: ${tokenManager.constructor.name}. Proceeding without authentication.`,
 				)
 
@@ -105,8 +123,26 @@ export function withTokenAuth(
 			const authorizedReq = cloneRequestWithMetadata(req)
 			authorizedReq.headers.set('Authorization', `Bearer ${accessToken}`)
 
+			// Debug: Log the headers being sent (without sensitive values)
+			console.log(
+				'[withTokenAuth] Request headers set:',
+				Object.fromEntries(
+					[...authorizedReq.headers.entries()].map(([k, v]) =>
+						k.toLowerCase() === 'authorization' ? [k, 'Bearer ***'] : [k, v],
+					),
+				),
+			)
+
 			// Execute the request
+			console.log(
+				`[withTokenAuth] Executing authenticated request to ${req.url}`,
+			)
 			const response = await next(authorizedReq)
+
+			// Debug: Log response status
+			console.log(
+				`[withTokenAuth] Response status: ${response.status} for ${req.url}`,
+			)
 
 			// Add auth metadata to the response
 			const responseMetadata = getMetadata(response)
@@ -115,7 +151,7 @@ export function withTokenAuth(
 			return response
 		} catch (error) {
 			// Log the error with more context for debugging
-			console.error('withTokenAuth: Failed to get access token:', error)
+			console.error('[withTokenAuth] Failed to get access token:', error)
 
 			// Provide detailed context for the error
 			const context = `Failed to retrieve authentication token for request to ${req.method} ${req.url}`

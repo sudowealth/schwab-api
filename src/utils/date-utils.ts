@@ -156,29 +156,32 @@ export const dateStringSchema = z
  * - UNIX epoch milliseconds (number)
  * - YYYY-MM-DD formatted strings
  * - null values
- * 
+ *
  * All values are transformed to UNIX epoch milliseconds or undefined (if null/undefined)
  * for API compatibility.
- * 
+ *
  * @returns A Zod schema for query parameter dates
  */
 export function createQueryDateSchema() {
-	return z.union([
-		z.number().int(),
-		z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-		z.null()
-	])
+	return z
+		.union([
+			z.number().int(),
+			z
+				.string()
+				.regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+			z.null(),
+		])
 		.optional()
 		.transform((val) => {
 			if (val === null || val === undefined) {
-				return undefined;
+				return undefined
 			}
 			if (typeof val === 'string') {
-				return new Date(val).getTime();
+				return new Date(val).getTime()
 			}
 			// For number type, ensure it's an epoch milliseconds value
-			return val;
-		});
+			return val
+		})
 }
 
 /**
@@ -186,27 +189,27 @@ export function createQueryDateSchema() {
  * - Validates ISO-8601 format with timezone offset
  * - Sets default to current time or specified days offset
  * - Handles transformations if needed
- * 
+ *
  * @param options Configuration options
  * @param options.daysOffset Number of days to offset from current date (negative for past)
  * @param options.description Field description
  * @returns A Zod schema for ISO-8601 datetime fields
  */
 export function createISODateTimeSchema(options: {
-	daysOffset?: number;
-	description?: string;
+	daysOffset?: number
+	description?: string
 }) {
-	const { daysOffset = 0, description } = options;
-	
+	const { daysOffset = 0, description } = options
+
 	return z
 		.string()
 		.datetime({ offset: true, precision: 3 })
-		.describe(description || "")
+		.describe(description || '')
 		.default(() => {
-			const date = new Date();
+			const date = new Date()
 			if (daysOffset !== 0) {
-				date.setDate(date.getDate() + daysOffset);
+				date.setDate(date.getDate() + daysOffset)
 			}
-			return date.toISOString();
-		});
+			return date.toISOString()
+		})
 }

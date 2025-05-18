@@ -369,10 +369,12 @@ export const GetOrdersRequestQueryParams = z.object({
 		),
 	fromEnteredTime: createISODateTimeSchema({
 		daysOffset: -59,
-		description: "Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date."
+		description:
+			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date.",
 	}),
 	toEnteredTime: createISODateTimeSchema({
-		description: "Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ."
+		description:
+			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ.",
 	}),
 	status: status
 		.optional()
@@ -400,10 +402,12 @@ export const GetOrdersByAccountRequestQueryParams = z.object({
 		.describe('The max number of orders to retrieve. Default is 3000.'),
 	fromEnteredTime: createISODateTimeSchema({
 		daysOffset: -30,
-		description: "Specifies that no orders entered before this time should be returned. Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example fromEnteredTime is '2024-03-29T00:00:00.000Z'. 'toEnteredTime' must also be set."
+		description:
+			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example fromEnteredTime is '2024-03-29T00:00:00.000Z'. 'toEnteredTime' must also be set.",
 	}),
 	toEnteredTime: createISODateTimeSchema({
-		description: "Specifies that no orders entered after this time should be returned.Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example toEnteredTime is '2024-04-28T23:59:59.000Z'. 'fromEnteredTime' must also be set."
+		description:
+			"Specifies that no orders entered after this time should be returned.Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example toEnteredTime is '2024-04-28T23:59:59.000Z'. 'fromEnteredTime' must also be set.",
 	}),
 	status: status
 		.optional()
