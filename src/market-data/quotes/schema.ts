@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils'
-import { InstrumentAssetTypeEnum } from '../instruments/schema' // Reusing for assetType
+import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'fields' query parameter
 export const QuoteFieldsEnum = z.enum([

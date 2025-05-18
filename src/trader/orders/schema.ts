@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { assetType } from '../transactions/schema'
+import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
 const duration = z.enum([
@@ -199,15 +199,6 @@ const AccountFixedIncome = AccountsBaseInstrument.extend({
 
 const AccountMutualFund = AccountsBaseInstrument.extend({
 	assetType: z.literal('MUTUAL_FUND'),
-})
-
-const ApiCurrencyType = z.enum(['USD', 'CAD', 'EUR', 'JPY'])
-
-const AccountAPIOptionDeliverable = z.object({
-	symbol: z.string(), // Removed optional, kept string
-	deliverableUnits: z.number(), // Removed optional
-	apiCurrencyType: ApiCurrencyType, // Removed optional
-	assetType: assetType, // Removed optional
 })
 
 const AccountOption = AccountsBaseInstrument.extend({

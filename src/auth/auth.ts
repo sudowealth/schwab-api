@@ -65,7 +65,6 @@ export interface AuthFactoryConfig {
 // Re-export the FullAuthClient type for convenience
 export type { FullAuthClient }
 
-
 /**
  * Token manager for OAuth flow that leverages BaseTokenHandler's implementation.
  * This class extends BaseTokenHandler to provide a simplified interface

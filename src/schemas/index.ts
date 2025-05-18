@@ -1,8 +1,5 @@
 // Base schemas - explicitly re-export to avoid naming conflicts
-export { 
-  AssetTypeEnum,
-  BaseInstrumentSchema
-} from './base'
+export { AssetTypeEnum, BaseInstrumentSchema } from './base'
 export type { BaseInstrument } from './base'
 
 // Feature-specific schemas
@@ -16,3 +13,4 @@ export * from '../trader/accounts/schema'
 export * from '../trader/orders/schema'
 export * from '../trader/transactions/schema'
 export * from '../trader/user-preference/schema'
+export * from '../trader/shared'
