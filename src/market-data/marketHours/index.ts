@@ -1,11 +1,11 @@
 export * from './schema'
 export * from './endpoints'
 
-// Explicitly declare the function type so TypeScript recognizes it
-import { type GetMarketHoursResponseBodySchema, type GetMarketHoursByMarketIdResponseBodySchema } from './schema'
+import { type EndpointFunction } from '../../core/endpoint-types'
+import { type getMarketHoursByMarketIdMeta, type getMarketHoursMeta  } from './endpoints'
 
-export type GetMarketHoursFunction = (params: { markets: string; date?: string }) => Promise<GetMarketHoursResponseBodySchema>
+export type GetMarketHoursFunction = EndpointFunction<typeof getMarketHoursMeta>
 export declare const getMarketHours: GetMarketHoursFunction
 
-export type GetMarketHoursByMarketIdFunction = (params: { market_id: string; date?: string }) => Promise<GetMarketHoursByMarketIdResponseBodySchema>
+export type GetMarketHoursByMarketIdFunction = EndpointFunction<typeof getMarketHoursByMarketIdMeta>
 export declare const getMarketHoursByMarketId: GetMarketHoursByMarketIdFunction

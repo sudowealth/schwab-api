@@ -1,8 +1,8 @@
 export * from './schema'
 export * from './endpoints'
 
-// Explicitly declare the function type so TypeScript recognizes it
-import { type GetMoversResponseBodySchema } from './schema'
+import { type EndpointFunction } from '../../core/endpoint-types'
+import { type getMoversMeta } from './endpoints'
 
-export type GetMoversFunction = (params: { index_id: string; direction?: string; change?: string }) => Promise<GetMoversResponseBodySchema>
+export type GetMoversFunction = EndpointFunction<typeof getMoversMeta>
 export declare const getMovers: GetMoversFunction

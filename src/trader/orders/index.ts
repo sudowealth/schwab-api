@@ -1,29 +1,23 @@
 export * from './endpoints'
 export * from './schema'
 
-// Explicitly declare the function type so TypeScript recognizes it
-import { 
-  type GetOrdersResponseBody, 
-  type PlaceOrderResponseBody, 
-  type GetOrderByOrderIdResponseBody, 
-  type CancelOrderResponseBody, 
-  type ReplaceOrderResponseBody 
-} from './schema'
+import { type EndpointFunction } from '../../core/endpoint-types'
+import { type cancelOrderMeta, type getOrderByOrderIdMeta, type getOrdersByAccountMeta, type getOrdersMeta, type placeOrderForAccountMeta, type replaceOrderMeta } from './endpoints'
 
-export type GetOrdersFunction = () => Promise<GetOrdersResponseBody>
+export type GetOrdersFunction = EndpointFunction<typeof getOrdersMeta>
 export declare const getOrders: GetOrdersFunction
 
-export type GetOrdersByAccountFunction = (params: { accountNumber: string }) => Promise<GetOrdersResponseBody>
+export type GetOrdersByAccountFunction = EndpointFunction<typeof getOrdersByAccountMeta>
 export declare const getOrdersByAccount: GetOrdersByAccountFunction
 
-export type PlaceOrderForAccountFunction = (params: { accountNumber: string }, body: any) => Promise<PlaceOrderResponseBody>
+export type PlaceOrderForAccountFunction = EndpointFunction<typeof placeOrderForAccountMeta>
 export declare const placeOrderForAccount: PlaceOrderForAccountFunction
 
-export type GetOrderByOrderIdFunction = (params: { accountNumber: string, orderId: number }) => Promise<GetOrderByOrderIdResponseBody>
+export type GetOrderByOrderIdFunction = EndpointFunction<typeof getOrderByOrderIdMeta>
 export declare const getOrderByOrderId: GetOrderByOrderIdFunction
 
-export type CancelOrderFunction = (params: { accountNumber: string, orderId: number }) => Promise<CancelOrderResponseBody>
+export type CancelOrderFunction = EndpointFunction<typeof cancelOrderMeta>
 export declare const cancelOrder: CancelOrderFunction
 
-export type ReplaceOrderFunction = (params: { accountNumber: string, orderId: number }, body: any) => Promise<ReplaceOrderResponseBody>
+export type ReplaceOrderFunction = EndpointFunction<typeof replaceOrderMeta>
 export declare const replaceOrder: ReplaceOrderFunction

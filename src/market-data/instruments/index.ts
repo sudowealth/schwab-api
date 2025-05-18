@@ -1,11 +1,11 @@
 export * from './schema'
 export * from './endpoints'
 
-// Explicitly declare the function type so TypeScript recognizes it
-import { type InstrumentsResponseSchema, type GetInstrumentByCusipResponseBodySchema } from './schema'
+import { type EndpointFunction } from '../../core/endpoint-types'
+import { type getInstrumentByCusipMeta, type getInstrumentsMeta } from './endpoints'
 
-export type GetInstrumentsFunction = (params: { symbols: string; projection?: string }) => Promise<InstrumentsResponseSchema>
+export type GetInstrumentsFunction = EndpointFunction<typeof getInstrumentsMeta>
 export declare const getInstruments: GetInstrumentsFunction
 
-export type GetInstrumentByCusipFunction = (params: { cusip_id: string }) => Promise<GetInstrumentByCusipResponseBodySchema>
+export type GetInstrumentByCusipFunction = EndpointFunction<typeof getInstrumentByCusipMeta>
 export declare const getInstrumentByCusip: GetInstrumentByCusipFunction

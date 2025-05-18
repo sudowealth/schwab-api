@@ -5,6 +5,7 @@ import {
 	getSchwabApiConfigDefaults,
 	// resolveBaseUrl, // Not directly used in the provided snippet modification
 } from './core/config'
+import { type ProcessNamespaceResult } from './core/endpoint-types'
 import {
 	createRequestContext,
 	type RequestContext,
@@ -79,28 +80,14 @@ export interface SchwabApiClient {
 	 * These namespaces contain both the metadata objects (with 'Meta' suffix) and 
 	 * the actual endpoint functions (without 'Meta' suffix) that are created during client initialization.
 	 */
-	marketData: {
-		instruments: typeof marketDataNs.instruments
-		marketHours: typeof marketDataNs.marketHours
-		movers: typeof marketDataNs.movers
-		options: typeof marketDataNs.options
-		priceHistory: typeof marketDataNs.priceHistory
-		quotes: typeof marketDataNs.quotes
-		shared: typeof marketDataNs.shared
-	}
+	marketData: ProcessNamespaceResult<typeof marketDataNs>
 
 	/**
 	 * Trader API (accounts, orders, transactions, etc.)
 	 * These namespaces contain both the metadata objects (with 'Meta' suffix) and
 	 * the actual endpoint functions (without 'Meta' suffix) that are created during client initialization.
 	 */
-	trader: {
-		accounts: typeof traderNs.accounts
-		orders: typeof traderNs.orders
-		transactions: typeof traderNs.transactions
-		userPreference: typeof traderNs.userPreference
-		shared: typeof traderNs.shared
-	}
+	trader: ProcessNamespaceResult<typeof traderNs>
 
 	/**
 	 * Schemas for API requests and responses
@@ -156,22 +143,8 @@ export interface SchwabApiClient {
 	 * callable endpoint functions created during client initialization.
 	 */
 	all: {
-		marketData: {
-			instruments: typeof marketDataNs.instruments
-			marketHours: typeof marketDataNs.marketHours
-			movers: typeof marketDataNs.movers
-			options: typeof marketDataNs.options
-			priceHistory: typeof marketDataNs.priceHistory
-			quotes: typeof marketDataNs.quotes
-			shared: typeof marketDataNs.shared
-		}
-		trader: {
-			accounts: typeof traderNs.accounts
-			orders: typeof traderNs.orders
-			transactions: typeof traderNs.transactions
-			userPreference: typeof traderNs.userPreference
-			shared: typeof traderNs.shared
-		}
+		marketData: ProcessNamespaceResult<typeof marketDataNs>
+		trader: ProcessNamespaceResult<typeof traderNs>
 		schemas: typeof schemasNs
 		auth: typeof authNs
 		errors: typeof errorsNs
@@ -192,14 +165,17 @@ export interface SchwabApiClient {
 	): ReturnType<typeof coreHttpCreateEndpoint<P, Q, B, R, M, E>>
 }
 
-// Helper function to recursively process namespaces and convert Meta objects to endpoints
+/**
+ * Helper function to recursively process namespaces and convert Meta objects to endpoints
+ * Uses the ProcessNamespaceResult type to maintain proper typing of the result
+ */
 function processNamespace<T extends Record<string, any>>(
 	ns: T,
 	clientCreateEndpoint: (
 		meta: EndpointMetadata<any, any, any, any, any, any>,
 	) => any,
-): any {
-	// Consider a more specific return type if possible, e.g., Processed<T>
+): ProcessNamespaceResult<T> {
+	// Process the namespace and return a properly typed result
 	const result: any = {}
 	
 	// First pass - process all Meta objects and prepare for endpoint creation
@@ -246,7 +222,9 @@ function processNamespace<T extends Record<string, any>>(
 		result[endpointName] = clientCreateEndpoint(meta)
 	}
 	
-	return result
+	// Cast the result to the expected type
+	// This maintains type safety while allowing the actual implementation to be dynamic
+	return result as ProcessNamespaceResult<T>
 }
 
 export function createApiClient(
