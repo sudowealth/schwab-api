@@ -77,13 +77,12 @@ export type EndpointFunction<T extends EndpointMetadata> = (
 
 /**
  * Determines the arguments for an endpoint function based on the metadata
+ * Updated to always allow an options object, even when no params are required or optional
  */
 type EndpointFunctionArgs<T extends EndpointMetadata> =
 	HasRequiredParams<T> extends true
 		? [options: BuildEndpointOptions<T>]
-		: HasOptionalParams<T> extends true
-			? [options?: BuildEndpointOptions<T>]
-			: []
+		: [options?: BuildEndpointOptions<T>]
 
 /**
  * Builds the options parameter type based on what's available in the metadata
@@ -106,48 +105,6 @@ type HasRequiredParams<T extends EndpointMetadata> =
 			: HasRequiredBody<T> extends true
 				? true
 				: false
-
-/**
- * Determines if an endpoint has any parameters (required or optional)
- */
-type HasOptionalParams<T extends EndpointMetadata> =
-	HasPathParams<T> extends true
-		? true
-		: HasQueryParams<T> extends true
-			? true
-			: HasBody<T> extends true
-				? true
-				: false
-
-/**
- * Checks if the endpoint has any path parameters
- */
-type HasPathParams<T extends EndpointMetadata> =
-	ExtractEndpointTypes<T>['PathParams'] extends never
-		? false
-		: ExtractEndpointTypes<T>['PathParams'] extends unknown
-			? false
-			: true
-
-/**
- * Checks if the endpoint has any query parameters
- */
-type HasQueryParams<T extends EndpointMetadata> =
-	ExtractEndpointTypes<T>['QueryParams'] extends never
-		? false
-		: ExtractEndpointTypes<T>['QueryParams'] extends unknown
-			? false
-			: true
-
-/**
- * Checks if the endpoint has a body
- */
-type HasBody<T extends EndpointMetadata> =
-	ExtractEndpointTypes<T>['BodyType'] extends never
-		? false
-		: ExtractEndpointTypes<T>['BodyType'] extends unknown
-			? false
-			: true
 
 /**
  * Checks if the endpoint has required path parameters
