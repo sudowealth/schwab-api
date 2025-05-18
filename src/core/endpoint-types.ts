@@ -114,22 +114,26 @@ type HasRequiredBody<T extends EndpointMetadata> =
  * Takes a namespace of endpoint metadata objects and creates a typed version
  * that includes both the metadata objects and the corresponding endpoint functions
  */
-export type ProcessedNamespace<T extends Record<string, any>> = {
+export type ProcessedNamespace<T> = {
   [K in keyof T]: K extends `${infer BaseName}Meta` 
-    ? T[K] extends EndpointMetadata
-      ? { 
-          [MetaKey in K]: T[K] 
-        } & { 
+    ? T[K] extends EndpointMetadata 
+      ? T[K] & { 
+          // Instead of creating a complex nested structure, directly include the endpoint function
+          // using the base name without the "Meta" suffix
           [FnKey in BaseName]: EndpointFunction<T[K]> 
         }
       : T[K]
     : T[K] extends Record<string, any>
       ? ProcessedNamespace<T[K]>
       : T[K]
-}
+};
 
 /**
- * Type-safe wrapper around the processNamespace function
- * This doesn't implement the actual functionality but provides proper typing
+ * Type-safe wrapper for the client object for both market data and trader namespaces
+ * Contains all endpoint functions alongside their metadata objects
  */
-export type ProcessNamespaceResult<T extends Record<string, any>> = ProcessedNamespace<T>
+export type ProcessNamespaceResult<T> = {
+  [K in keyof T]: T[K] extends Record<string, any> 
+    ? ProcessedNamespace<T[K]> 
+    : T[K]
+}
