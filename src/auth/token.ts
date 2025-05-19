@@ -259,6 +259,43 @@ export async function refreshTokenWithContext(
 		refreshTokenLength: opts.refreshToken.length,
 	})
 
+	// Import the token refresh tracer dynamically to avoid circular dependencies
+	const { TokenRefreshTracer } = await import('./token-refresh-tracer')
+	const tracer = TokenRefreshTracer.getInstance()
+	const refreshId = tracer.startRefreshTrace()
+
+	// Capture the full request details for diagnostics
+	const requestHeaders = {
+		Authorization: authHeader,
+		'Content-Type': MEDIA_TYPES.FORM,
+		Accept: 'application/json',
+	}
+
+	// Log very detailed request information
+	tokenLogWithContext(
+		context,
+		'info',
+		`Token refresh request [ID: ${refreshId}] to: ${tokenEndpoint}`,
+		{
+			method: 'POST',
+			contentType: MEDIA_TYPES.FORM,
+			refreshTokenLength: opts.refreshToken.length,
+			refreshTokenFirstChars: opts.refreshToken.substring(0, 4),
+			clientIdFirstChars: opts.clientId.substring(0, 4),
+			currentTimestamp: new Date().toISOString(),
+			requestId: refreshId,
+		},
+	)
+
+	// Record the HTTP request in the tracer
+	tracer.recordRefreshRequest(
+		refreshId,
+		tokenEndpoint,
+		'POST',
+		requestHeaders,
+		body.toString(),
+	)
+
 	try {
 		// Add timeout support
 		const controller = new AbortController()
@@ -267,14 +304,12 @@ export async function refreshTokenWithContext(
 			config.timeout as number,
 		)
 
+		const startTime = Date.now()
+
 		const response = await fetchFn(
 			new Request(tokenEndpoint, {
 				method: 'POST',
-				headers: {
-					Authorization: authHeader,
-					'Content-Type': MEDIA_TYPES.FORM,
-					Accept: 'application/json',
-				},
+				headers: requestHeaders,
 				body: body,
 				signal: controller.signal,
 			}),
@@ -282,6 +317,8 @@ export async function refreshTokenWithContext(
 
 		// Clear the timeout
 		clearTimeout(timeoutId)
+
+		const requestDuration = Date.now() - startTime
 
 		// Log response details
 		const responseHeaders: Record<string, string> = {}
@@ -292,8 +329,13 @@ export async function refreshTokenWithContext(
 		tokenLogWithContext(
 			context,
 			'info',
-			`Token refresh response status: ${response.status}`,
-			{ headers: responseHeaders },
+			`Token refresh response [ID: ${refreshId}] status: ${response.status} (${requestDuration}ms)`,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: responseHeaders,
+				durationMs: requestDuration,
+			},
 		)
 
 		let data

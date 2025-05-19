@@ -211,15 +211,70 @@ export class ConcurrentTokenManager implements ITokenLifecycleManager {
 			)
 		}
 
+		// Import the token refresh tracer dynamically to avoid circular dependencies
+		const { TokenRefreshTracer } = await import('./token-refresh-tracer')
+		const tracer = TokenRefreshTracer.getInstance()
+		const refreshId = tracer.startRefreshTrace()
+
 		try {
+			console.log(
+				`[ConcurrentTokenManager] Starting token refresh (ID: ${refreshId})${options?.force ? ' (FORCED)' : ''}`,
+			)
+
+			// Get existing tokens for comparison after refresh
+			const existingTokens = await this.underlying.getTokenData()
+			if (existingTokens) {
+				console.log('[ConcurrentTokenManager] Current tokens before refresh:', {
+					hasAccessToken: !!existingTokens.accessToken,
+					accessTokenLength: existingTokens.accessToken?.length,
+					hasRefreshToken: !!existingTokens.refreshToken,
+					refreshTokenLength: existingTokens.refreshToken?.length,
+					expiresAt: existingTokens.expiresAt,
+					expiresIn: existingTokens.expiresAt
+						? Math.floor((existingTokens.expiresAt - Date.now()) / 1000) + 's'
+						: 'unknown',
+				})
+			}
+
 			// Pass through the options to the underlying manager
 			const tokenData = await this.underlying.refreshIfNeeded(options)
+
+			// Log the result of the refresh
+			console.log('[ConcurrentTokenManager] Token refresh successful:', {
+				hasAccessToken: !!tokenData.accessToken,
+				accessTokenLength: tokenData.accessToken?.length,
+				hasRefreshToken: !!tokenData.refreshToken,
+				refreshTokenLength: tokenData.refreshToken?.length,
+				expiresAt: tokenData.expiresAt,
+				expiresIn: tokenData.expiresAt
+					? Math.floor((tokenData.expiresAt - Date.now()) / 1000) + 's'
+					: 'unknown',
+				tokensChanged: {
+					accessToken:
+						!existingTokens ||
+						existingTokens.accessToken !== tokenData.accessToken,
+					refreshToken:
+						!existingTokens ||
+						existingTokens.refreshToken !== tokenData.refreshToken,
+					expiresAt:
+						!existingTokens || existingTokens.expiresAt !== tokenData.expiresAt,
+				},
+			})
+
+			// Record the successful refresh in the tracer
+			tracer.recordRefreshSuccess(refreshId, tokenData)
 
 			// Notify all listeners
 			this.notifyRefreshListeners(tokenData)
 
 			return tokenData
 		} catch (error) {
+			// Log the error with more details
+			console.error('[ConcurrentTokenManager] Token refresh failed:', error)
+
+			// Record the failed refresh in the tracer
+			tracer.recordRefreshFailure(refreshId, error)
+
 			// Convert to SchwabAuthError if it's not already one
 			if (error instanceof SchwabAuthError) {
 				throw error

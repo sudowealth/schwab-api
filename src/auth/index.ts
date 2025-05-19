@@ -19,3 +19,8 @@ export { OpenIdTokenManager } from './openid-manager'
 
 // Token management architecture components
 export * from './token-lifecycle-manager'
+
+// Token validation and diagnostics utilities
+export * from './token-validator'
+export * from './token-refresh-tracer'
+export * from './auth-diagnostics'

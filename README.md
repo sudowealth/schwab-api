@@ -1407,3 +1407,90 @@ request pipeline:
 - `withTokenAuth(tokenManager)`: Add auth headers and auto-refresh
 - `withRateLimit(options)`: Add rate limiting (enabled by default)
 - `
+
+## Authentication Debugging Tools
+
+The package includes several tools to help diagnose and fix authentication
+issues, particularly "Unauthorized" (401) errors.
+
+### Enhanced Token Validation and Debugging
+
+```javascript
+const {
+	validateTokens,
+} = require('@sudowealth/schwab-api/examples/validate-tokens')
+
+// Validate your current tokens
+const result = await validateTokens()
+
+// Output includes detailed token validation information:
+// - Token format validation
+// - Expiration status
+// - Endpoint compatibility
+// - Authorization header format
+```
+
+### Token Refresh Debugging
+
+For diagnosing issues with token refresh, particularly in Cloudflare Workers:
+
+```javascript
+const {
+	debugTokenRefresh,
+} = require('@sudowealth/schwab-api/examples/debug-token-refresh')
+
+// Capture detailed information about token refresh
+const result = await debugTokenRefresh()
+
+// Returns comprehensive information including:
+// - HTTP request/response details during refresh
+// - Token format validation
+// - Refresh success/failure analysis
+```
+
+### Request/Response Debugging
+
+You can add detailed request/response logging to debug authentication issues:
+
+```javascript
+const { createApiClient, middleware } = require('@sudowealth/schwab-api')
+const { withDebug } = middleware
+
+const client = createApiClient({
+	// your auth config here
+	middleware: {
+		before: [
+			withDebug({
+				tag: 'auth-debug',
+				logRequest: true,
+				logResponse: true,
+				logBodies: true, // Be careful with sensitive data
+				prettyPrint: true,
+			}),
+		],
+	},
+})
+```
+
+### Token Refresh Tracing
+
+For detailed diagnostics of the token refresh process:
+
+```javascript
+const { auth } = require('@sudowealth/schwab-api')
+const { TokenRefreshTracer } = auth
+
+// Configure the tracer
+const tracer = TokenRefreshTracer.getInstance({
+	includeRawResponses: true, // WARNING: Contains sensitive data
+	maxHistorySize: 20,
+})
+
+// Get detailed reports after operations
+const report = tracer.getLatestRefreshReport()
+console.log('Refresh summary:', report.summary)
+```
+
+For more comprehensive documentation on troubleshooting authentication issues,
+see the
+[Token Refresh Troubleshooting Guide](./docs/token-refresh-troubleshooting.md).
