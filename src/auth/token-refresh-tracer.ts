@@ -681,7 +681,7 @@ export class TokenRefreshTracer {
 					const parts = strValue.split(' ')
 					if (parts.length > 1) {
 						const authType = parts[0]
-						const tokenStart = parts[1].substring(0, 8)
+						const tokenStart = parts[1]!.substring(0, 8)
 						result[key] = `${authType} ${tokenStart}...`
 					} else {
 						result[key] = '[REDACTED]'
