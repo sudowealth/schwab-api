@@ -1,5 +1,4 @@
 import { EnhancedTokenManager } from './enhanced-token-manager'
-import { OpenIdTokenManager } from './openid-manager'
 import {
 	type ITokenLifecycleManager,
 	buildTokenManager,
@@ -11,17 +10,11 @@ import { type AuthClientOptions, type FullAuthClient } from './types'
  */
 export enum AuthStrategy {
 	/**
-	 * OAuth 2.0 code flow authentication
-	 * - Requires client ID, client secret, and redirect URI
-	 * - Handles code exchange, token refresh, and storage
-	 */
-	CODE_FLOW = 'codeFlow',
-
-	/**
-	 * Enhanced OAuth 2.0 code flow authentication
-	 * - More robust token persistence and refresh capabilities
+	 * Enhanced OAuth 2.0 code flow authentication (Recommended)
+	 * - Built-in token persistence and refresh capabilities
 	 * - Includes retry logic, automatic reconnection, and token validation
 	 * - Comprehensive error handling and debugging tools
+	 * - Reliable token management for serverless environments
 	 */
 	ENHANCED = 'enhanced',
 
@@ -60,7 +53,7 @@ export interface AuthFactoryConfig {
 	tokenManager?: ITokenLifecycleManager
 
 	/**
-	 * OAuth client options (required when strategy is 'codeFlow')
+	 * OAuth client options (required when strategy is 'enhanced')
 	 */
 	oauthConfig?: AuthClientOptions
 }
@@ -76,9 +69,9 @@ export type { FullAuthClient }
  *
  * @example
  * ```typescript
- * // Example 1: OAuth Code Flow
+ * // Example 1: Enhanced Authentication (Recommended)
  * const auth = createSchwabAuth({
- *   strategy: AuthStrategy.CODE_FLOW,
+ *   strategy: AuthStrategy.ENHANCED,
  *   oauthConfig: {
  *     clientId: 'your-client-id',
  *     clientSecret: 'your-client-secret',
@@ -117,14 +110,6 @@ export function createSchwabAuth(config: AuthFactoryConfig): FullAuthClient {
 	const strategy = config.strategy.toLowerCase()
 
 	switch (strategy) {
-		case AuthStrategy.CODE_FLOW.toLowerCase():
-			if (!config.oauthConfig) {
-				throw new Error('oauthConfig is required for CODE_FLOW strategy')
-			}
-
-			const oauthManager = new OpenIdTokenManager(config.oauthConfig)
-			return oauthManager as unknown as FullAuthClient
-
 		case AuthStrategy.ENHANCED.toLowerCase():
 			if (!config.oauthConfig) {
 				throw new Error('oauthConfig is required for ENHANCED strategy')
