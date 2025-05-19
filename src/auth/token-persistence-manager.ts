@@ -339,7 +339,7 @@ export class TokenPersistenceManager {
 
 		// Basic format validation for Schwab tokens
 		// This could be expanded based on known token formats
-		if (!refreshToken.match(/^[A-Za-z0-9._-]+$/)) {
+		if (!refreshToken.match(/^[\w\-\.~+\/=]+$/)) {
 			return {
 				valid: false,
 				reason: 'Refresh token contains invalid characters',
