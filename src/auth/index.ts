@@ -24,3 +24,7 @@ export * from './token-lifecycle-manager'
 export * from './token-validator'
 export * from './token-refresh-tracer'
 export * from './auth-diagnostics'
+
+// Enhanced token management (new in v1.x)
+export * from './token-persistence-manager'
+export * from './enhanced-token-manager'

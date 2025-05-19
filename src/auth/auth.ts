@@ -1,3 +1,4 @@
+import { EnhancedTokenManager } from './enhanced-token-manager'
 import { OpenIdTokenManager } from './openid-manager'
 import {
 	type ITokenLifecycleManager,
@@ -15,6 +16,14 @@ export enum AuthStrategy {
 	 * - Handles code exchange, token refresh, and storage
 	 */
 	CODE_FLOW = 'codeFlow',
+
+	/**
+	 * Enhanced OAuth 2.0 code flow authentication
+	 * - More robust token persistence and refresh capabilities
+	 * - Includes retry logic, automatic reconnection, and token validation
+	 * - Comprehensive error handling and debugging tools
+	 */
+	ENHANCED = 'enhanced',
 
 	/**
 	 * Static token authentication
@@ -115,6 +124,15 @@ export function createSchwabAuth(config: AuthFactoryConfig): FullAuthClient {
 
 			const oauthManager = new OpenIdTokenManager(config.oauthConfig)
 			return oauthManager as unknown as FullAuthClient
+
+		case AuthStrategy.ENHANCED.toLowerCase():
+			if (!config.oauthConfig) {
+				throw new Error('oauthConfig is required for ENHANCED strategy')
+			}
+
+			// Create the enhanced token manager with the same OAuth config
+			const enhancedManager = new EnhancedTokenManager(config.oauthConfig)
+			return enhancedManager as unknown as FullAuthClient
 
 		case AuthStrategy.STATIC.toLowerCase():
 			if (!config.accessToken) {
