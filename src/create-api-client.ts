@@ -1,4 +1,9 @@
 import * as authNs from './auth'
+import {
+	getAuthDiagnostics,
+	type AuthDiagnosticsOptions,
+	type AuthDiagnosticsResult,
+} from './auth/auth-diagnostics'
 import { type ITokenLifecycleManager } from './auth/token-lifecycle-manager'
 import {
 	type SchwabApiConfig,
@@ -168,13 +173,9 @@ export interface SchwabApiClient {
 	 * Debug authentication issues and provide detailed information about the current auth state.
 	 * Use this when experiencing 401 Unauthorized errors to diagnose token problems.
 	 * @param options Options for debugging auth
-	 * @returns Debugging information about the auth state
+	 * @returns Detailed diagnostics information about the auth state
 	 */
-	debugAuth(options?: { forceRefresh?: boolean }): Promise<{
-		tokenStatus: any
-		authManagerType: string
-		supportsRefresh: boolean
-	}>
+	debugAuth(options?: AuthDiagnosticsOptions): Promise<AuthDiagnosticsResult>
 }
 
 /**
@@ -336,117 +337,88 @@ export function createApiClient(
 		debugAuth: async (options = {}) => {
 			console.log('[debugAuth] Starting auth diagnostics')
 
-			// Get basic information about the auth manager
-			const authManagerType = authManager.constructor.name
-			const supportsRefresh = authManager.supportsRefresh()
-
-			console.log(`[debugAuth] Auth manager type: ${authManagerType}`)
-			console.log(`[debugAuth] Supports refresh: ${supportsRefresh}`)
-
-			// Get current token status
-			let tokenStatus: any = {}
-
-			try {
-				// Get token data
-				const tokenData = await authManager.getTokenData()
-
-				// Extract basic info without exposing sensitive data
-				tokenStatus = {
-					hasAccessToken: !!tokenData?.accessToken,
-					accessTokenLength: tokenData?.accessToken?.length,
-					hasRefreshToken: !!tokenData?.refreshToken,
-					refreshTokenLength: tokenData?.refreshToken?.length,
-					expiresAt: tokenData?.expiresAt,
-					timeToExpiration: tokenData?.expiresAt
-						? tokenData.expiresAt - Date.now()
-						: undefined,
-					isExpired: tokenData?.expiresAt
-						? tokenData.expiresAt <= Date.now()
-						: undefined,
-				}
-
-				console.log('[debugAuth] Current token status:', tokenStatus)
-
-				// Try to force refresh if requested and refresh is supported
-				if (
-					options.forceRefresh &&
-					supportsRefresh &&
-					authManager.refreshIfNeeded
-				) {
-					console.log('[debugAuth] Attempting force refresh of tokens')
-
-					try {
-						// Force a refresh of the tokens
-						const refreshedTokenData = await authManager.refreshIfNeeded({
-							force: true,
-						})
-
-						tokenStatus.refreshed = true
-						tokenStatus.refreshSuccessful = true
-						tokenStatus.newExpiresAt = refreshedTokenData.expiresAt
-						tokenStatus.newTimeToExpiration = refreshedTokenData.expiresAt
-							? refreshedTokenData.expiresAt - Date.now()
-							: undefined
-
-						console.log('[debugAuth] Force refresh successful:', {
-							newExpiresAt: refreshedTokenData.expiresAt,
-							newAccessTokenLength: refreshedTokenData.accessToken?.length,
-						})
-					} catch (refreshError) {
-						console.error('[debugAuth] Force refresh failed:', refreshError)
-
-						tokenStatus.refreshed = true
-						tokenStatus.refreshSuccessful = false
-						tokenStatus.refreshError =
-							refreshError instanceof Error
-								? refreshError.message
-								: String(refreshError)
-					}
-				}
-			} catch (error) {
-				console.error('[debugAuth] Error getting token data:', error)
-
-				tokenStatus = {
-					error: error instanceof Error ? error.message : String(error),
-					tokenRetrievalFailed: true,
-				}
+			// Get environment information for diagnostic context
+			const environment = {
+				apiEnvironment: finalConfig.environment,
 			}
 
-			// Test if authorization headers would be applied properly
+			// Use the new enhanced auth diagnostics function
 			try {
-				console.log('[debugAuth] Testing authorization header creation')
-				const testReq = new Request('https://api.test.url')
-				const accessToken = await authManager.getAccessToken()
-
-				if (accessToken) {
-					tokenStatus.authorizationHeaderTest = {
-						success: true,
-						headerValue: `Bearer ${accessToken.substring(0, 5)}...`,
-					}
-				} else {
-					tokenStatus.authorizationHeaderTest = {
-						success: false,
-						reason: 'No access token available',
-					}
-				}
-			} catch (headerError) {
-				console.error(
-					'[debugAuth] Error testing authorization header:',
-					headerError,
+				const diagnostics = await getAuthDiagnostics(
+					authManager,
+					environment,
+					options,
 				)
-				tokenStatus.authorizationHeaderTest = {
-					success: false,
-					error:
-						headerError instanceof Error
-							? headerError.message
-							: String(headerError),
-				}
-			}
 
-			return {
-				tokenStatus,
-				authManagerType,
-				supportsRefresh,
+				// Log diagnostics summary for troubleshooting
+				console.log('[debugAuth] Auth diagnostics complete:', {
+					authManagerType: diagnostics.authManagerType,
+					supportsRefresh: diagnostics.supportsRefresh,
+					hasAccessToken: diagnostics.tokenStatus.hasAccessToken,
+					hasRefreshToken: diagnostics.tokenStatus.hasRefreshToken,
+					isExpired: diagnostics.tokenStatus.isExpired,
+					expiresInSeconds: diagnostics.tokenStatus.expiresInSeconds,
+					apiEnvironment: diagnostics.environment.apiEnvironment,
+				})
+
+				// Add an authorization header test
+				try {
+					const accessToken = await authManager.getAccessToken()
+					if (accessToken) {
+						// Test auth header format
+						const authHeader = `Bearer ${accessToken}`
+						const isCorrectFormat = authHeader.startsWith('Bearer ')
+						const headerTest = {
+							success: true,
+							isCorrectFormat,
+							format: isCorrectFormat
+								? 'Valid Bearer format'
+								: 'Incorrect format',
+							preview: `Bearer ${accessToken.substring(0, 8)}...`,
+						}
+						console.log('[debugAuth] Auth header test:', headerTest)
+						// Add to the diagnostics result
+						;(diagnostics as any).authHeaderTest = headerTest
+					} else {
+						;(diagnostics as any).authHeaderTest = {
+							success: false,
+							reason: 'No access token available',
+						}
+					}
+				} catch (headerError) {
+					console.error(
+						'[debugAuth] Error testing authorization header:',
+						headerError,
+					)
+					;(diagnostics as any).authHeaderTest = {
+						success: false,
+						error:
+							headerError instanceof Error
+								? headerError.message
+								: String(headerError),
+					}
+				}
+
+				return diagnostics
+			} catch (error) {
+				console.error('[debugAuth] Error during diagnostics:', error)
+
+				// Return error information in a consistent format
+				return {
+					authManagerType: authManager.constructor.name,
+					supportsRefresh: authManager.supportsRefresh(),
+					tokenStatus: {
+						hasAccessToken: false,
+						hasRefreshToken: false,
+						isExpired: true,
+						errorMessage:
+							error instanceof Error ? error.message : String(error),
+						diagnosticsError: true,
+					},
+					environment: {
+						apiEnvironment: finalConfig.environment,
+					},
+				} as AuthDiagnosticsResult
 			}
 		},
 	}
