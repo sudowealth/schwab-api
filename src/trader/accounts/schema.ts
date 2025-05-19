@@ -294,11 +294,9 @@ export type GetAccountByNumberResponseBody = z.infer<
 >
 
 // --- Get Accounts ---
-export const GetAccountsRequestQueryParams = z
-	.object({
-		fields: z.enum(['positions']).optional(),
-	})
-	.optional()
+export const GetAccountsRequestQueryParams = z.object({
+	fields: z.enum(['positions']).optional(),
+})
 export type GetAccountsRequestQueryParams = z.infer<
 	typeof GetAccountsRequestQueryParams
 >
