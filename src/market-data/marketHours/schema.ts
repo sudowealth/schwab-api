@@ -14,15 +14,23 @@ export type MarketHoursMarketQueryEnum = z.infer<
 	typeof MarketHoursMarketQueryEnum
 >
 
-// Schema for time string (HH:mm:ss)
+// Schema for ISO 8601 datetime string (YYYY-MM-DDTHH:mm:ss±HH:mm)
 const timeStringSchema = z
 	.string()
-	.regex(/^\d{2}:\d{2}:\d{2}$/, 'Time must be in HH:mm:ss format')
+	// Accept ISO 8601 datetime format from the API
+	.regex(
+		/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/,
+		'Time must be in ISO 8601 format',
+	)
 
 // Schema for session interval (start and end times)
 const SessionIntervalSchema = z.object({
-	start: timeStringSchema.describe('Session start time (HH:mm:ss)'),
-	end: timeStringSchema.describe('Session end time (HH:mm:ss)'),
+	start: timeStringSchema.describe(
+		'Session start time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss±HH:mm)',
+	),
+	end: timeStringSchema.describe(
+		'Session end time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss±HH:mm)',
+	),
 })
 export type SessionIntervalSchema = z.infer<typeof SessionIntervalSchema>
 
