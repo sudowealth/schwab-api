@@ -41,7 +41,7 @@ export class BaseTokenHandler implements FullAuthClient {
 	protected redirectUri: string
 	protected fetchFn: typeof fetch
 	protected loadTokens?: () => Promise<TokenSet | null>
-	protected saveTokens?: (tokens: TokenSet) => Promise<void>
+	protected _internalSaveTokens?: (tokens: TokenSet) => Promise<void>
 	protected defaultScope: string[]
 	protected refreshTokenCreatedAt?: number
 	protected refreshCallbacks: ((t: TokenSet) => void)[] = []
@@ -53,8 +53,29 @@ export class BaseTokenHandler implements FullAuthClient {
 		this.redirectUri = options.redirectUri
 		this.fetchFn = options.fetch || fetch
 		this.loadTokens = options.load
-		this.saveTokens = options.save
+		this._internalSaveTokens = options.save
 		this.defaultScope = options.scope || ['api', 'offline_access']
+	}
+
+	/**
+	 * Manually save tokens with optional metadata
+	 * @param tokens The token set to save
+	 * @param metadata Optional metadata about the save operation
+	 */
+	public async saveTokens(
+		tokens: Partial<TokenSet>,
+		_metadata?: Record<string, any>,
+	): Promise<void> {
+		// Create a valid TokenSet from the partial input
+		const tokenSet: TokenSet = {
+			accessToken: tokens.accessToken || '',
+			refreshToken: tokens.refreshToken || '',
+			expiresAt: tokens.expiresAt || Date.now() + 3600 * 1000,
+		}
+
+		if (this._internalSaveTokens) {
+			await this._internalSaveTokens(tokenSet)
+		}
 	}
 
 	/**
@@ -74,10 +95,10 @@ export class BaseTokenHandler implements FullAuthClient {
 		// Try to load tokens if needed
 		if (!this.tokenSet && this.loadTokens) {
 			try {
-				console.log('[debugTokenStatus] Loading tokens from storage')
 				this.tokenSet = await this.loadTokens()
 			} catch (error) {
-				console.error('[debugTokenStatus] Error loading tokens:', error)
+				// Error loading tokens, continue with null tokenSet
+				console.error('Error loading tokens', error)
 			}
 		}
 
@@ -99,7 +120,6 @@ export class BaseTokenHandler implements FullAuthClient {
 				: undefined,
 		}
 
-		console.log('[debugTokenStatus] Token status:', result)
 		return result
 	}
 
@@ -108,14 +128,11 @@ export class BaseTokenHandler implements FullAuthClient {
 	 * Use this when experiencing 401 errors to ensure tokens are valid.
 	 */
 	async forceTokenRefresh(): Promise<TokenSet> {
-		console.log('[forceTokenRefresh] Starting forced token refresh')
-
 		await this.debugTokenStatus()
 
 		try {
 			// Ensure we have a refresh token to use
 			if (!this.tokenSet?.refreshToken && this.loadTokens) {
-				console.log('[forceTokenRefresh] Loading tokens from storage')
 				this.tokenSet = await this.loadTokens()
 			}
 
@@ -126,19 +143,13 @@ export class BaseTokenHandler implements FullAuthClient {
 				)
 			}
 
-			console.log(
-				`[forceTokenRefresh] Using refresh token (length: ${this.tokenSet.refreshToken.length})`,
-			)
-
 			const result = await this.refreshTokens({
 				refreshToken: this.tokenSet.refreshToken,
 				force: true,
 			})
 
-			console.log('[forceTokenRefresh] Successfully refreshed tokens')
 			return result
 		} catch (error) {
-			console.error('[forceTokenRefresh] Error during forced refresh:', error)
 			throw error
 		}
 	}
@@ -190,9 +201,12 @@ export class BaseTokenHandler implements FullAuthClient {
 			// Track when refresh token was obtained
 			this.refreshTokenCreatedAt = Date.now()
 
-			if (this.saveTokens) {
-				await this.saveTokens(tokenSet)
-			}
+			// Save tokens with metadata about code exchange
+			await this.saveTokens(tokenSet, {
+				operation: 'code_exchange',
+				codeLength: code.length,
+				timestamp: Date.now(),
+			})
 
 			return tokenSet
 		} catch (error) {
@@ -270,15 +284,6 @@ export class BaseTokenHandler implements FullAuthClient {
 				)
 			}
 
-			// Check if refresh token might be nearing expiration and log a warning
-			// Skip if force is true - we'll refresh regardless of expiration status
-			if (!options?.force && this.isRefreshTokenNearingExpiration()) {
-				console.warn(
-					'WARNING: Schwab refresh token is nearing its 7-day expiration limit. ' +
-						'If refresh fails, a full re-authentication will be required.',
-				)
-			}
-
 			// Create a request context for token refresh
 			const context = createRequestContext(
 				getSchwabApiConfigDefaults(),
@@ -303,9 +308,12 @@ export class BaseTokenHandler implements FullAuthClient {
 			// Store the tokens internally
 			this.tokenSet = tokenSet
 
-			if (this.saveTokens) {
-				await this.saveTokens(tokenSet)
-			}
+			// Save tokens with metadata about token refresh
+			await this.saveTokens(tokenSet, {
+				operation: 'refresh',
+				refreshToken: refreshTokenToUse,
+				timestamp: Date.now(),
+			})
 
 			// Notify all refresh listeners
 			this.notifyRefreshListeners(tokenSet)
@@ -387,7 +395,8 @@ export class BaseTokenHandler implements FullAuthClient {
 			try {
 				cb(tokenSet)
 			} catch (error) {
-				console.error('Error in onRefresh callback:', error)
+				// Silently ignore callback errors
+				console.error('Error notifying refresh listeners', error)
 			}
 		})
 	}
@@ -416,7 +425,7 @@ export class BaseTokenHandler implements FullAuthClient {
 				expiresAt: this.tokenSet.expiresAt,
 			}
 		} catch (error) {
-			console.error('Failed to get token data:', error)
+			console.error('Error getting token data', error)
 			return null
 		}
 	}

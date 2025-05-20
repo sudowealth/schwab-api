@@ -261,7 +261,7 @@ export async function createApiClient(
 		await manager.clearTokens()
 		await manager.saveTokens({
 			accessToken: options.auth,
-			expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
+			expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes expiration
 		})
 
 		authManager = manager

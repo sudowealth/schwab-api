@@ -105,17 +105,6 @@ const DEFAULT_DEBUG_OPTIONS: Required<Omit<DebugOptions, 'callback'>> = {
 }
 
 /**
- * Helper function to safely stringify objects for logging
- */
-function safeStringify(obj: any, prettyPrint: boolean): string {
-	try {
-		return prettyPrint ? JSON.stringify(obj, null, 2) : JSON.stringify(obj)
-	} catch (e) {
-		return `[Object cannot be stringified: ${(e as Error).message}]`
-	}
-}
-
-/**
  * Helper function to safely clone and parse JSON request/response bodies
  */
 async function safeParseBody(req: Request | Response): Promise<any> {
@@ -188,8 +177,7 @@ export function withDebug(options: DebugOptions = {}): Middleware {
 		...options,
 	}
 
-	const { tag, logRequest, logResponse, logBodies, prettyPrint, callback } =
-		config
+	const { tag, logRequest, logResponse, logBodies, callback } = config
 
 	return async (req, next) => {
 		const metadata = getMetadata(req)
@@ -223,12 +211,8 @@ export function withDebug(options: DebugOptions = {}): Middleware {
 
 			if (callback) {
 				callback(info)
-			} else {
-				console.log(
-					`[${tag}] REQUEST ${req.method} ${req.url}:`,
-					prettyPrint ? '\n' + safeStringify(info, true) : info,
-				)
 			}
+			// Console logging removed
 		}
 
 		// Create a new request with updated metadata
@@ -266,12 +250,8 @@ export function withDebug(options: DebugOptions = {}): Middleware {
 
 				if (callback) {
 					callback(info)
-				} else {
-					console.log(
-						`[${tag}] RESPONSE ${response.status} (${req.method} ${new URL(req.url).pathname}):`,
-						prettyPrint ? '\n' + safeStringify(info, true) : info,
-					)
 				}
+				// Console logging removed
 			}
 
 			return response
@@ -293,12 +273,8 @@ export function withDebug(options: DebugOptions = {}): Middleware {
 
 			if (callback) {
 				callback(errorInfo)
-			} else {
-				console.error(
-					`[${tag}] ERROR for ${req.method} ${req.url}:`,
-					prettyPrint ? '\n' + safeStringify(errorInfo, true) : errorInfo,
-				)
 			}
+			// Console logging removed
 
 			throw error
 		}

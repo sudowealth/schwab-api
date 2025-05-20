@@ -188,6 +188,16 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	load?(): Promise<TokenSet | null>
 
 	/**
+	 * Manually save tokens
+	 * @param tokens The token set to save
+	 * @param metadata Optional metadata about the save operation
+	 */
+	saveTokens?(
+		tokens: Partial<TokenSet>,
+		metadata?: Record<string, any>,
+	): Promise<void>
+
+	/**
 	 * Register a callback for token refresh events
 	 */
 	onRefresh?(callback: (tokenSet: TokenSet) => void): void

@@ -283,7 +283,7 @@ export class TokenRefreshTracer {
 					sanitizedBody =
 						body.length > 100 ? body.substring(0, 100) + '...' : body
 				}
-				console.error('Error sanitizing response body:', e)
+				console.error('Error sanitizing body', e)
 			}
 		} else {
 			sanitizedBody = body
@@ -635,16 +635,8 @@ export class TokenRefreshTracer {
 			try {
 				this.options.tracerCallback(event)
 			} catch (e) {
-				console.error('Error in token refresh tracer callback:', e)
+				console.error('Error calling tracer callback', e)
 			}
-		} else {
-			// Default console logging
-			console.log(
-				`[TokenRefreshTracer] ${event.eventType}:`,
-				event.error
-					? { details: event.details, error: event.error }
-					: event.details,
-			)
 		}
 	}
 
@@ -700,7 +692,7 @@ export class TokenRefreshTracer {
 			}
 		} catch (error) {
 			// If anything goes wrong during iteration, return a safe empty object
-			console.warn('Error sanitizing headers:', error)
+			console.error('Error sanitizing headers', error)
 		}
 
 		return result
@@ -750,7 +742,8 @@ export function createTracingFetch(
 					}
 				}
 			} catch (e) {
-				console.warn('Failed to extract request body for tracing:', e)
+				// Failed to extract request body
+				console.error('Error extracting request body', e)
 			}
 
 			// Record the request
@@ -780,7 +773,7 @@ export function createTracingFetch(
 						resBody = await resClone.clone().text()
 					}
 				} catch (e) {
-					console.warn('Failed to extract response body for tracing:', e)
+					console.error('Error extracting response body', e)
 					resBody = '[Failed to parse response body]'
 				}
 
@@ -812,7 +805,7 @@ export function createTracingFetch(
 							tracer.recordRefreshSuccess(refreshId, {})
 						}
 					} catch (e) {
-						console.warn('Failed to extract token data for tracing:', e)
+						console.error('Error extracting token data', e)
 						tracer.recordRefreshSuccess(refreshId, {})
 					}
 				} else {
