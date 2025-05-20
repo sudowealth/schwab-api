@@ -1,8 +1,8 @@
+import { tokenIsExpiringSoon } from './auth-utils'
 import {
 	type ITokenLifecycleManager,
 	forceRefreshTokens,
 } from './token-lifecycle-manager'
-import { tokenIsExpiringSoon } from './token-utils'
 import { type TokenData } from './types'
 
 /**

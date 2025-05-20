@@ -1,7 +1,4 @@
-import {
-	type ITokenLifecycleManager,
-	buildTokenManager,
-} from '../auth/token-lifecycle-manager'
+import { EnhancedTokenManager } from '../auth/enhanced-token-manager'
 import { type Middleware } from './compose'
 import { type RateLimitOptions } from './with-rate-limit'
 import { type RetryOptions } from './with-retry'
@@ -74,10 +71,10 @@ export interface MiddlewarePipelineOptions {
  * @param token Authentication token or token manager
  * @returns Array of middleware functions in execution order
  */
-export function buildMiddlewarePipeline(
+export async function buildMiddlewarePipeline(
 	options: MiddlewarePipelineOptions = {},
-	token?: string | ITokenLifecycleManager,
-): Middleware[] {
+	token?: string | EnhancedTokenManager,
+): Promise<Middleware[]> {
 	// Import middleware lazily to avoid circular dependencies
 	const { withTokenAuth } = require('./with-token-auth')
 	const { withRateLimit } = require('./with-rate-limit')
@@ -97,21 +94,39 @@ export function buildMiddlewarePipeline(
 	// Add auth middleware if not disabled and token is provided
 	if (!disabled.includes('auth') && token) {
 		try {
-			// Convert to a unified token manager
-			const tokenManager = buildTokenManager(token)
+			// Create auth middleware with token
+			let tokenManager: EnhancedTokenManager
 
-			if (tokenManager) {
-				// Create auth middleware with options
-				const authOptions: TokenAuthOptions = {
-					tokenManager,
-					advanced: {
-						...DEFAULT_TOKEN_AUTH_OPTIONS.advanced,
-						...options.auth?.advanced,
-					},
-				}
+			// If it's a string token, create a new EnhancedTokenManager with it
+			if (typeof token === 'string') {
+				// Create a temporary token manager for the access token
+				tokenManager = new EnhancedTokenManager({
+					clientId: 'temp-static-token',
+					clientSecret: 'static-token-secret',
+					redirectUri: 'https://example.com/callback',
+				})
 
-				pipeline.push(withTokenAuth(authOptions))
+				// Manually set the token
+				await tokenManager.clearTokens()
+				await tokenManager.saveTokens({
+					accessToken: token,
+					expiresAt: Date.now() + 3600 * 1000, // 1 hour
+				})
+			} else {
+				// Use the provided EnhancedTokenManager
+				tokenManager = token
 			}
+
+			// Create auth middleware with options
+			const authOptions: TokenAuthOptions = {
+				tokenManager,
+				advanced: {
+					...DEFAULT_TOKEN_AUTH_OPTIONS.advanced,
+					...options.auth?.advanced,
+				},
+			}
+
+			pipeline.push(withTokenAuth(authOptions))
 		} catch (error) {
 			console.error('Failed to create token manager:', error)
 			// Continue without auth middleware

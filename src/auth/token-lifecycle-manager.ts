@@ -7,46 +7,6 @@ import {
 } from './types'
 
 /**
- * @internal This class is not intended to be used directly.
- * Export it for index.ts to re-export
- */
-
-/**
- * Basic implementation for a static token (no refresh capability)
- * Useful for simple scripts or when tokens are managed externally
- */
-export class StaticTokenManager implements ITokenLifecycleManager {
-	/**
-	 * Create a static token manager with a fixed access token
-	 * @param accessToken The static access token to use
-	 */
-	constructor(private accessToken: string) {}
-
-	async getTokenData(): Promise<TokenData> {
-		return { accessToken: this.accessToken }
-	}
-
-	async getAccessToken(): Promise<string> {
-		return this.accessToken
-	}
-
-	supportsRefresh(): boolean {
-		return false
-	}
-}
-
-/**
- * Create a token manager from a static token string
- * @param accessToken The static access token
- * @returns A StaticTokenManager instance
- */
-export function createStaticTokenManager(
-	accessToken: string,
-): StaticTokenManager {
-	return new StaticTokenManager(accessToken)
-}
-
-/**
  * Function to determine if an object implements ITokenLifecycleManager
  * @param obj Object to check
  * @returns True if the object implements ITokenLifecycleManager
@@ -70,8 +30,9 @@ export function isTokenLifecycleManager(
  * Adds concurrency protection to a token manager that supports refresh
  * This is a wrapper that ensures controlled concurrency for refresh operations
  *
- * @internal This class is used internally by buildTokenManager to ensure concurrency protection
- * and should not be instantiated directly by users.
+ * @internal This class is used internally and should not be instantiated directly.
+ * @deprecated This class is deprecated and will be removed in a future version.
+ * Use EnhancedTokenManager instead which has built-in concurrency protection.
  */
 export class ConcurrentTokenManager implements ITokenLifecycleManager {
 	private refreshInProgress: Promise<TokenData> | null = null
@@ -129,7 +90,7 @@ export class ConcurrentTokenManager implements ITokenLifecycleManager {
 
 		// Import the token utilities dynamically to avoid circular dependencies
 		const { tokenIsExpiringSoon, DEFAULT_REFRESH_THRESHOLD_MS } = await import(
-			'./token-utils'
+			'./auth-utils'
 		)
 
 		// Default threshold is 5 minutes
@@ -338,9 +299,10 @@ export class ConcurrentTokenManager implements ITokenLifecycleManager {
 }
 
 /**
+ * @deprecated This function is deprecated and will be removed in a future version.
+ * Use EnhancedTokenManager or createSchwabAuth with AuthStrategy.STATIC instead.
+ *
  * A unified function to build a token manager from various input types.
- * This is the recommended way to create token managers as it handles all
- * edge cases and automatically applies concurrency protection when needed.
  *
  * @param input The token input, which can be:
  *   - A string containing a static access token
@@ -369,15 +331,22 @@ export function buildTokenManager(
 		return input
 	}
 
-	// String token - create a static manager (no concurrency needed as it doesn't support refresh)
+	// String token - create a basic token manager through ConcurrentTokenManager
 	if (typeof input === 'string') {
-		return createStaticTokenManager(input)
+		throw new SchwabAuthError(
+			AuthErrorCode.INVALID_CODE,
+			'Static token managers are deprecated. Use EnhancedTokenManager or createSchwabAuth with AuthStrategy.STATIC instead.',
+			undefined,
+			{
+				providedType: typeof input,
+			},
+		)
 	}
 
 	// Unsupported input type
 	throw new SchwabAuthError(
 		AuthErrorCode.INVALID_CODE,
-		'Unsupported token type. Must be a string or ITokenLifecycleManager instance.',
+		'Unsupported token type. Must be a ITokenLifecycleManager instance.',
 		undefined,
 		{
 			providedType: typeof input,

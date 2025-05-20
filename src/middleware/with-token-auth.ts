@@ -1,4 +1,4 @@
-import { type ITokenLifecycleManager } from '../auth/token-lifecycle-manager'
+import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
 import { handleApiError } from '../errors'
 import { type Middleware } from './compose'
 import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
@@ -10,7 +10,7 @@ export interface TokenAuthOptions {
 	/**
 	 * The token manager to use for authentication
 	 */
-	tokenManager: ITokenLifecycleManager
+	tokenManager: EnhancedTokenManager
 
 	/**
 	 * Advanced token authentication options
@@ -53,7 +53,7 @@ export const DEFAULT_TOKEN_AUTH_OPTIONS: Omit<
  * @returns A middleware function
  */
 export function withTokenAuth(
-	options: ITokenLifecycleManager | TokenAuthOptions,
+	options: EnhancedTokenManager | TokenAuthOptions,
 ): Middleware {
 	// Handle both function signatures (tokenManager or options object)
 	let config: TokenAuthOptions

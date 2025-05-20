@@ -1,36 +1,19 @@
 import { EnhancedTokenManager } from './enhanced-token-manager'
-import {
-	type ITokenLifecycleManager,
-	buildTokenManager,
-} from './token-lifecycle-manager'
 import { type AuthClientOptions, type FullAuthClient } from './types'
 
 /**
- * Authentication strategy types supported by the auth factory
+ * Authentication strategy for the auth factory
+ * Only the Enhanced strategy is supported in this version
  */
 export enum AuthStrategy {
 	/**
-	 * Enhanced OAuth 2.0 code flow authentication (Recommended)
+	 * Enhanced OAuth 2.0 code flow authentication
 	 * - Built-in token persistence and refresh capabilities
 	 * - Includes retry logic, automatic reconnection, and token validation
 	 * - Comprehensive error handling and debugging tools
 	 * - Reliable token management for serverless environments
 	 */
 	ENHANCED = 'enhanced',
-
-	/**
-	 * Static token authentication
-	 * - Uses a fixed access token
-	 * - No refresh capability
-	 */
-	STATIC = 'static',
-
-	/**
-	 * Custom token lifecycle manager
-	 * - Uses a user-provided implementation of ITokenLifecycleManager
-	 * - Allows full control over token management
-	 */
-	CUSTOM = 'custom',
 }
 
 /**
@@ -38,40 +21,26 @@ export enum AuthStrategy {
  */
 export interface AuthFactoryConfig {
 	/**
-	 * Authentication strategy to use
+	 * Authentication strategy to use (only ENHANCED is supported)
+	 * @default AuthStrategy.ENHANCED
 	 */
-	strategy: AuthStrategy | string
+	strategy?: AuthStrategy | string
 
 	/**
-	 * Static access token (required when strategy is 'static')
+	 * OAuth client options (required)
 	 */
-	accessToken?: string
-
-	/**
-	 * Custom token lifecycle manager (required when strategy is 'custom')
-	 */
-	tokenManager?: ITokenLifecycleManager
-
-	/**
-	 * OAuth client options (required when strategy is 'enhanced')
-	 */
-	oauthConfig?: AuthClientOptions
+	oauthConfig: AuthClientOptions
 }
 
 // Re-export the FullAuthClient type for convenience
 export type { FullAuthClient }
 
 /**
- * Creates a unified authentication client that handles various authentication strategies
- *
- * This function simplifies authentication by providing a consistent interface
- * regardless of the chosen authentication method.
+ * Creates an authentication client using the EnhancedTokenManager
  *
  * @example
  * ```typescript
- * // Example 1: Enhanced Authentication (Recommended)
  * const auth = createSchwabAuth({
- *   strategy: AuthStrategy.ENHANCED,
  *   oauthConfig: {
  *     clientId: 'your-client-id',
  *     clientSecret: 'your-client-secret',
@@ -87,70 +56,14 @@ export type { FullAuthClient }
  * // Exchange code for tokens
  * const tokens = await auth.exchangeCode('authorization-code');
  * ```
- *
- * @example
- * ```typescript
- * // Example 2: Static Token
- * const auth = createSchwabAuth({
- *   strategy: AuthStrategy.STATIC,
- *   accessToken: 'your-access-token'
- * });
- * ```
- *
- * @example
- * ```typescript
- * // Example 3: Custom Token Manager
- * const auth = createSchwabAuth({
- *   strategy: AuthStrategy.CUSTOM,
- *   tokenManager: myCustomTokenManager
- * });
- * ```
  */
 export function createSchwabAuth(config: AuthFactoryConfig): FullAuthClient {
-	const strategy = config.strategy.toLowerCase()
-
-	switch (strategy) {
-		case AuthStrategy.ENHANCED.toLowerCase():
-			if (!config.oauthConfig) {
-				throw new Error('oauthConfig is required for ENHANCED strategy')
-			}
-
-			// Create the enhanced token manager with the same OAuth config
-			const enhancedManager = new EnhancedTokenManager(config.oauthConfig)
-			return enhancedManager as unknown as FullAuthClient
-
-		case AuthStrategy.STATIC.toLowerCase():
-			if (!config.accessToken) {
-				throw new Error('accessToken is required for STATIC strategy')
-			}
-
-			// Static tokens can't exchange code or refresh
-			const staticManager = buildTokenManager(config.accessToken)
-			// Cast to FullAuthClient but with limited functionality
-			return {
-				...staticManager,
-				getAuthorizationUrl: () => {
-					throw new Error(
-						'getAuthorizationUrl is not supported with static tokens',
-					)
-				},
-				exchangeCode: () => {
-					throw new Error('exchangeCode is not supported with static tokens')
-				},
-				refresh: () => {
-					throw new Error('refresh is not supported with static tokens')
-				},
-			} as FullAuthClient
-
-		case AuthStrategy.CUSTOM.toLowerCase():
-			if (!config.tokenManager) {
-				throw new Error('tokenManager is required for CUSTOM strategy')
-			}
-
-			// Cast to FullAuthClient but let the caller handle missing methods
-			return buildTokenManager(config.tokenManager) as unknown as FullAuthClient
-
-		default:
-			throw new Error(`Unknown authentication strategy: ${config.strategy}`)
+	// Check if oauthConfig is provided
+	if (!config.oauthConfig) {
+		throw new Error('oauthConfig is required')
 	}
+
+	// Create the enhanced token manager with the provided OAuth config
+	const enhancedManager = new EnhancedTokenManager(config.oauthConfig)
+	return enhancedManager as unknown as FullAuthClient
 }

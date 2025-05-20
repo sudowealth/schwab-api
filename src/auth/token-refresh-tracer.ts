@@ -283,6 +283,7 @@ export class TokenRefreshTracer {
 					sanitizedBody =
 						body.length > 100 ? body.substring(0, 100) + '...' : body
 				}
+				console.error('Error sanitizing response body:', e)
 			}
 		} else {
 			sanitizedBody = body

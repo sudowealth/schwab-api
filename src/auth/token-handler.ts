@@ -2,13 +2,13 @@ import { getSchwabApiConfigDefaults } from '../core/config'
 import { createRequestContext } from '../core/http'
 import { AuthErrorCode, SchwabAuthError } from '../errors'
 import {
+	tokenIsExpiringSoon,
+	REFRESH_TOKEN_WARNING_THRESHOLD_MS,
+} from './auth-utils'
+import {
 	exchangeCodeForTokenWithContext,
 	refreshTokenWithContext,
 } from './token'
-import {
-	tokenIsExpiringSoon,
-	REFRESH_TOKEN_WARNING_THRESHOLD_MS,
-} from './token-utils'
 import {
 	type SchwabTokenResponse,
 	type TokenSet,

@@ -90,12 +90,11 @@ to navigate and extend the library.
 ### Concurrency Protection
 
 Token refresh operations are automatically protected against race conditions.
-When you use `createSchwabAuth` with an authentication strategy that supports
-token refresh (like `AuthStrategy.CODE_FLOW` or a custom manager with refresh
-capabilities), the underlying token manager is wrapped with a
-`ConcurrentTokenManager`. This ensures that multiple concurrent API calls will
-not trigger multiple simultaneous token refresh attempts, preventing potential
-issues and ensuring a stable token lifecycle.
+When you use `createSchwabAuth` with `AuthStrategy.ENHANCED`, the
+`EnhancedTokenManager` provides built-in concurrency protection. This ensures
+that multiple concurrent API calls will not trigger multiple simultaneous token
+refresh attempts, preventing potential issues and ensuring a stable token
+lifecycle.
 
 You can access the various API domains through the client instance:
 
@@ -157,7 +156,7 @@ import {
 } from '@sudowealth/schwab-api'
 ;(async () => {
 	const auth = createSchwabAuth({
-		strategy: AuthStrategy.STATIC,
+		strategy: AuthStrategy.ENHANCED,
 		accessToken: 'YOUR_TOKEN',
 	}) // Replace YOUR_TOKEN with a valid token
 	const client = createApiClient({ auth, config: { environment: 'SANDBOX' } }) // For actual live data, set environment: 'PRODUCTION'. Ensure your OAuth credentials are also configured for production use in your Schwab developer dashboard.
@@ -180,14 +179,14 @@ async function main() {
 	// For this quick start, we'll use a static token.
 	// Replace 'YOUR_ACCESS_TOKEN' with your actual token.
 	const auth = createSchwabAuth({
-		strategy: AuthStrategy.STATIC,
+		strategy: AuthStrategy.ENHANCED,
 		accessToken: 'YOUR_ACCESS_TOKEN',
 	})
 
 	// Alternatively, for OAuth 2.0 Code Flow (more common for applications):
 	// Make sure SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET are defined in your environment (e.g., in .env or your hosting platform's config).
 	const auth = createSchwabAuth({
-		strategy: AuthStrategy.CODE_FLOW,
+		strategy: AuthStrategy.ENHANCED,
 		oauthConfig: {
 			clientId: process.env.SCHWAB_CLIENT_ID!, // Ensure these are set in your environment
 			clientSecret: process.env.SCHWAB_CLIENT_SECRET!,
@@ -218,7 +217,7 @@ async function main() {
 		supportsRefresh: () => false,
 	}
 	const auth = createSchwabAuth({
-		strategy: AuthStrategy.CUSTOM,
+		strategy: AuthStrategy.ENHANCED,
 		tokenManager: customManager,
 	})
 
@@ -285,7 +284,7 @@ import {
 
 // Create an auth client with your preferred strategy
 const auth = createSchwabAuth({
-	strategy: AuthStrategy.CODE_FLOW, // Or AuthStrategy.STATIC or AuthStrategy.CUSTOM
+	strategy: AuthStrategy.ENHANCED, // This is the recommended strategy
 	oauthConfig: {
 		clientId: process.env.SCHWAB_CLIENT_ID,
 		clientSecret: process.env.SCHWAB_CLIENT_SECRET,
@@ -335,7 +334,7 @@ import {
 // Create an auth client with OAuth configuration
 // Make sure SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET are defined in your environment (e.g., in .env or your hosting platform's config).
 const auth = createSchwabAuth({
-	strategy: AuthStrategy.CODE_FLOW,
+	strategy: AuthStrategy.ENHANCED,
 	oauthConfig: {
 		clientId: process.env.SCHWAB_CLIENT_ID,
 		clientSecret: process.env.SCHWAB_CLIENT_SECRET,
@@ -374,7 +373,7 @@ import {
 
 // Method 1: Using createSchwabAuth
 const auth = createSchwabAuth({
-	strategy: AuthStrategy.STATIC,
+	strategy: AuthStrategy.ENHANCED,
 	accessToken: 'your-access-token-here',
 })
 
@@ -450,7 +449,7 @@ class CustomTokenManager implements ITokenLifecycleManager {
 
 // Method 1: Using createSchwabAuth
 const auth = createSchwabAuth({
-	strategy: AuthStrategy.CUSTOM,
+	strategy: AuthStrategy.ENHANCED,
 	tokenManager: new CustomTokenManager('https://your-backend.com'),
 })
 
@@ -482,7 +481,7 @@ import { createApiClient, AuthStrategy } from '@sudowealth/schwab-api'
 const client = createApiClient({
 	config: { environment: 'SANDBOX' },
 	auth: {
-		strategy: AuthStrategy.CODE_FLOW,
+		strategy: AuthStrategy.ENHANCED,
 		oauthConfig: {
 			clientId: 'your-client-id',
 			clientSecret: 'your-client-secret',
@@ -761,27 +760,23 @@ const auth = createSchwabAuth({
 The library provides robust token management, especially concerning concurrent
 API calls and token refreshes.
 
-- **Automatic Concurrency Protection**: When you use `createSchwabAuth` with an
-  authentication strategy that supports token refresh (like
-  `AuthStrategy.CODE_FLOW` or a custom `ITokenLifecycleManager` that implements
-  `refreshIfNeeded` and `supportsRefresh`), the token manager is automatically
-  wrapped in a `ConcurrentTokenManager`. This wrapper ensures that if multiple
-  API calls are made simultaneously and the access token has expired or is about
-  to expire, only a single refresh attempt will be made. Other concurrent
-  requests will wait for the new token, preventing multiple refresh calls that
-  could lead to errors or token invalidation.
+- **Automatic Concurrency Protection**: When you use `createSchwabAuth` with
+  `AuthStrategy.ENHANCED`, the `EnhancedTokenManager` provides built-in
+  concurrency protection. This ensures that if multiple API calls are made
+  simultaneously and the access token has expired or is about to expire, only a
+  single refresh attempt will be made. Other concurrent requests will wait for
+  the new token, preventing multiple refresh calls that could lead to errors or
+  token invalidation.
 
-- **`buildTokenManager`**: This utility function is used internally by
-  `createSchwabAuth` but can also be used directly if you need to construct a
-  token manager with specific behaviors outside of the standard
-  `createSchwabAuth` flow. It also applies the `ConcurrentTokenManager` wrapper
-  if the underlying manager supports refresh.
+- **Token Management**: The `EnhancedTokenManager` handles all aspects of token
+  lifecycle, including token acquisition, storage, refresh, and concurrency
+  protection. This component is used internally by `createSchwabAuth` and is the
+  recommended approach for all authentication scenarios.
 
-- **Custom Token Managers**: If you implement a custom `ITokenLifecycleManager`,
-  the library will still wrap it with `ConcurrentTokenManager` as long as your
-  `supportsRefresh()` method returns `true`. This means you don't need to
-  implement concurrency protection yourself within your custom manager for the
-  refresh logic.
+- **Custom Token Managers**: When using `AuthStrategy.ENHANCED` with a custom
+  token manager, all the concurrency protection, refresh handling, and token
+  lifecycle management is handled for you. This means you don't need to
+  implement concurrency protection yourself within your custom manager.
 
   ```typescript
   import {
@@ -854,16 +849,13 @@ API calls and token refreshes.
   // Using it with createSchwabAuth:
   const customManager = new MyCustomTokenManager()
   const authClient = createSchwabAuth({
-  	strategy: AuthStrategy.CUSTOM,
+  	strategy: AuthStrategy.ENHANCED,
   	tokenManager: customManager,
-  	// The `customManager` will be automatically wrapped in ConcurrentTokenManager
-  	// because `supportsRefresh()` returns true.
+  	// The EnhancedTokenManager will handle all concurrency protection
+  	// and token lifecycle management.
   })
 
-  // Or using buildTokenManager directly (less common for end-users)
-  // const concurrentCustomManager = buildTokenManager({
-  //   tokenManager: customManager
-  // });
+  // With EnhancedTokenManager, you don't need additional token management utilities
   ```
 
 ### Cloudflare Workers Compatibility
@@ -1376,7 +1368,7 @@ use.
   - `options.auth`: Authentication configuration (recommended)
     - Can be a string access token, an object implementing
       ITokenLifecycleManager, or an AuthFactoryConfig
-    - String tokens are automatically wrapped with StaticTokenManager
+    - String tokens are automatically wrapped with EnhancedTokenManager
   - `options.middleware`: Configure middleware pipeline including rate limits,
     retries, and additional custom middleware
 
@@ -1388,16 +1380,14 @@ use.
     concurrency protection
   - Recommended approach for all token management needs
 - `ITokenLifecycleManager`: Interface for token lifecycle management
-- `StaticTokenManager`: Simple implementation for static tokens
-- `ConcurrentTokenManager`: Wrapper that ensures only one refresh happens at a
-  time
+- `EnhancedTokenManager`: Robust implementation for token lifecycle management
+  that handles authentication, refresh, and concurrency protection
 
 #### Public Token Utility Functions
 
 - `isTokenLifecycleManager(obj)`: Type guard to check if an object implements
   the token manager interface
-- `createStaticTokenManager(accessToken)`: Create a non-refreshable token
-  manager
+- `EnhancedTokenManager`: Create a fully-featured token manager
 
 ### Public Middleware Components
 

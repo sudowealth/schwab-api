@@ -91,3 +91,84 @@ export function shouldRefreshTokens(
 	// If token is expiring soon or already expired
 	return tokenIsExpiringSoon(expiresAt, refreshThresholdMs)
 }
+
+/**
+ * Creates a proper Authorization header value from token data
+ *
+ * @param tokenData TokenData object containing the access token
+ * @returns Authorization header value or null if no valid token is available
+ */
+export function createAuthHeaderFromToken(
+	tokenData: TokenData | null | undefined,
+): string | null {
+	if (!tokenData?.accessToken) {
+		return null
+	}
+
+	// Ensure the token doesn't already include 'Bearer'
+	const token = tokenData.accessToken.startsWith('Bearer ')
+		? tokenData.accessToken
+		: `Bearer ${tokenData.accessToken}`
+
+	return token
+}
+
+/**
+ * Checks if the Authorization header is properly formatted
+ *
+ * @param headerValue The Authorization header value to check
+ * @returns Validation result
+ */
+export function validateAuthorizationHeader(
+	headerValue: string | null | undefined,
+): {
+	isValid: boolean
+	reason?: string
+	formattedValue?: string
+} {
+	// Check for missing header
+	if (!headerValue) {
+		return {
+			isValid: false,
+			reason: 'Missing Authorization header',
+		}
+	}
+
+	// Check for Bearer prefix
+	if (!headerValue.startsWith('Bearer ')) {
+		// Try to fix by adding Bearer prefix
+		const formattedValue = `Bearer ${headerValue}`
+
+		return {
+			isValid: false,
+			reason: 'Authorization header missing "Bearer" prefix',
+			formattedValue,
+		}
+	}
+
+	// Check for token after prefix
+	const parts = headerValue.split(' ')
+	if (parts.length < 2 || !parts[1]) {
+		return {
+			isValid: false,
+			reason: 'Authorization header missing token',
+		}
+	}
+
+	// Check for extra spaces
+	if (parts.length > 2) {
+		// Try to fix by removing extra spaces
+		const formattedValue = `Bearer ${parts[1]}`
+
+		return {
+			isValid: false,
+			reason: 'Authorization header contains extra spaces',
+			formattedValue,
+		}
+	}
+
+	// Valid header
+	return {
+		isValid: true,
+	}
+}

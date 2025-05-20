@@ -1,8 +1,9 @@
 export * from './urls'
 export * from './token'
 export * from './types'
+export * from './auth-utils'
 
-// Primary auth interfaces and factory (recommended approach)
+// Primary auth interfaces and factory
 export {
 	createSchwabAuth,
 	AuthStrategy,
@@ -10,21 +11,21 @@ export {
 	type FullAuthClient,
 } from './auth'
 
-// Export token utilities
-export * from './token-utils'
-
-// Core token handling components
-export { BaseTokenHandler, mapTokenResponse } from './token-handler'
-export { OpenIdTokenManager } from './openid-manager'
-
-// Token management architecture components
-export * from './token-lifecycle-manager'
-
-// Token validation and diagnostics utilities
-export * from './token-validator'
-export * from './token-refresh-tracer'
+// Export diagnostic utilities for debugging
 export * from './auth-diagnostics'
 
-// Enhanced token management (new in v1.x)
-export * from './token-persistence-manager'
-export * from './enhanced-token-manager'
+// EnhancedTokenManager and related components
+export {
+	// Main token manager class
+	EnhancedTokenManager,
+
+	// Options and configuration
+	type EnhancedTokenManagerOptions,
+
+	// Error codes
+	TokenErrorCode,
+
+	// Event types
+	TokenPersistenceEvent,
+	type TokenPersistenceEventHandler,
+} from './enhanced-token-manager'

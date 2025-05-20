@@ -4,7 +4,7 @@ import {
 	type AuthDiagnosticsOptions,
 	type AuthDiagnosticsResult,
 } from './auth/auth-diagnostics'
-import { type ITokenLifecycleManager } from './auth/token-lifecycle-manager'
+import { type EnhancedTokenManager } from './auth/enhanced-token-manager'
 import {
 	type SchwabApiConfig,
 	getSchwabApiConfigDefaults,
@@ -61,12 +61,12 @@ export interface CreateApiClientOptions {
 	 *
 	 * This can be one of:
 	 * - A string containing an access token
-	 * - An object implementing ITokenLifecycleManager
+	 * - An EnhancedTokenManager instance
 	 * - An AuthFactoryConfig object that will be passed to createSchwabAuth
 	 *
 	 * Concurrency protection is automatically applied for refresh-capable token managers.
 	 */
-	auth?: string | ITokenLifecycleManager | authNs.AuthFactoryConfig
+	auth?: string | EnhancedTokenManager | authNs.AuthFactoryConfig
 
 	/**
 	 * Middleware configuration options
@@ -242,42 +242,58 @@ function processNamespace<T extends Record<string, any>>(
 	return result as ProcessNamespaceResult<T>
 }
 
-export function createApiClient(
+export async function createApiClient(
 	options: CreateApiClientOptions = {},
-): SchwabApiClient {
+): Promise<SchwabApiClient> {
 	const finalConfig = { ...getSchwabApiConfigDefaults(), ...options.config }
 
-	let authManager: ITokenLifecycleManager
+	let authManager: EnhancedTokenManager
 	if (typeof options.auth === 'string') {
-		const auth = authNs.createSchwabAuth({
-			strategy: authNs.AuthStrategy.STATIC,
+		// For string tokens, create an EnhancedTokenManager directly
+		// and then set the token manually
+		const manager = new authNs.EnhancedTokenManager({
+			clientId: 'temp-client',
+			clientSecret: 'temp-secret',
+			redirectUri: 'https://example.com/callback',
+		})
+
+		// Set the token value
+		await manager.clearTokens()
+		await manager.saveTokens({
 			accessToken: options.auth,
+			expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
 		})
-		// Cast to ensure type compatibility (all FullAuthClient implements ITokenLifecycleManager properties)
-		authManager = auth as unknown as ITokenLifecycleManager
+
+		authManager = manager
 	} else if (options.auth && 'strategy' in options.auth) {
-		const auth = authNs.createSchwabAuth(
-			options.auth as authNs.AuthFactoryConfig,
-		)
+		// Create auth client using the provided factory config
+		// Always use ENHANCED strategy regardless of what was requested
+		const authConfig = {
+			...(options.auth as authNs.AuthFactoryConfig),
+			strategy: authNs.AuthStrategy.ENHANCED,
+		}
+		const auth = authNs.createSchwabAuth(authConfig)
 		// Cast to ensure type compatibility
-		authManager = auth as unknown as ITokenLifecycleManager
+		authManager = auth as unknown as EnhancedTokenManager
 	} else if (options.auth) {
-		authManager = options.auth as ITokenLifecycleManager
+		authManager = options.auth as EnhancedTokenManager
 	} else {
-		// Default to a simple static token manager if no auth provided
-		const auth = authNs.createSchwabAuth({
-			strategy: authNs.AuthStrategy.STATIC,
-			accessToken: '',
+		// Default to a simple EnhancedTokenManager with no tokens
+		authManager = new authNs.EnhancedTokenManager({
+			clientId: 'dummy-client',
+			clientSecret: 'dummy-secret',
+			redirectUri: 'https://example.com/callback',
 		})
-		// Cast to ensure type compatibility
-		authManager = auth as unknown as ITokenLifecycleManager
 		console.warn(
 			'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
 		)
 	}
 
 	const middlewareConfig = options.middleware ?? {}
-	const middleware = buildMiddlewarePipeline(middlewareConfig, authManager)
+	const middleware = await buildMiddlewarePipeline(
+		middlewareConfig,
+		authManager,
+	)
 	const chain = compose(...middleware)
 	const apiClientContext = createRequestContext(finalConfig, (req) =>
 		chain(req),

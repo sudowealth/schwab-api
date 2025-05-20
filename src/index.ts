@@ -82,15 +82,23 @@ export {
 	type ITokenLifecycleManager,
 	type TokenData,
 
-	// Token manager implementations
-	StaticTokenManager,
-	createStaticTokenManager,
-	ConcurrentTokenManager,
-
 	// Helper functions
-	buildTokenManager, // Recommended approach for token manager creation
 	isTokenLifecycleManager,
 } from './auth/token-lifecycle-manager'
+
+/**
+ * Enhanced Token Management
+ *
+ * Export the EnhancedTokenManager for applications requiring
+ * robust token management capabilities
+ */
+export {
+	EnhancedTokenManager,
+	type EnhancedTokenManagerOptions,
+	TokenErrorCode,
+	TokenPersistenceEvent,
+	type TokenPersistenceEventHandler,
+} from './auth/enhanced-token-manager'
 
 /**
  * Public Middleware Components
