@@ -4,7 +4,7 @@ A TypeScript client for interacting with the Charles Schwab API, including
 market data (quotes, instruments, options) and trader endpoints (accounts,
 orders, transactions).
 
-## ⚠️ Unofficial Library ⚠️
+## Unofficial Library
 
 **This is an unofficial, community-developed TypeScript client library for
 interacting with Schwab APIs. It has not been approved, endorsed, or certified
