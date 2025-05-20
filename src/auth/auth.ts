@@ -57,7 +57,9 @@ export type { FullAuthClient }
  * const tokens = await auth.exchangeCode('authorization-code');
  * ```
  */
-export function createSchwabAuth(config: AuthFactoryConfig): FullAuthClient {
+export function createSchwabAuth(
+	config: AuthFactoryConfig,
+): EnhancedTokenManager {
 	// Check if oauthConfig is provided
 	if (!config.oauthConfig) {
 		throw new Error('oauthConfig is required')
@@ -65,5 +67,5 @@ export function createSchwabAuth(config: AuthFactoryConfig): FullAuthClient {
 
 	// Create the enhanced token manager with the provided OAuth config
 	const enhancedManager = new EnhancedTokenManager(config.oauthConfig)
-	return enhancedManager as unknown as FullAuthClient
+	return enhancedManager
 }
