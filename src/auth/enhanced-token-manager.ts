@@ -392,8 +392,28 @@ export class EnhancedTokenManager implements FullAuthClient {
 		// First trim any whitespace
 		const trimmedCode = code.trim()
 
+		// Handle the @ symbol which is not a valid base64 character
+		// It might be included as URL-encoded %40 or directly as @
+		let preProcessedCode = trimmedCode
+		if (preProcessedCode.includes('@') || preProcessedCode.includes('%40')) {
+			// Remove @ symbol at the end (common issue)
+			if (preProcessedCode.endsWith('@')) {
+				preProcessedCode = preProcessedCode.slice(0, -1)
+			}
+
+			// Replace any remaining @ symbols (could be URL-encoded or raw)
+			preProcessedCode = preProcessedCode.replace(/@/g, '')
+			preProcessedCode = preProcessedCode.replace(/%40/g, '')
+
+			if (this.config.debug) {
+				console.log(
+					`[EnhancedTokenManager.sanitizeAuthCode] Removed invalid '@' symbols from code: '${trimmedCode.substring(0, 15)}...' => '${preProcessedCode.substring(0, 15)}...'`,
+				)
+			}
+		}
+
 		// Convert from base64url to base64 if needed
-		let sanitizedCode = trimmedCode.replace(/-/g, '+').replace(/_/g, '/')
+		let sanitizedCode = preProcessedCode.replace(/-/g, '+').replace(/_/g, '/')
 
 		// Add padding if needed to make length a multiple of 4
 		while (sanitizedCode.length % 4 !== 0) {
@@ -402,7 +422,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 		if (this.config.debug && sanitizedCode !== trimmedCode) {
 			console.log(
-				`[EnhancedTokenManager.sanitizeAuthCode] Code was sanitized from '${trimmedCode.substring(0, 15)}...' to '${sanitizedCode.substring(0, 15)}...' (added proper base64 padding)`,
+				`[EnhancedTokenManager.sanitizeAuthCode] Code was sanitized from '${trimmedCode.substring(0, 15)}...' to '${sanitizedCode.substring(0, 15)}...'`,
 			)
 		}
 
@@ -1304,22 +1324,35 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 		// Additional debug logging before making the request
 		if (this.config.debug) {
-			console.log(`[EnhancedTokenManager.performDirectTokenExchange] Making token request...`)
-			console.log(`[EnhancedTokenManager.performDirectTokenExchange] Request body length: ${formData.toString().length}`)
-			
+			console.log(
+				`[EnhancedTokenManager.performDirectTokenExchange] Making token request...`,
+			)
+			console.log(
+				`[EnhancedTokenManager.performDirectTokenExchange] Request body length: ${formData.toString().length}`,
+			)
+
 			// Inspect grant_type and code specifically for debugging code exchange issues
-			if (formData.get('grant_type') === 'authorization_code' && formData.has('code')) {
+			if (
+				formData.get('grant_type') === 'authorization_code' &&
+				formData.has('code')
+			) {
 				const code = formData.get('code')
-				console.log(`[EnhancedTokenManager.performDirectTokenExchange] Code in request: length=${code?.length}, code=${code?.toString().substring(0, 15)}...`)
-				console.log(`[EnhancedTokenManager.performDirectTokenExchange] Code validation: length is ${code?.length && code.length % 4 === 0 ? 'valid (multiple of 4)' : 'INVALID (not a multiple of 4)'}`)
+				console.log(
+					`[EnhancedTokenManager.performDirectTokenExchange] Code in request: length=${code?.length}, code=${code?.toString().substring(0, 15)}...`,
+				)
+				console.log(
+					`[EnhancedTokenManager.performDirectTokenExchange] Code validation: length is ${code?.length && code.length % 4 === 0 ? 'valid (multiple of 4)' : 'INVALID (not a multiple of 4)'}`,
+				)
 			}
-			
+
 			if (formData.has('code_verifier')) {
 				const verifier = formData.get('code_verifier')
-				console.log(`[EnhancedTokenManager.performDirectTokenExchange] Code verifier in request: length=${verifier?.length}, starts with=${verifier?.toString().substring(0, 10)}...`)
+				console.log(
+					`[EnhancedTokenManager.performDirectTokenExchange] Code verifier in request: length=${verifier?.length}, starts with=${verifier?.toString().substring(0, 10)}...`,
+				)
 			}
 		}
-		
+
 		const response = await fetchFn(tokenEndpoint, {
 			method: 'POST',
 			headers,
