@@ -5,6 +5,9 @@
  * direct access to schemas without needing to instantiate an API client.
  */
 
+// Utilities
+export { mergeShapes } from '../utils/schema-utils'
+
 // --- Base Schemas ---
 export {
 	AssetTypeEnum,
@@ -31,6 +34,7 @@ export {
 	GetMarketHoursResponseBodySchema,
 	GetMarketHoursByMarketIdRequestPathParamsSchema,
 	GetMarketHoursByMarketIdRequestQueryParamsSchema,
+	GetMarketHoursByMarketIdRequestParamsSchema,
 	GetMarketHoursByMarketIdResponseBodySchema,
 } from '../market-data/marketHours/schema'
 
@@ -39,6 +43,7 @@ export {
 	MoversDirectionEnum,
 	GetMoversRequestPathParamsSchema,
 	GetMoversRequestQueryParamsSchema,
+	GetMoversRequestParamsSchema,
 	GetMoversResponseBodySchema,
 } from '../market-data/movers/schema'
 
@@ -59,6 +64,7 @@ export {
 export {
 	GetQuoteBySymbolIdRequestPathParamsSchema,
 	GetQuoteBySymbolIdRequestQueryParamsSchema,
+	GetQuoteBySymbolIdRequestParamsSchema,
 	GetQuotesRequestQueryParamsSchema,
 	GetQuotesResponseBodySchema,
 } from '../market-data/quotes/schema'
@@ -71,6 +77,7 @@ export { InstrumentAssetTypeEnum } from '../market-data/shared/instrument-asset-
 export {
 	GetAccountByNumberRequestPathParams,
 	GetAccountByNumberRequestQueryParams,
+	GetAccountByNumberRequestParamsSchema,
 	GetAccountByNumberResponseBody,
 	GetAccountsRequestQueryParams,
 	GetAccountsResponseBody,
@@ -83,6 +90,7 @@ export {
 	GetOrdersRequestQueryParams,
 	GetOrdersByAccountRequestPathParams,
 	GetOrdersByAccountRequestQueryParams,
+	GetOrdersByAccountRequestParamsSchema,
 	PlaceOrderRequestBody,
 	PlaceOrderResponseBody,
 	GetOrderByOrderIdRequestPathParams,
@@ -96,6 +104,7 @@ export {
 	TransactionType,
 	GetTransactionsRequestPathParams,
 	GetTransactionsRequestQueryParams,
+	GetTransactionsRequestParamsSchema,
 	GetTransactionsResponseBody,
 } from '../trader/transactions/schema'
 

@@ -4,6 +4,7 @@ import {
 	DateFormatType,
 	dateTransformer,
 } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 import { assetType } from '../shared'
 
 export const TransactionType = z.enum([
@@ -339,4 +340,15 @@ export type GetTransactionsRequestPathParams = z.infer<
 >
 export type GetTransactionsRequestQueryParams = z.infer<
 	typeof GetTransactionsRequestQueryParams
+>
+
+// Request Params Schema for GET /accounts/{accountNumber}/transactions (merged path + query params)
+export const GetTransactionsRequestParamsSchema = z.object(
+	mergeShapes(
+		GetTransactionsRequestQueryParams.shape,
+		GetTransactionsRequestPathParams.shape,
+	),
+)
+export type GetTransactionsRequestParamsSchema = z.infer<
+	typeof GetTransactionsRequestParamsSchema
 >

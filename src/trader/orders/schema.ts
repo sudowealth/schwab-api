@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createISODateTimeSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
@@ -443,3 +444,14 @@ export type CancelOrderResponseBody = z.infer<typeof CancelOrderResponseBody>
 
 export const ReplaceOrderResponseBody = z.object({}).passthrough()
 export type ReplaceOrderResponseBody = z.infer<typeof ReplaceOrderResponseBody>
+
+// Request Params Schema for GET /accounts/{accountNumber}/orders (merged path + query params)
+export const GetOrdersByAccountRequestParamsSchema = z.object(
+	mergeShapes(
+		GetOrdersByAccountRequestQueryParams.shape,
+		GetOrdersByAccountRequestPathParams.shape,
+	),
+)
+export type GetOrdersByAccountRequestParamsSchema = z.infer<
+	typeof GetOrdersByAccountRequestParamsSchema
+>

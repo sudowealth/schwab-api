@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { mergeShapes } from '../../utils/schema-utils'
 import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 export const AccountsBaseInstrument = z.object({
@@ -313,4 +314,15 @@ export const GetAccountNumbersResponseBody = z.array(
 )
 export type GetAccountNumbersResponseBody = z.infer<
 	typeof GetAccountNumbersResponseBody
+>
+
+// Request Params Schema for GET /accounts/{accountNumber} (merged path + query params)
+export const GetAccountByNumberRequestParamsSchema = z.object(
+	mergeShapes(
+		GetAccountByNumberRequestPathParams.shape,
+		GetAccountByNumberRequestQueryParams.unwrap().shape,
+	),
+)
+export type GetAccountByNumberRequestParamsSchema = z.infer<
+	typeof GetAccountByNumberRequestParamsSchema
 >

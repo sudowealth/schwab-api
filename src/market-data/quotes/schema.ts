@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'fields' query parameter
@@ -885,4 +886,15 @@ export type GetQuoteBySymbolIdRequestQueryParamsSchema = z.infer<
 export const GetQuoteBySymbolIdResponseBodySchema = GetQuotesResponseBodySchema
 export type GetQuoteBySymbolIdResponseBodySchema = z.infer<
 	typeof GetQuoteBySymbolIdResponseBodySchema
+>
+
+// Request Params Schema for GET /{symbol_id}/quotes (merged path + query params)
+export const GetQuoteBySymbolIdRequestParamsSchema = z.object(
+	mergeShapes(
+		GetQuoteBySymbolIdRequestQueryParamsSchema.shape,
+		GetQuoteBySymbolIdRequestPathParamsSchema.shape,
+	),
+)
+export type GetQuoteBySymbolIdRequestParamsSchema = z.infer<
+	typeof GetQuoteBySymbolIdRequestParamsSchema
 >
