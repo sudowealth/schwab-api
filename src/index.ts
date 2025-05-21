@@ -110,6 +110,13 @@ export {
 } from './auth/enhanced-token-manager'
 
 /**
+ * Authentication Utilities
+ *
+ * Utility functions for authentication and encoding operations
+ */
+export { safeBase64Encode, safeBase64Decode } from './auth/auth-utils'
+
+/**
  * Public Middleware Components
  *
  * These exports provide middleware components that can be used to customize
