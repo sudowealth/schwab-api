@@ -567,6 +567,77 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 */
 
 	/**
+	 * Explicitly initialize the token manager, ensuring tokens are loaded, validated, and refreshed if needed
+	 * @returns Promise<boolean> True if a valid access token is available after initialization, false otherwise
+	 */
+	public async initialize(): Promise<boolean> {
+		if (this.config.debug) {
+			console.log(
+				'[EnhancedTokenManager.initialize] Explicit initialization called.',
+			)
+		}
+		try {
+			const tokenData = await this.getTokenData() // Triggers load and initial validation
+			if (!tokenData || !tokenData.accessToken) {
+				if (this.config.debug) {
+					console.log(
+						'[EnhancedTokenManager.initialize] No token data available after getTokenData.',
+					)
+				}
+				return false // No token available
+			}
+
+			if (
+				this.shouldRefreshToken(
+					tokenData.expiresAt,
+					this.config.refreshThresholdMs,
+				)
+			) {
+				if (this.config.debug) {
+					console.log(
+						'[EnhancedTokenManager.initialize] Token needs refresh, attempting refreshIfNeeded.',
+					)
+				}
+				if (!tokenData.refreshToken) {
+					if (this.config.debug) {
+						console.warn(
+							'[EnhancedTokenManager.initialize] Token needs refresh, but no refresh token available.',
+						)
+					}
+					return false // Cannot refresh
+				}
+				await this.refreshIfNeeded({
+					refreshToken: tokenData.refreshToken,
+					force: true,
+				})
+				// Check again after refresh
+				const refreshedTokenData = await this.getTokenData()
+				return !!(
+					refreshedTokenData &&
+					refreshedTokenData.accessToken &&
+					!this.shouldRefreshToken(refreshedTokenData.expiresAt, 0)
+				)
+			}
+			if (this.config.debug) {
+				console.log(
+					'[EnhancedTokenManager.initialize] Initialization successful, token is valid.',
+				)
+			}
+			return true
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			console.error(
+				`[EnhancedTokenManager.initialize] Error during initialization: ${message}`,
+			)
+			if (this.config.debug) {
+				// Log full error for debugging
+				console.error(error)
+			}
+			return false
+		}
+	}
+
+	/**
 	 * Get the current token data
 	 * Handles token loading and validation
 	 */
