@@ -480,7 +480,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				)
 			}
 			throw new SchwabAuthError(
-				AuthErrorCode.INVALID_CODE, // Or a more specific PKCE error code if you define one
+				AuthErrorCode.PKCE_VERIFIER_MISSING,
 				'PKCE code_verifier is missing or could not be retrieved. Token exchange cannot be completed.',
 			)
 		}
@@ -1017,16 +1017,18 @@ export class EnhancedTokenManager implements FullAuthClient {
 			// Handle load error
 			this.dispatchTokenEvent(
 				TokenPersistenceEvent.TOKEN_LOAD_FAILED,
-				{
-					accessToken: '',
-					refreshToken: '',
-					expiresAt: 0,
-				},
+				{ accessToken: '', refreshToken: '', expiresAt: 0 },
 				{ error },
 			)
-
-			// Rethrow to signal failure
-			throw error
+			// Wrap and rethrow as SchwabAuthError
+			throw new SchwabAuthError(
+				AuthErrorCode.TOKEN_PERSISTENCE_LOAD_FAILED,
+				error instanceof Error
+					? error.message
+					: 'Failed to load tokens from storage',
+				undefined, // No HTTP status for this internal error
+				{ originalError: error },
+			)
 		}
 	}
 
@@ -1047,7 +1049,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 			// Validate tokens before saving
 			const isValid = this.validateTokens(tokens)
 			if (!isValid) {
-				throw new Error('Invalid tokens, refusing to save')
+				throw new SchwabAuthError(
+					AuthErrorCode.TOKEN_VALIDATION_ERROR,
+					'Invalid tokens, refusing to save to persistence.',
+				)
 			}
 
 			// Track tokens being saved
@@ -1301,7 +1306,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 		const tokenEndpoint = `${this.config.issuerBaseUrl}/oauth/token`
 
 		if (!tokenEndpoint) {
-			throw new Error('Token endpoint not available in OIDC configuration')
+			throw new SchwabAuthError(
+				AuthErrorCode.TOKEN_ENDPOINT_CONFIG_ERROR,
+				'Token endpoint not available in OIDC configuration',
+			)
 		}
 
 		// Log request details when debug is enabled
@@ -1490,14 +1498,32 @@ export class EnhancedTokenManager implements FullAuthClient {
 				)
 			}
 
-			// Throw detailed error, ensuring errorBodyContent is passed if parsedErrorJson is not available
-			throw new Error(
-				`Token exchange failed with status ${response.status}: ${
-					parsedErrorJson?.error_description ||
-					parsedErrorJson?.error ||
-					errorBodyContent || // Use full text if JSON parsing failed or no specific error fields
-					response.statusText
-				}`,
+			// Map OAuth error responses to specific AuthErrorCodes
+			let authErrorCode = AuthErrorCode.UNKNOWN
+			const oauthError = parsedErrorJson?.error
+			const errorDetail =
+				parsedErrorJson?.error_description ||
+				parsedErrorJson?.error ||
+				errorBodyContent ||
+				response.statusText
+
+			if (oauthError === 'invalid_grant') {
+				authErrorCode = AuthErrorCode.INVALID_CODE
+			} else if (oauthError === 'invalid_client') {
+				authErrorCode = AuthErrorCode.UNAUTHORIZED
+			} else if (oauthError === 'invalid_request') {
+				authErrorCode = AuthErrorCode.INVALID_CODE
+			} else if (response.status === 401) {
+				authErrorCode = AuthErrorCode.UNAUTHORIZED
+			} else if (response.status === 400) {
+				authErrorCode = AuthErrorCode.INVALID_CODE
+			}
+
+			throw new SchwabAuthError(
+				authErrorCode,
+				`Token exchange failed with status ${response.status}: ${errorDetail}`,
+				response.status,
+				parsedErrorJson || { rawBody: errorBodyContent },
 			)
 		}
 	}

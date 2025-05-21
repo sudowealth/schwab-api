@@ -29,6 +29,19 @@ export enum AuthErrorCode {
 	NETWORK = 'NETWORK', // A network error occurred
 	REFRESH_NEEDED = 'REFRESH_NEEDED', // The access token has expired and needs to be refreshed
 	UNKNOWN = 'UNKNOWN', // An unknown error occurred
+
+	// Token persistence errors
+	TOKEN_PERSISTENCE_LOAD_FAILED = 'TOKEN_PERSISTENCE_LOAD_FAILED', // Failed to load tokens from storage
+	TOKEN_PERSISTENCE_SAVE_FAILED = 'TOKEN_PERSISTENCE_SAVE_FAILED', // Failed to save tokens to storage
+
+	// Token validation errors
+	TOKEN_VALIDATION_ERROR = 'TOKEN_VALIDATION_ERROR', // Token validation failed
+
+	// PKCE flow errors
+	PKCE_VERIFIER_MISSING = 'PKCE_VERIFIER_MISSING', // PKCE code verifier is missing for token exchange
+
+	// Configuration errors
+	TOKEN_ENDPOINT_CONFIG_ERROR = 'TOKEN_ENDPOINT_CONFIG_ERROR', // Token endpoint configuration is missing or invalid
 }
 
 // ---- Error Response Metadata ----
@@ -207,9 +220,14 @@ export class SchwabAuthError extends SchwabError {
 			case AuthErrorCode.NETWORK:
 			case AuthErrorCode.REFRESH_NEEDED:
 			case AuthErrorCode.TOKEN_EXPIRED:
+			case AuthErrorCode.TOKEN_PERSISTENCE_LOAD_FAILED:
 				return true
 			case AuthErrorCode.UNAUTHORIZED:
 			case AuthErrorCode.INVALID_CODE:
+			case AuthErrorCode.TOKEN_PERSISTENCE_SAVE_FAILED:
+			case AuthErrorCode.TOKEN_VALIDATION_ERROR:
+			case AuthErrorCode.PKCE_VERIFIER_MISSING:
+			case AuthErrorCode.TOKEN_ENDPOINT_CONFIG_ERROR:
 			case AuthErrorCode.UNKNOWN:
 			default:
 				return false
