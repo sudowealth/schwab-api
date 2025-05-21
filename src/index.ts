@@ -129,3 +129,72 @@ export {
 	type RateLimitOptions,
 } from './middleware/with-rate-limit'
 export { withRetry, type RetryOptions } from './middleware/with-retry'
+
+/**
+ * Public Schema Exports
+ *
+ * These exports provide direct access to the Zod schemas used
+ * for validation within the package. These are re-exported from
+ * the central schemas module to allow direct imports without
+ * creating an API client instance.
+ */
+export {
+	// Base Schemas
+	AssetTypeEnum,
+	BaseInstrumentSchema,
+
+	// Market Data Schemas
+	InstrumentProjectionEnum,
+	GetInstrumentsRequestQueryParamsSchema,
+	InstrumentsResponseSchema,
+	GetInstrumentByCusipRequestPathParamsSchema,
+	GetInstrumentByCusipResponseBodySchema,
+	MarketHoursMarketQueryEnum,
+	GetMarketHoursRequestQueryParamsSchema,
+	GetMarketHoursResponseBodySchema,
+	GetMarketHoursByMarketIdRequestPathParamsSchema,
+	GetMarketHoursByMarketIdRequestQueryParamsSchema,
+	GetMarketHoursByMarketIdResponseBodySchema,
+	MoversDirectionEnum,
+	GetMoversRequestPathParamsSchema,
+	GetMoversRequestQueryParamsSchema,
+	GetMoversResponseBodySchema,
+	ExpirationTypeEnum,
+	GetOptionChainRequestQueryParamsSchema,
+	PeriodEnum,
+	FrequencyEnum,
+	GetPriceHistoryRequestQueryParamsSchema,
+	GetQuoteBySymbolIdRequestPathParamsSchema,
+	GetQuotesRequestQueryParamsSchema,
+	GetQuotesResponseBodySchema,
+	InstrumentAssetTypeEnum,
+
+	// Trader Schemas
+	GetAccountByNumberRequestPathParams,
+	GetAccountByNumberRequestQueryParams,
+	GetAccountByNumberResponseBody,
+	GetAccountsRequestQueryParams,
+	GetAccountsResponseBody,
+	GetAccountNumbersResponseBody,
+	GetOrdersResponseBody,
+	GetOrdersRequestQueryParams,
+	GetOrdersByAccountRequestPathParams,
+	GetOrdersByAccountRequestQueryParams,
+	PlaceOrderRequestBody,
+	PlaceOrderResponseBody,
+	GetOrderByOrderIdRequestPathParams,
+	GetOrderByOrderIdResponseBody,
+	CancelOrderResponseBody,
+	ReplaceOrderResponseBody,
+	TransactionType,
+	GetTransactionsRequestPathParams,
+	GetTransactionsRequestQueryParams,
+	GetTransactionsResponseBody,
+	GetUserPreferenceResponseBody,
+	AccountAPIOptionDeliverable,
+	ApiCurrencyType,
+	assetType,
+} from './schemas'
+
+// Re-export schema types
+export type { AssetType, BaseInstrument } from './schemas'
