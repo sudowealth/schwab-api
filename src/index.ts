@@ -1,6 +1,7 @@
 // Public surface of the schwab-api package
 
 // Import specific error types for re-export
+import { type SchwabApiLogger } from './core/config'
 import {
 	SchwabApiError,
 	isSchwabApiError,
@@ -8,6 +9,8 @@ import {
 	SchwabError,
 	isSchwabError,
 } from './errors'
+
+// Import the SchwabApiLogger type for re-export
 
 /**
  * INTERNAL NAMESPACES
@@ -37,6 +40,7 @@ export {
 	SchwabApiError,
 	isSchwabApiError,
 	SchwabAuthError,
+	SchwabApiLogger,
 }
 
 /**
