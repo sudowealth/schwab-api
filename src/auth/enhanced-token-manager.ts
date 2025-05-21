@@ -170,7 +170,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			clientSecret: options.clientSecret,
 			redirectUri: options.redirectUri,
 			scope: options.scope || ['api', 'offline_access'],
-			fetch: options.fetch || globalThis.fetch,
+			fetch: options.fetch || globalThis.fetch.bind(globalThis),
 			load: options.load,
 			save: options.save,
 			maxRetryAttempts: options.maxRetryAttempts ?? 3,
@@ -250,7 +250,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		state?: string // This 'state' is from the calling application (schwab-mcp's AuthRequest)
 	}): Promise<{
 		authUrl: string
-		generatedState: string // Return the state we constructed so MCP can use it
+		generatedState?: string // Return the state we constructed so MCP can use it
 	}> {
 		const scope = opts?.scope || this.config.scope
 		const baseIssuerUrl = this.config.issuerBaseUrl
@@ -281,17 +281,46 @@ export class EnhancedTokenManager implements FullAuthClient {
 		let appSpecificStateData: any = {}
 		if (opts?.state) {
 			try {
-				appSpecificStateData = JSON.parse(atob(opts.state))
+				// First, make sure the state is a valid base64 string
+				let decodedStateString: string
+				try {
+					decodedStateString = this.safeBase64Decode(opts.state)
+				} catch (decodeError) {
+					if (this.config.debug) {
+						console.warn(
+							`[EnhancedTokenManager] opts.state in getAuthorizationUrl failed base64 decoding: ${(decodeError as Error).message}. Treating as raw string.`,
+						)
+					}
+					// If not base64, just use the raw string
+					decodedStateString = opts.state
+				}
+
+				// Try to parse as JSON
+				try {
+					appSpecificStateData = JSON.parse(decodedStateString)
+					if (this.config.debug) {
+						console.log(
+							`[EnhancedTokenManager] Successfully parsed opts.state as JSON: ${JSON.stringify(appSpecificStateData).substring(0, 100)}...`,
+						)
+					}
+				} catch (jsonError) {
+					if (this.config.debug) {
+						console.warn(
+							`[EnhancedTokenManager] Decoded state string is not valid JSON. Treating as opaque string. Error: ${(jsonError as Error).message}`,
+						)
+					}
+					// If not JSON, wrap it as a string value
+					appSpecificStateData = { original_app_state: decodedStateString }
+				}
 			} catch (e) {
 				if (this.config.debug) {
 					console.warn(
-						`[EnhancedTokenManager] opts.state in getAuthorizationUrl was not valid base64 JSON. Treating as opaque string. Original state: ${opts.state}`,
+						`[EnhancedTokenManager] Failed to process opts.state in getAuthorizationUrl. Treating as opaque string. Original state: ${opts.state}`,
 					)
 				}
-				console.error('Error parsing opts.state in getAuthorizationUrl:', e) // Good to log the error
-				// If not JSON, we might need a different strategy or ensure it's always JSON
-				// For now, let's wrap it if it's not already an object.
-				appSpecificStateData = { original_app_state: opts.state } // THIS IS THE REFINEMENT POINT
+				console.error('Error processing opts.state in getAuthorizationUrl:', e)
+				// Fall back to treating it as a raw string
+				appSpecificStateData = { original_app_state: opts.state }
 			}
 		}
 
@@ -300,12 +329,58 @@ export class EnhancedTokenManager implements FullAuthClient {
 			pkce_code_verifier: this.codeVerifierForCurrentFlow, // Our PKCE verifier
 		}
 
-		const finalStateParamForSchwab = btoa(JSON.stringify(combinedStateObject))
-		authParams.state = finalStateParamForSchwab
+		// Create the combined state with more robust base64 encoding
+		let finalStateParamForSchwab: string
+		try {
+			// Use the safe base64 encoding helper
+			finalStateParamForSchwab = this.safeBase64Encode(
+				JSON.stringify(combinedStateObject),
+			)
+			if (this.config.debug) {
+				console.log(
+					`[EnhancedTokenManager] Generated state param (len ${finalStateParamForSchwab.length}): ${finalStateParamForSchwab.substring(0, 20)}...`,
+				)
+			}
+		} catch (encodeError) {
+			console.error(
+				`[EnhancedTokenManager] Critical error encoding state: ${(encodeError as Error).message}`,
+			)
+			// Fall back to a simpler approach - encode just the code verifier without user state
+			// This ensures PKCE still works even if we can't include the app state
+			try {
+				const fallbackState = {
+					pkce_code_verifier: this.codeVerifierForCurrentFlow,
+				}
+				finalStateParamForSchwab = this.safeBase64Encode(
+					JSON.stringify(fallbackState),
+				)
+				console.warn(
+					'[EnhancedTokenManager] Using fallback state encoding (app state discarded due to encoding error)',
+				)
+			} catch (fallbackError) {
+				// If all encoding fails, we're in a bad state but can't do much
+				console.error(
+					`[EnhancedTokenManager] Fatal encoding error for state: ${(fallbackError as Error).message}`,
+				)
+				// Don't include state at all - the exchange will fail but that's better than crashing here
+				finalStateParamForSchwab = ''
+			}
+		}
+
+		// Only add state if we successfully created it
+		if (finalStateParamForSchwab) {
+			authParams.state = finalStateParamForSchwab
+		}
 
 		const authUrl = `${baseIssuerUrl}/oauth/authorize?${new URLSearchParams(authParams).toString()}`
 
-		return { authUrl, generatedState: finalStateParamForSchwab } // Return the state we built
+		// Only return generatedState if we successfully created it
+		return {
+			authUrl,
+			...(finalStateParamForSchwab
+				? { generatedState: finalStateParamForSchwab }
+				: {}),
+		}
 	}
 	/**
 	 * Sanitize authorization code for Schwab's OAuth requirements
@@ -367,8 +442,36 @@ export class EnhancedTokenManager implements FullAuthClient {
 				retrievedCodeVerifier = this.codeVerifierForCurrentFlow
 			}
 		} else {
+			// First, pre-process the stateParam to handle potential URL encoding
+			let processedStateParam = stateParam
+
+			if (this.config.debug) {
+				console.log(
+					`[EnhancedTokenManager.exchangeCode] Processing stateParam (length: ${stateParam.length}, preview: '${stateParam.substring(0, 30)}...')`,
+				)
+			}
+
+			// Check if the stateParam might be URL-encoded
+			if (stateParam.includes('%')) {
+				try {
+					const decodedStateParam = decodeURIComponent(stateParam)
+					if (this.config.debug) {
+						console.log(
+							`[EnhancedTokenManager.exchangeCode] State appears to be URL-encoded, decoded to: '${decodedStateParam.substring(0, 30)}...'`,
+						)
+					}
+					processedStateParam = decodedStateParam
+				} catch (e) {
+					console.warn(
+						`[EnhancedTokenManager.exchangeCode] Failed to URL-decode stateParam. Will use as-is. Error: ${(e as Error).message}`,
+					)
+					// Continue with original state param
+				}
+			}
+
 			try {
-				const decodedStateString = atob(stateParam)
+				// Use our safe base64 decode function instead of atob
+				const decodedStateString = this.safeBase64Decode(processedStateParam)
 				if (this.config.debug) {
 					console.log(
 						`[EnhancedTokenManager.exchangeCode] Decoded state string from base64: '${decodedStateString.substring(0, 100)}...'`,
@@ -391,7 +494,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				}
 			} catch (e: any) {
 				console.error(
-					`[EnhancedTokenManager.exchangeCode] Failed to decode (atob) or parse (JSON) stateParam. This is likely the cause of 'String length must be a multiple of four' or similar errors if stateParam is not valid Base64 JSON. Error: ${e.message}. Raw stateParam was: '${stateParam}'`,
+					`[EnhancedTokenManager.exchangeCode] Failed to decode or parse stateParam: ${e.message}. Raw stateParam was: '${stateParam.substring(0, 50)}...'`,
 				)
 				// Even if state decoding fails, check if this.codeVerifierForCurrentFlow (instance property) was set as a desperate fallback
 				if (this.codeVerifierForCurrentFlow) {
@@ -1047,17 +1150,17 @@ export class EnhancedTokenManager implements FullAuthClient {
 					// Debug log removed
 				}
 
-				// Some tokens may be base64url encoded
+				// Some tokens may be base64 encoded
 				try {
 					// Attempt to decode to check format
-					const decoded = this.base64urlDecode(refreshToken)
+					const decoded = this.safeBase64Decode(refreshToken)
 					if (decoded && decoded.length > 0) {
-						// Token appears to be base64url encoded
+						// Token appears to be valid base64 encoded
 						// No need to re-encode
 					}
 				} catch (e) {
 					console.error('Error decoding refresh token', e)
-					// Error during decode implies not base64url, may need encoding
+					// Error during safe base64 decode implies not valid base64, may need encoding
 					if (this.config.debug) {
 						// Error log removed
 					}
@@ -1171,8 +1274,23 @@ export class EnhancedTokenManager implements FullAuthClient {
 			console.log(`  Body: ${redactedFormDataLog.toString()}`)
 		}
 
-		// Make the token request
-		const response = await this.config.fetch(tokenEndpoint, {
+		// Make the token request with properly bound fetch to avoid "Illegal invocation" errors
+		// We need to ensure fetch is bound correctly regardless of whether it's the global fetch or custom fetch
+		let fetchFn: typeof fetch
+
+		// Handle different ways fetch might be provided
+		if (this.config.fetch === globalThis.fetch) {
+			// Using the global fetch directly - bind to globalThis
+			fetchFn = globalThis.fetch.bind(globalThis)
+		} else if (typeof this.config.fetch === 'function') {
+			// Using a custom fetch function - still needs binding to globalThis to avoid illegal invocation
+			fetchFn = this.config.fetch.bind(globalThis)
+		} else {
+			// Fallback to global fetch in case something went wrong with config
+			fetchFn = globalThis.fetch.bind(globalThis)
+		}
+
+		const response = await fetchFn(tokenEndpoint, {
 			method: 'POST',
 			headers,
 			body: formData.toString(),
@@ -1224,27 +1342,67 @@ export class EnhancedTokenManager implements FullAuthClient {
 	}
 
 	/**
-	 * Helper for base64url decoding
+	 * Safe Base64 decoding that handles both Node.js and browser environments
+	 * with better error handling
 	 */
-	private base64urlDecode(str: string): string {
-		// Convert base64url to base64
-		let base64 = str.replace(/-/g, '+').replace(/_/g, '/')
-		// Add padding if needed
-		while (base64.length % 4) {
-			base64 += '='
-		}
-		// Decode
+	private safeBase64Decode(input: string): string {
 		try {
-			if (typeof Buffer !== 'undefined') {
-				// Node.js
-				return Buffer.from(base64, 'base64').toString()
-			} else {
-				// Browser
-				return atob(base64)
+			// First check if we need to convert from base64url to standard base64
+			const needsUrlDecoding = input.includes('-') || input.includes('_')
+			let base64 = input
+
+			if (needsUrlDecoding) {
+				// Convert base64url to base64 for standard decoding
+				base64 = input.replace(/-/g, '+').replace(/_/g, '/')
 			}
-		} catch (e) {
-			console.error('Error decoding refresh token', e)
-			throw new Error('Invalid base64 string')
+
+			// Add padding if needed
+			let paddedBase64 = base64
+			while (paddedBase64.length % 4 !== 0) {
+				paddedBase64 += '='
+			}
+
+			// Decode using the appropriate method
+			if (typeof Buffer !== 'undefined') {
+				// Node.js environment
+				return Buffer.from(paddedBase64, 'base64').toString()
+			} else {
+				// Browser environment
+				return atob(paddedBase64)
+			}
+		} catch (error) {
+			throw new Error(`Base64 decode error: ${(error as Error).message}`)
+		}
+	}
+
+	/**
+	 * Safe Base64 encoding that handles both Node.js and browser environments
+	 * with better error handling and optional URL-safe format
+	 */
+	private safeBase64Encode(input: string, urlSafe = true): string {
+		try {
+			// Encode the string
+			let base64: string
+
+			if (typeof Buffer !== 'undefined') {
+				// Node.js environment
+				base64 = Buffer.from(input).toString('base64')
+			} else if (typeof btoa === 'function') {
+				// Browser environment
+				base64 = btoa(input)
+			} else {
+				// Unlikely case where neither is available
+				throw new Error('No base64 encoding method available')
+			}
+
+			// Convert to URL-safe format if requested
+			if (urlSafe) {
+				return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+			}
+
+			return base64
+		} catch (error) {
+			throw new Error(`Base64 encode error: ${(error as Error).message}`)
 		}
 	}
 
@@ -1272,32 +1430,6 @@ export class EnhancedTokenManager implements FullAuthClient {
 	}
 
 	/**
-	 * Base64url encode a string or buffer
-	 */
-	private base64urlEncode(data: string | ArrayBuffer): string {
-		let str: string
-
-		if (typeof data === 'string') {
-			// If data is already a string, encode it to ArrayBuffer
-			const encoder = new TextEncoder()
-			const buffer = encoder.encode(data)
-			str = String.fromCharCode(...new Uint8Array(buffer))
-		} else {
-			// Otherwise, it's already an ArrayBuffer
-			str = String.fromCharCode(...new Uint8Array(data))
-		}
-
-		// btoa creates a base64 string
-		let base64 =
-			typeof btoa === 'function'
-				? btoa(str)
-				: Buffer.from(str).toString('base64')
-
-		// Convert to base64url format
-		return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-	}
-
-	/**
 	 * Generate a code challenge from a code verifier using SHA-256
 	 * @param verifier The code verifier string
 	 * @returns A base64url encoded SHA-256 hash of the verifier
@@ -1309,12 +1441,44 @@ export class EnhancedTokenManager implements FullAuthClient {
 			)
 		}
 
-		const encoder = new TextEncoder()
-		const data = encoder.encode(verifier)
-		const hashBuffer = await cryptoAPI.subtle.digest('SHA-256', data)
+		try {
+			const encoder = new TextEncoder()
+			const data = encoder.encode(verifier)
+			const hashBuffer = await cryptoAPI.subtle.digest('SHA-256', data)
 
-		// Base64 URL encode the hash
-		return this.base64urlEncode(hashBuffer)
+			// Convert hash buffer to base64url string
+			const hashArray = Array.from(new Uint8Array(hashBuffer))
+			const hashString = String.fromCharCode(...hashArray)
+
+			// Get base64 using appropriate method for environment
+			let base64: string
+			if (typeof btoa === 'function') {
+				base64 = btoa(hashString)
+			} else if (typeof Buffer !== 'undefined') {
+				base64 = Buffer.from(hashBuffer).toString('base64')
+			} else {
+				// Fallback to our string-based base64 encoder
+				throw new Error('No base64 encoding method available')
+			}
+
+			// Convert to URL-safe format without padding
+			const base64url = base64
+				.replace(/\+/g, '-')
+				.replace(/\//g, '_')
+				.replace(/=+$/, '')
+
+			if (this.config.debug) {
+				console.log(
+					`[EnhancedTokenManager] Generated code challenge (length: ${base64url.length}): ${base64url.substring(0, 20)}...`,
+				)
+			}
+
+			return base64url
+		} catch (error) {
+			const errorMessage = `PKCE code challenge generation failed: ${(error as Error).message}`
+			console.error(`[EnhancedTokenManager] ${errorMessage}`)
+			throw new Error(errorMessage)
+		}
 	}
 
 	/**
