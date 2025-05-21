@@ -1,3 +1,4 @@
+import * as base64js from 'base64-js'
 import * as oidc from 'openid-client'
 import pkceChallenge from 'pkce-challenge'
 import { API_URLS, API_VERSIONS } from '../constants'
@@ -386,6 +387,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * - Handling URL-encoded characters
 	 * @private
 	 */
+	/**
+	 * Sanitize authorization code using the base64-js library for improved reliability
+	 *
+	 * This function processes an authorization code to ensure it's in valid Base64 format
+	 * by handling URL-encoded characters, removing invalid chars, normalizing to
+	 * standard Base64 format, and ensuring proper padding.
+	 */
 	private sanitizeAuthCode(code: string): string {
 		// First trim any whitespace
 		const trimmedCode = code.trim()
@@ -444,7 +452,20 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 		// Final validation to ensure it's a valid Base64 string
 		// The resulting string should only contain A-Z, a-z, 0-9, +, /, and = for padding
-		const isValidBase64 = /^[A-Za-z0-9+/]*={0,2}$/.test(sanitizedCode)
+		let isValidBase64 = false
+
+		try {
+			// Test if the string can be decoded by base64-js
+			base64js.toByteArray(sanitizedCode)
+			isValidBase64 = true
+		} catch (e) {
+			isValidBase64 = false
+			if (this.config.debug) {
+				console.warn(
+					`[EnhancedTokenManager.sanitizeAuthCode] base64-js validation failed: ${(e as Error).message}`,
+				)
+			}
+		}
 
 		if (this.config.debug) {
 			if (sanitizedCode !== trimmedCode) {
@@ -1484,8 +1505,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 	}
 
 	/**
-	 * Safe Base64 decoding that handles both Node.js and browser environments
-	 * with better error handling
+	 * Safe Base64 decoding using base64-js library
+	 * - Handles standard base64 and base64url formats
+	 * - Works consistently across Node.js and browser environments
+	 * - Provides improved error handling
 	 */
 	private safeBase64Decode(input: string): string {
 		try {
@@ -1504,38 +1527,29 @@ export class EnhancedTokenManager implements FullAuthClient {
 				paddedBase64 += '='
 			}
 
-			// Decode using the appropriate method
-			if (typeof Buffer !== 'undefined') {
-				// Node.js environment
-				return Buffer.from(paddedBase64, 'base64').toString()
-			} else {
-				// Browser environment
-				return atob(paddedBase64)
-			}
+			// Convert base64 string to binary data
+			const binaryData = base64js.toByteArray(paddedBase64)
+
+			// Convert binary data to string
+			return new TextDecoder().decode(binaryData)
 		} catch (error) {
 			throw new Error(`Base64 decode error: ${(error as Error).message}`)
 		}
 	}
 
 	/**
-	 * Safe Base64 encoding that handles both Node.js and browser environments
-	 * with better error handling and optional URL-safe format
+	 * Safe Base64 encoding using base64-js library
+	 * - Encodes strings to base64 with consistent behavior across environments
+	 * - Supports URL-safe base64 format (base64url)
+	 * - Enhanced error handling
 	 */
 	private safeBase64Encode(input: string, urlSafe = true): string {
 		try {
-			// Encode the string
-			let base64: string
+			// Convert string to binary data
+			const binaryData = new TextEncoder().encode(input)
 
-			if (typeof Buffer !== 'undefined') {
-				// Node.js environment
-				base64 = Buffer.from(input).toString('base64')
-			} else if (typeof btoa === 'function') {
-				// Browser environment
-				base64 = btoa(input)
-			} else {
-				// Unlikely case where neither is available
-				throw new Error('No base64 encoding method available')
-			}
+			// Use base64-js to encode binary data to base64
+			let base64 = base64js.fromByteArray(binaryData)
 
 			// Convert to URL-safe format if requested
 			if (urlSafe) {
