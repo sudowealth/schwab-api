@@ -1,4 +1,3 @@
-import * as base64js from 'base64-js'
 import pkceChallenge from 'pkce-challenge'
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
@@ -7,6 +6,11 @@ import {
 	type AuthDiagnosticsOptions,
 	type AuthDiagnosticsResult,
 } from './auth-diagnostics'
+import {
+	sanitizeAuthCode,
+	safeBase64Encode,
+	safeBase64Decode,
+} from './auth-utils'
 import { TokenRefreshTracer } from './token-refresh-tracer'
 import {
 	type TokenData,
@@ -260,7 +264,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				// First, make sure the state is a valid base64 string
 				let decodedStateString: string
 				try {
-					decodedStateString = this.safeBase64Decode(opts.state)
+					decodedStateString = safeBase64Decode(opts.state)
 				} catch (decodeError) {
 					if (this.config.debug) {
 						console.warn(
@@ -309,7 +313,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		let finalStateParamForSchwab: string
 		try {
 			// Use the safe base64 encoding helper
-			finalStateParamForSchwab = this.safeBase64Encode(
+			finalStateParamForSchwab = safeBase64Encode(
 				JSON.stringify(combinedStateObject),
 			)
 			if (this.config.debug) {
@@ -327,7 +331,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				const fallbackState = {
 					pkce_code_verifier: this.codeVerifierForCurrentFlow,
 				}
-				finalStateParamForSchwab = this.safeBase64Encode(
+				finalStateParamForSchwab = safeBase64Encode(
 					JSON.stringify(fallbackState),
 				)
 				console.warn(
@@ -358,78 +362,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				: {}),
 		}
 	}
-	/**
-	 * Sanitize authorization code for Schwab's OAuth requirements
-	 * This handles any encoding issues that might come up with special characters
-	 * and ensures base64 padding is correctly handled.
-	 *
-	 * Specifically addresses:
-	 * - Removing invalid base64 characters (like @ symbols)
-	 * - Converting from base64url to standard base64 format
-	 * - Adding proper padding to make length a multiple of 4
-	 * - Handling URL-encoded characters
-	 * @private
-	 */
-	/**
-	 * Sanitize authorization code using the base64-js library for improved reliability
-	 *
-	 * This function processes an authorization code to ensure it's in valid Base64 format
-	 * by handling URL-encoded characters, removing invalid chars, normalizing to
-	 * standard Base64 format, and ensuring proper padding.
-	 */
-	private sanitizeAuthCode(code: string): string {
-		// First trim any whitespace
-		const trimmedCode = code.trim()
-
-		// Only perform URL-decoding while preserving structure
-		let processedCode = trimmedCode
-
-		// Handle URL-encoded characters if present
-		if (processedCode.includes('%')) {
-			try {
-				// Selectively handle URL-encoded characters that might appear in codes
-				// Only handle specific known URL encodings to preserve structure
-				processedCode = processedCode
-					.replace(/%40/g, '@') // %40 = @
-					.replace(/%7E/g, '~') // %7E = ~
-					.replace(/%2B/g, '+') // %2B = +
-					.replace(/%2F/g, '/') // %2F = /
-					.replace(/%3D/g, '=') // %3D = =
-					.replace(/%20/g, ' ') // %20 = space
-				// DO NOT modify periods or other structural elements
-
-				if (this.config.debug) {
-					console.log(
-						`[EnhancedTokenManager.sanitizeAuthCode] URL-decoded specific characters: '${trimmedCode.substring(0, 15)}...' => '${processedCode.substring(0, 15)}...'`,
-					)
-				}
-			} catch (e) {
-				// If specific URL decoding fails, preserve original code
-				console.error(
-					`[EnhancedTokenManager.sanitizeAuthCode] Error handling URL-encoded characters: ${(e as Error).message}`,
-				)
-				processedCode = trimmedCode // Revert to original
-			}
-		}
-
-		if (this.config.debug) {
-			// Log if the code contains periods for debugging purposes
-			if (processedCode.includes('.')) {
-				console.log(
-					`[EnhancedTokenManager.sanitizeAuthCode] Code contains periods. Format preserved as: ${processedCode
-						.split('.')
-						.map((segment) => segment.substring(0, 5) + '...')
-						.join('.')}`,
-				)
-			}
-
-			console.log(
-				`[EnhancedTokenManager.sanitizeAuthCode] Minimal processing applied, preserving structure: '${processedCode.substring(0, 15)}...'`,
-			)
-		}
-
-		return processedCode
-	}
+	// Using the unified sanitizeAuthCode function from auth-utils.ts
 
 	/**
 	 * Exchange an authorization code for tokens
@@ -447,7 +380,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			)
 		}
 
-		const sanitizedCode = this.sanitizeAuthCode(code)
+		const sanitizedCode = sanitizeAuthCode(code, this.config.debug)
 		if (this.config.debug) {
 			console.log(
 				`[EnhancedTokenManager.exchangeCode] Code was sanitized to: '${sanitizedCode.substring(0, 15)}...'`,
@@ -505,7 +438,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 			try {
 				// Use our safe base64 decode function instead of atob
-				const decodedStateString = this.safeBase64Decode(processedStateParam)
+				const decodedStateString = safeBase64Decode(processedStateParam)
 				if (this.config.debug) {
 					console.log(
 						`[EnhancedTokenManager.exchangeCode] Decoded state string from base64: '${decodedStateString.substring(0, 100)}...'`,
@@ -1187,7 +1120,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				// Some tokens may be base64 encoded
 				try {
 					// Attempt to decode to check format
-					const decoded = this.safeBase64Decode(refreshToken)
+					const decoded = safeBase64Decode(refreshToken)
 					if (decoded && decoded.length > 0) {
 						// Token appears to be valid base64 encoded
 						// No need to re-encode
@@ -1472,63 +1405,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		}
 	}
 
-	/**
-	 * Safe Base64 decoding using base64-js library
-	 * - Handles standard base64 and base64url formats
-	 * - Works consistently across Node.js and browser environments
-	 * - Provides improved error handling
-	 */
-	private safeBase64Decode(input: string): string {
-		try {
-			// First check if we need to convert from base64url to standard base64
-			const needsUrlDecoding = input.includes('-') || input.includes('_')
-			let base64 = input
-
-			if (needsUrlDecoding) {
-				// Convert base64url to base64 for standard decoding
-				base64 = input.replace(/-/g, '+').replace(/_/g, '/')
-			}
-
-			// Add padding if needed
-			let paddedBase64 = base64
-			while (paddedBase64.length % 4 !== 0) {
-				paddedBase64 += '='
-			}
-
-			// Convert base64 string to binary data
-			const binaryData = base64js.toByteArray(paddedBase64)
-
-			// Convert binary data to string
-			return new TextDecoder().decode(binaryData)
-		} catch (error) {
-			throw new Error(`Base64 decode error: ${(error as Error).message}`)
-		}
-	}
-
-	/**
-	 * Safe Base64 encoding using base64-js library
-	 * - Encodes strings to base64 with consistent behavior across environments
-	 * - Supports URL-safe base64 format (base64url)
-	 * - Enhanced error handling
-	 */
-	private safeBase64Encode(input: string, urlSafe = true): string {
-		try {
-			// Convert string to binary data
-			const binaryData = new TextEncoder().encode(input)
-
-			// Use base64-js to encode binary data to base64
-			let base64 = base64js.fromByteArray(binaryData)
-
-			// Convert to URL-safe format if requested
-			if (urlSafe) {
-				return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-			}
-
-			return base64
-		} catch (error) {
-			throw new Error(`Base64 encode error: ${(error as Error).message}`)
-		}
-	}
+	// Using the unified safeBase64Decode and safeBase64Encode functions from auth-utils.ts
 
 	/**
 	 * PKCE functionality is now handled by the pkce-challenge package

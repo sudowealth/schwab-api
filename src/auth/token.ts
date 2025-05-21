@@ -1,6 +1,7 @@
 import { MEDIA_TYPES, OAUTH_GRANT_TYPES } from '../constants'
 import { type RequestContext } from '../core/http'
 import { handleApiError, createSchwabApiError } from '../errors'
+import { sanitizeAuthCode } from './auth-utils'
 import { type SchwabTokenResponse } from './types'
 import { getTokenUrlWithContext } from './urls'
 
@@ -43,26 +44,6 @@ function tokenLogWithContext(
 }
 
 /**
- * Specially sanitize a code for Schwab's OAuth requirements
- * This handles any encoding issues that might come up with special characters
- */
-function sanitizeAuthCode(code: string): string {
-	// First trim any whitespace
-	const trimmedCode = code.trim()
-
-	// Schwab's auth code contains special characters like "." and "@"
-	// If the code was already URL decoded, it may need to be handled differently
-
-	// Handle the @ character at the end if present (base64 padding character)
-	// This should be already URL-encoded as %40 in most cases
-	if (trimmedCode.endsWith('@')) {
-		return trimmedCode.slice(0, -1) + '%40'
-	}
-
-	return trimmedCode
-}
-
-/**
  * Exchange an authorization code for an access token using the provided context
  */
 export async function exchangeCodeForTokenWithContext(
@@ -74,7 +55,8 @@ export async function exchangeCodeForTokenWithContext(
 	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	// Ensure code is properly formatted for Schwab API requirements
-	const authCode = sanitizeAuthCode(opts.code)
+	// Pass context.config.enableLogging for debug flag
+	const authCode = sanitizeAuthCode(opts.code, context.config.enableLogging)
 
 	tokenLogWithContext(
 		context,
