@@ -392,38 +392,78 @@ export class EnhancedTokenManager implements FullAuthClient {
 		// First trim any whitespace
 		const trimmedCode = code.trim()
 
-		// Handle the @ symbol which is not a valid base64 character
-		// It might be included as URL-encoded %40 or directly as @
+		// Valid Base64 characters are A-Z, a-z, 0-9, +, /, and = for padding
+		// Valid Base64URL characters are A-Z, a-z, 0-9, -, _, and no padding
+
+		// Step 1: Filter out any non-standard Base64 characters
+		// This includes handling %40 (@) symbols which are causing issues
 		let preProcessedCode = trimmedCode
-		if (preProcessedCode.includes('@') || preProcessedCode.includes('%40')) {
-			// Remove @ symbol at the end (common issue)
-			if (preProcessedCode.endsWith('@')) {
-				preProcessedCode = preProcessedCode.slice(0, -1)
-			}
 
-			// Replace any remaining @ symbols (could be URL-encoded or raw)
-			preProcessedCode = preProcessedCode.replace(/@/g, '')
-			preProcessedCode = preProcessedCode.replace(/%40/g, '')
-
-			if (this.config.debug) {
-				console.log(
-					`[EnhancedTokenManager.sanitizeAuthCode] Removed invalid '@' symbols from code: '${trimmedCode.substring(0, 15)}...' => '${preProcessedCode.substring(0, 15)}...'`,
+		// Remove URL encoded characters
+		if (preProcessedCode.includes('%')) {
+			try {
+				// Try to decode URL-encoded parts
+				preProcessedCode = decodeURIComponent(preProcessedCode)
+				if (this.config.debug) {
+					console.log(
+						`[EnhancedTokenManager.sanitizeAuthCode] Decoded URL-encoded characters: '${trimmedCode.substring(0, 15)}...' => '${preProcessedCode.substring(0, 15)}...'`,
+					)
+				}
+			} catch (e) {
+				console.error(
+					`[EnhancedTokenManager.sanitizeAuthCode] Failed to decode URL-encoded characters: ${(e as Error).message}`,
 				)
+				// If decoding fails, manually remove problematic sequences
+				preProcessedCode = preProcessedCode.replace(/%40/g, '') // Remove @
+				preProcessedCode = preProcessedCode.replace(/%20/g, '') // Remove spaces
+
+				if (this.config.debug) {
+					console.log(
+						`[EnhancedTokenManager.sanitizeAuthCode] Manually removed URL-encoded characters: '${trimmedCode.substring(0, 15)}...' => '${preProcessedCode.substring(0, 15)}...'`,
+					)
+				}
 			}
 		}
 
-		// Convert from base64url to base64 if needed
-		let sanitizedCode = preProcessedCode.replace(/-/g, '+').replace(/_/g, '/')
+		// Remove any illegal Base64 characters after URL decoding
+		// Only keep A-Z, a-z, 0-9, +, /, -, _, = (valid in base64 and base64url)
+		const filteredCode = preProcessedCode.replace(/[^A-Za-z0-9+/\-_=]/g, '')
 
-		// Add padding if needed to make length a multiple of 4
+		if (filteredCode !== preProcessedCode && this.config.debug) {
+			console.log(
+				`[EnhancedTokenManager.sanitizeAuthCode] Removed illegal Base64 characters: '${preProcessedCode.substring(0, 15)}...' => '${filteredCode.substring(0, 15)}...'`,
+			)
+		}
+
+		// Step 2: Normalize to standard Base64 format (from possible Base64URL format)
+		// Convert from base64url to base64 if needed
+		let sanitizedCode = filteredCode.replace(/-/g, '+').replace(/_/g, '/')
+
+		// Step 3: Add padding if needed to make length a multiple of 4
 		while (sanitizedCode.length % 4 !== 0) {
 			sanitizedCode += '='
 		}
 
-		if (this.config.debug && sanitizedCode !== trimmedCode) {
+		// Final validation to ensure it's a valid Base64 string
+		// The resulting string should only contain A-Z, a-z, 0-9, +, /, and = for padding
+		const isValidBase64 = /^[A-Za-z0-9+/]*={0,2}$/.test(sanitizedCode)
+
+		if (this.config.debug) {
+			if (sanitizedCode !== trimmedCode) {
+				console.log(
+					`[EnhancedTokenManager.sanitizeAuthCode] Code was sanitized from '${trimmedCode.substring(0, 15)}...' to '${sanitizedCode.substring(0, 15)}...'`,
+				)
+			}
+
 			console.log(
-				`[EnhancedTokenManager.sanitizeAuthCode] Code was sanitized from '${trimmedCode.substring(0, 15)}...' to '${sanitizedCode.substring(0, 15)}...'`,
+				`[EnhancedTokenManager.sanitizeAuthCode] Final code validation: ${isValidBase64 ? 'VALID Base64 format' : 'INVALID Base64 format'}`,
 			)
+
+			if (!isValidBase64) {
+				console.warn(
+					`[EnhancedTokenManager.sanitizeAuthCode] Warning: Final sanitized code still contains invalid Base64 characters`,
+				)
+			}
 		}
 
 		return sanitizedCode
@@ -1322,6 +1362,44 @@ export class EnhancedTokenManager implements FullAuthClient {
 			fetchFn = globalThis.fetch.bind(globalThis)
 		}
 
+		// Additional validation and sanitization for authorization code
+		if (
+			formData.get('grant_type') === 'authorization_code' &&
+			formData.has('code')
+		) {
+			const originalCode = formData.get('code') || ''
+
+			// Ensure the code is valid Base64 format before sending
+			// This is a final check/fix to catch any issues that might have been missed
+			const isValidBase64 = /^[A-Za-z0-9+/]*={0,2}$/.test(originalCode)
+
+			if (!isValidBase64) {
+				// If not valid, re-sanitize to be certain
+				// Filter to only valid Base64 characters
+				let sanitizedCode = originalCode.replace(/[^A-Za-z0-9+/=]/g, '')
+
+				// Adjust padding to ensure length is multiple of 4
+				while (sanitizedCode.length % 4 !== 0) {
+					sanitizedCode += '='
+				}
+
+				// Replace the code in the form data with our re-sanitized version
+				formData.set('code', sanitizedCode)
+
+				if (this.config.debug) {
+					console.warn(
+						`[EnhancedTokenManager.performDirectTokenExchange] ⚠️ Authorization code was not valid Base64, re-sanitized before sending`,
+					)
+					console.log(
+						`[EnhancedTokenManager.performDirectTokenExchange] Original code: '${originalCode.substring(0, 15)}...'`,
+					)
+					console.log(
+						`[EnhancedTokenManager.performDirectTokenExchange] Sanitized code: '${sanitizedCode.substring(0, 15)}...'`,
+					)
+				}
+			}
+		}
+
 		// Additional debug logging before making the request
 		if (this.config.debug) {
 			console.log(
@@ -1342,6 +1420,9 @@ export class EnhancedTokenManager implements FullAuthClient {
 				)
 				console.log(
 					`[EnhancedTokenManager.performDirectTokenExchange] Code validation: length is ${code?.length && code.length % 4 === 0 ? 'valid (multiple of 4)' : 'INVALID (not a multiple of 4)'}`,
+				)
+				console.log(
+					`[EnhancedTokenManager.performDirectTokenExchange] Is valid Base64 format: ${/^[A-Za-z0-9+/]*={0,2}$/.test(code || '') ? 'YES' : 'NO'}`,
 				)
 			}
 
