@@ -385,22 +385,28 @@ export class EnhancedTokenManager implements FullAuthClient {
 	/**
 	 * Sanitize authorization code for Schwab's OAuth requirements
 	 * This handles any encoding issues that might come up with special characters
+	 * and ensures base64 padding is correctly handled
 	 * @private
 	 */
 	private sanitizeAuthCode(code: string): string {
 		// First trim any whitespace
 		const trimmedCode = code.trim()
 
-		// Schwab's auth code contains special characters like "." and "@"
-		// If the code was already URL decoded, it may need to be handled differently
+		// Convert from base64url to base64 if needed
+		let sanitizedCode = trimmedCode.replace(/-/g, '+').replace(/_/g, '/')
 
-		// Handle the @ character at the end if present (base64 padding character)
-		// This should be already URL-encoded as %40 in most cases
-		if (trimmedCode.endsWith('@')) {
-			return trimmedCode.slice(0, -1) + '%40'
+		// Add padding if needed to make length a multiple of 4
+		while (sanitizedCode.length % 4 !== 0) {
+			sanitizedCode += '='
 		}
 
-		return trimmedCode
+		if (this.config.debug && sanitizedCode !== trimmedCode) {
+			console.log(
+				`[EnhancedTokenManager.sanitizeAuthCode] Code was sanitized from '${trimmedCode.substring(0, 15)}...' to '${sanitizedCode.substring(0, 15)}...' (added proper base64 padding)`,
+			)
+		}
+
+		return sanitizedCode
 	}
 
 	/**
@@ -420,9 +426,15 @@ export class EnhancedTokenManager implements FullAuthClient {
 		}
 
 		const sanitizedCode = this.sanitizeAuthCode(code)
-		if (this.config.debug && sanitizedCode !== code) {
+		if (this.config.debug) {
 			console.log(
 				`[EnhancedTokenManager.exchangeCode] Code was sanitized to: '${sanitizedCode.substring(0, 15)}...'`,
+			)
+			console.log(
+				`[EnhancedTokenManager.exchangeCode] Code length before: ${code.length}, after: ${sanitizedCode.length}`,
+			)
+			console.log(
+				`[EnhancedTokenManager.exchangeCode] Sanitized code length validation: ${sanitizedCode.length % 4 === 0 ? 'Valid length (multiple of 4)' : 'INVALID length (not a multiple of 4)'}`,
 			)
 		}
 
@@ -1290,6 +1302,24 @@ export class EnhancedTokenManager implements FullAuthClient {
 			fetchFn = globalThis.fetch.bind(globalThis)
 		}
 
+		// Additional debug logging before making the request
+		if (this.config.debug) {
+			console.log(`[EnhancedTokenManager.performDirectTokenExchange] Making token request...`)
+			console.log(`[EnhancedTokenManager.performDirectTokenExchange] Request body length: ${formData.toString().length}`)
+			
+			// Inspect grant_type and code specifically for debugging code exchange issues
+			if (formData.get('grant_type') === 'authorization_code' && formData.has('code')) {
+				const code = formData.get('code')
+				console.log(`[EnhancedTokenManager.performDirectTokenExchange] Code in request: length=${code?.length}, code=${code?.toString().substring(0, 15)}...`)
+				console.log(`[EnhancedTokenManager.performDirectTokenExchange] Code validation: length is ${code?.length && code.length % 4 === 0 ? 'valid (multiple of 4)' : 'INVALID (not a multiple of 4)'}`)
+			}
+			
+			if (formData.has('code_verifier')) {
+				const verifier = formData.get('code_verifier')
+				console.log(`[EnhancedTokenManager.performDirectTokenExchange] Code verifier in request: length=${verifier?.length}, starts with=${verifier?.toString().substring(0, 10)}...`)
+			}
+		}
+		
 		const response = await fetchFn(tokenEndpoint, {
 			method: 'POST',
 			headers,
