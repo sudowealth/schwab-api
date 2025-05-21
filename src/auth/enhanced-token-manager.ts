@@ -16,6 +16,14 @@ import {
 	type SchwabTokenResponse,
 } from './types'
 
+// Crypto polyfill for environments without crypto API
+const cryptoAPI =
+	typeof crypto !== 'undefined'
+		? crypto
+		: typeof window !== 'undefined' && 'crypto' in window
+			? window.crypto
+			: null
+
 // Define additional error codes for enhanced token manager
 export enum TokenErrorCode {
 	AUTHORIZATION_ERROR = 'AUTHORIZATION_ERROR',
@@ -150,6 +158,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private isReconnecting: boolean = false
 	private lastRefreshAttempt: number = 0
 	private refreshLock: Promise<TokenData> | null = null
+	private codeVerifier: string | null = null
 
 	constructor(options: EnhancedTokenManagerOptions) {
 		// Set default configuration values
@@ -231,23 +240,64 @@ export class EnhancedTokenManager implements FullAuthClient {
 	}
 
 	/**
-	 * Get the authorization URL for the OAuth flow
+	 * Get the authorization URL for the OAuth flow with PKCE support
+	 * This is an asynchronous method to properly generate and include the code challenge
 	 */
-	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): {
+	async getAuthorizationUrl(opts?: {
+		scope?: string[]
+		state?: string
+	}): Promise<{
 		authUrl: string
-	} {
+	}> {
 		const scope = opts?.scope || this.config.scope
 		const baseIssuerUrl = this.config.issuerBaseUrl
 
+		// Generate PKCE code verifier
+		this.codeVerifier = this.generateRandomString(128)
+
+		// Generate the actual code challenge with SHA-256 and base64url encoding
+		const codeChallenge = await this.generateCodeChallenge(this.codeVerifier)
+
+		// Create auth params with the properly generated code_challenge
 		const authParams: Record<string, string> = {
 			client_id: this.config.clientId,
 			scope: scope.join(' '),
 			response_type: 'code',
 			redirect_uri: this.config.redirectUri,
+			code_challenge: codeChallenge,
+			code_challenge_method: 'S256',
 		}
 
+		// Store state - include the code_verifier for reliable retrieval during callback
 		if (opts?.state) {
-			authParams.state = opts.state
+			// Preserve the existing state but also store code verifier
+			try {
+				// Try to decode the state as base64, merge with verifier info, and re-encode
+				const decodedState = JSON.parse(atob(opts.state))
+				const combinedState = {
+					...decodedState,
+					pkce_code_verifier: this.codeVerifier,
+				}
+				authParams.state = btoa(JSON.stringify(combinedState))
+			} catch (e) {
+				// If not valid base64 JSON, treat as opaque and store separately
+				if (this.config.debug) {
+					console.log(
+						'[EnhancedTokenManager] State parameter is not base64 JSON, using as-is.',
+					)
+				}
+				authParams.state = opts.state
+			}
+		} else {
+			// No state provided, create one with just the code verifier
+			const stateObj = { pkce_code_verifier: this.codeVerifier }
+			authParams.state = btoa(JSON.stringify(stateObj))
+		}
+
+		if (this.config.debug) {
+			console.log(
+				`[EnhancedTokenManager] PKCE: verifier (len ${this.codeVerifier.length}), challenge (len ${codeChallenge.length}, starts ${codeChallenge.substring(0, 10)}...)`,
+			)
 		}
 
 		const authUrl = `${baseIssuerUrl}/oauth/authorize?${new URLSearchParams(authParams).toString()}`
@@ -256,19 +306,108 @@ export class EnhancedTokenManager implements FullAuthClient {
 	}
 
 	/**
+	 * Sanitize authorization code for Schwab's OAuth requirements
+	 * This handles any encoding issues that might come up with special characters
+	 * @private
+	 */
+	private sanitizeAuthCode(code: string): string {
+		// First trim any whitespace
+		const trimmedCode = code.trim()
+
+		// Schwab's auth code contains special characters like "." and "@"
+		// If the code was already URL decoded, it may need to be handled differently
+
+		// Handle the @ character at the end if present (base64 padding character)
+		// This should be already URL-encoded as %40 in most cases
+		if (trimmedCode.endsWith('@')) {
+			return trimmedCode.slice(0, -1) + '%40'
+		}
+
+		return trimmedCode
+	}
+
+	/**
 	 * Exchange an authorization code for tokens
 	 * This method is used after the user completes the authorization flow
+	 * @param code The authorization code received from the OAuth server
+	 * @param stateParam Optional state parameter received in the callback, may contain code_verifier
 	 */
-	async exchangeCode(code: string): Promise<TokenSet> {
+	async exchangeCode(code: string, stateParam?: string): Promise<TokenSet> {
 		// Handle exchange internally using direct token exchange
 		try {
+			// Log the raw authorization code for debugging
+			if (this.config.debug) {
+				console.log(
+					`[EnhancedTokenManager] Received authorization code for exchange: '${code}' (length: ${code.length})`,
+				)
+
+				// Check for potentially problematic characters in the code
+				const hasSpecialChars = /[+/=@.]/g.test(code)
+				if (hasSpecialChars) {
+					console.log(
+						`[EnhancedTokenManager] Note: Authorization code contains special characters that might need sanitization`,
+					)
+				}
+			}
+
+			// Sanitize the code using the same logic from token.ts
+			const sanitizedCode = this.sanitizeAuthCode(code)
+
+			if (this.config.debug && sanitizedCode !== code) {
+				console.log(
+					`[EnhancedTokenManager] Code was sanitized for Schwab API requirements`,
+				)
+			}
+
+			// Retrieve code_verifier from state or use stored verifier
+			let codeVerifier = this.codeVerifier
+
+			// If state parameter is provided, try to extract code_verifier from it
+			if (stateParam) {
+				try {
+					const decodedState = JSON.parse(atob(stateParam))
+					if (decodedState.pkce_code_verifier) {
+						codeVerifier = decodedState.pkce_code_verifier
+
+						if (this.config.debug) {
+							console.log(
+								`[EnhancedTokenManager] Retrieved code_verifier from state parameter`,
+							)
+						}
+					}
+				} catch (e) {
+					if (this.config.debug) {
+						console.log(
+							`[EnhancedTokenManager] Failed to decode state parameter: ${e}`,
+						)
+					}
+					// Fall back to stored codeVerifier
+				}
+			}
+
+			if (!codeVerifier) {
+				// This should not happen in correctly implemented PKCE flow
+				console.warn(
+					'[EnhancedTokenManager] No code_verifier available for PKCE token exchange',
+				)
+			} else if (this.config.debug) {
+				console.log(
+					`[EnhancedTokenManager] Using code_verifier for PKCE (length: ${codeVerifier.length})`,
+				)
+			}
+
 			// Prepare parameters for token exchange
-			const params = {
+			const params: Record<string, string> = {
 				grant_type: 'authorization_code',
-				code,
+				code: sanitizedCode,
 				redirect_uri: this.config.redirectUri,
 				client_id: this.config.clientId,
 				client_secret: this.config.clientSecret,
+			}
+
+			// Add code_verifier if available (required for PKCE)
+			if (codeVerifier) {
+				params.code_verifier = codeVerifier
 			}
 
 			// Extra logging for debugging
@@ -291,8 +430,12 @@ export class EnhancedTokenManager implements FullAuthClient {
 			await this.persistTokens(tokenSet, {
 				operation: 'code_exchange',
 				codeLength: code.length,
+				usedPkce: !!codeVerifier,
 				timestamp: Date.now(),
 			})
+
+			// Clear stored code verifier after successful exchange
+			this.codeVerifier = null
 
 			// Return the mapped tokens
 			return tokenSet
@@ -905,10 +1048,6 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private async performDirectTokenExchange(
 		params: Record<string, string>,
 	): Promise<SchwabTokenResponse> {
-		if (this.config.debug) {
-			// Debug log removed
-		}
-
 		// Prepare the form data
 		const formData = new URLSearchParams()
 		Object.entries(params).forEach(([key, value]) => {
@@ -955,6 +1094,40 @@ export class EnhancedTokenManager implements FullAuthClient {
 			throw new Error('Token endpoint not available in OIDC configuration')
 		}
 
+		// Log request details when debug is enabled
+		if (this.config.debug) {
+			const redactedFormDataLog = new URLSearchParams()
+			formData.forEach((value, key) => {
+				if (key === 'client_secret') {
+					redactedFormDataLog.append(key, '[REDACTED]')
+				} else if (key === 'code') {
+					// For code, show a portion to help with debugging
+					const codePreview = value.substring(0, 10) + '...'
+					redactedFormDataLog.append(key, codePreview)
+
+					// Add code-specific diagnostics
+					console.log(`[EnhancedTokenManager] Auth code diagnostics:`)
+					console.log(`  - Length: ${value.length}`)
+					console.log(`  - Preview: ${codePreview}`)
+					console.log(`  - Contains special chars: ${/[+/=@.]/g.test(value)}`)
+					console.log(
+						`  - URL encoding check: ${encodeURIComponent(value) !== value ? 'Might need URL encoding' : 'Already encoded or no special chars'}`,
+					)
+				} else {
+					redactedFormDataLog.append(key, value)
+				}
+			})
+			const redactedHeaders = { ...headers }
+			if (redactedHeaders.Authorization)
+				redactedHeaders.Authorization = 'Basic [REDACTED]'
+
+			console.log(`[EnhancedTokenManager] Performing direct token exchange.`)
+			console.log(`  Endpoint: ${tokenEndpoint}`)
+			console.log(`  Method: POST`)
+			console.log(`  Headers: ${JSON.stringify(redactedHeaders)}`)
+			console.log(`  Body: ${redactedFormDataLog.toString()}`)
+		}
+
 		// Make the token request
 		const response = await this.config.fetch(tokenEndpoint, {
 			method: 'POST',
@@ -966,36 +1139,41 @@ export class EnhancedTokenManager implements FullAuthClient {
 		if (response.ok) {
 			return await response.json()
 		} else {
-			// Handle error response
-			let errorText: string
-			let errorJson: any
-
+			// Handle error response with improved error capture
+			let errorBodyContent: string = 'Could not read error response body.'
+			let parsedErrorJson: any
 			try {
-				errorText = await response.text()
+				const errorResponseClone = response.clone() // Clone before reading
+				errorBodyContent = await errorResponseClone.text() // Get raw text first
 				try {
-					errorJson = JSON.parse(errorText)
+					parsedErrorJson = JSON.parse(errorBodyContent)
 				} catch (e) {
-					console.error('Error parsing error response', e)
-					if (this.config.debug) {
-						// Debug log removed
-					}
-					// Not JSON, use text as is
+					// Not JSON, errorBodyContent already has the text
+
+					console.error(
+						'[EnhancedTokenManager] Failed to parse error response body:',
+						e,
+					)
 				}
-			} catch (error) {
-				console.error('Error parsing error response', error)
-				errorText = 'Failed to parse error response'
+			} catch (readError: any) {
+				console.error(
+					'[EnhancedTokenManager] Fatal: Failed to read error response body:',
+					readError.message || readError,
+				)
 			}
 
 			if (this.config.debug) {
-				// Error log removed
+				console.error(
+					`[EnhancedTokenManager] Token exchange HTTP error ${response.status}. Full Response Body: ${errorBodyContent}`,
+				)
 			}
 
-			// Throw detailed error
+			// Throw detailed error, ensuring errorBodyContent is passed if parsedErrorJson is not available
 			throw new Error(
 				`Token exchange failed with status ${response.status}: ${
-					errorJson?.error_description ||
-					errorJson?.error ||
-					errorText ||
+					parsedErrorJson?.error_description ||
+					parsedErrorJson?.error ||
+					errorBodyContent || // Use full text if JSON parsing failed or no specific error fields
 					response.statusText
 				}`,
 			)
@@ -1025,6 +1203,75 @@ export class EnhancedTokenManager implements FullAuthClient {
 			console.error('Error decoding refresh token', e)
 			throw new Error('Invalid base64 string')
 		}
+	}
+
+	/**
+	 * Generate a cryptographically random string for PKCE code_verifier
+	 * @param length The length of the random string (43-128 chars)
+	 * @returns A random string using allowed characters for PKCE
+	 */
+	private generateRandomString(length: number = 128): string {
+		if (!cryptoAPI) {
+			throw new Error('Crypto API not available for PKCE generation')
+		}
+
+		const charset =
+			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
+		let result = ''
+		const randomValues = new Uint8Array(length)
+		cryptoAPI.getRandomValues(randomValues)
+
+		for (let i = 0; i < length; i++) {
+			result += charset[randomValues[i]! % charset.length]
+		}
+
+		return result
+	}
+
+	/**
+	 * Base64url encode a string or buffer
+	 */
+	private base64urlEncode(data: string | ArrayBuffer): string {
+		let str: string
+
+		if (typeof data === 'string') {
+			// If data is already a string, encode it to ArrayBuffer
+			const encoder = new TextEncoder()
+			const buffer = encoder.encode(data)
+			str = String.fromCharCode(...new Uint8Array(buffer))
+		} else {
+			// Otherwise, it's already an ArrayBuffer
+			str = String.fromCharCode(...new Uint8Array(data))
+		}
+
+		// btoa creates a base64 string
+		let base64 =
+			typeof btoa === 'function'
+				? btoa(str)
+				: Buffer.from(str).toString('base64')
+
+		// Convert to base64url format
+		return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+	}
+
+	/**
+	 * Generate a code challenge from a code verifier using SHA-256
+	 * @param verifier The code verifier string
+	 * @returns A base64url encoded SHA-256 hash of the verifier
+	 */
+	private async generateCodeChallenge(verifier: string): Promise<string> {
+		if (!cryptoAPI || !cryptoAPI.subtle) {
+			throw new Error(
+				'WebCrypto subtle API not available for PKCE code challenge generation',
+			)
+		}
+
+		const encoder = new TextEncoder()
+		const data = encoder.encode(verifier)
+		const hashBuffer = await cryptoAPI.subtle.digest('SHA-256', data)
+
+		// Base64 URL encode the hash
+		return this.base64urlEncode(hashBuffer)
 	}
 
 	/**

@@ -179,10 +179,11 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 
 	/**
 	 * Get the authorization URL for the OAuth flow
+	 * @returns Promise when using PKCE to allow for async code challenge generation
 	 */
-	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): {
+	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): Promise<{
 		authUrl: string
-	}
+	}>
 
 	/**
 	 * Load tokens from storage if available
