@@ -705,7 +705,7 @@ export class TokenRefreshTracer {
  * @returns A wrapped fetch function that traces token operations
  */
 export function createTracingFetch(
-        fetchFn: (req: Request) => Promise<Response>,
+	fetchFn: (req: Request) => Promise<Response>,
 ): (req: Request) => Promise<Response> {
 	return async (req: Request) => {
 		const url = req.url

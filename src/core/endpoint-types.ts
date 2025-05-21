@@ -100,7 +100,7 @@ type BuildEndpointOptions<T extends EndpointMetadata> =
 type HasRequiredParams<T extends EndpointMetadata> =
 	HasRequiredPathParams<T> extends true
 		? true
-                : HasRequiredQueryParams extends true
+		: HasRequiredQueryParams extends true
 			? true
 			: HasRequiredBody<T> extends true
 				? true

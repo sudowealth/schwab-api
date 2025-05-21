@@ -77,8 +77,8 @@ export function tokenIsExpiringSoon(
  * @returns True if tokens should be refreshed
  */
 export function shouldRefreshTokens(
-        tokens: TokenData | TokenSet | null | undefined,
-        refreshThresholdMs: number = DEFAULT_REFRESH_THRESHOLD_MS,
+	tokens: TokenData | TokenSet | null | undefined,
+	refreshThresholdMs: number = DEFAULT_REFRESH_THRESHOLD_MS,
 ): boolean {
 	// No tokens available
 	if (!tokens) return false

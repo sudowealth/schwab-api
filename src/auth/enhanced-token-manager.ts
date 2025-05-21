@@ -132,7 +132,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		onTokenEvent: TokenPersistenceEventHandler | undefined
 	}
 
-        private tokenSet?: SchwabTokenResponse
+	private tokenSet?: SchwabTokenResponse
 
 	// Persistence-related properties (integrated from TokenPersistenceManager)
 	private saveFn?: (tokens: TokenSet) => Promise<void>
@@ -146,8 +146,8 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private tracer: TokenRefreshTracer
 	private refreshCallbacks: Array<(t: TokenSet) => void> = []
 	private reconnectionHandlers: Array<() => Promise<void>> = []
-        private isReconnecting: boolean = false
-        private refreshLock: Promise<TokenData> | null = null
+	private isReconnecting: boolean = false
+	private refreshLock: Promise<TokenData> | null = null
 
 	constructor(options: EnhancedTokenManagerOptions) {
 		// Set default configuration values
@@ -176,7 +176,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			issuerBaseUrl: baseIssuerUrl,
 		}
 
-                // Create dummy implementations for when the actual functions are missing
+		// Create dummy implementations for when the actual functions are missing
 		const dummySave =
 			this.config.save ||
 			(async () => {
@@ -1621,7 +1621,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		let lastError: unknown
 		let attempt = 0
 
-                // Try up to maxRetryAttempts times
+		// Try up to maxRetryAttempts times
 		while (attempt < this.config.maxRetryAttempts) {
 			try {
 				// Log retry attempt

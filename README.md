@@ -19,8 +19,7 @@ or transactions.**
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage Examples](#usage)
-  - [Full OAuth Flow with Simplified Token Management](#example-1-full-oauth-flow-with-simplified-token-management)
-  - [OAuth Flow with Enhanced Token Management](#example-1a-full-oauth-flow-with-enhanced-token-management)
+  - [Full OAuth Flow with Enhanced Token Management](#example-1-oauth-code-flow-authentication)
   - [Using a Static Token](#example-2-using-a-static-token)
   - [Custom Token Manager](#example-3-custom-token-manager)
 - [API Coverage](#api-coverage)
@@ -60,12 +59,11 @@ corresponding to a specific domain of API functionality:
 - **`/auth`**: Handles all OAuth 2.0 authentication logic, including token
   generation, refresh, and lifecycle management. This module ensures secure and
   reliable access to the Schwab API. It introduces `createSchwabAuth` for
-  creating authentication clients and `buildTokenManager` for more granular
+  creating authentication clients and `EnhancedTokenManager` for more granular
   control over token behavior, especially regarding concurrency.
 - **`/core`**: Contains the foundational building blocks of the client, such as
-  the API client itself (`createApiClient`), middleware pipeline
-  (`buildMiddlewarePipeline`), error handling, and request/response processing
-  utilities.
+  the API client itself (`createApiClient`), middleware pipeline, error
+  handling, and request/response processing utilities.
 - **`/market-data`**: Provides access to market data endpoints, including:
   - `quotes`: Fetching real-time or delayed quotes for various symbols.
   - `price-history`: Retrieving historical price data.
@@ -83,9 +81,9 @@ to navigate and extend the library.
 ### Naming Conventions
 
 - The `createSchwabAuth` function creates an authentication client.
-- The `buildTokenManager` function is used internally by `createSchwabAuth` but
-  can also be used directly to construct token managers, particularly when
-  dealing with custom token storage or refresh logic that requires concurrency.
+- The `EnhancedTokenManager` class is used for robust token management,
+  particularly when dealing with custom token storage or refresh logic that
+  requires concurrency protection.
 
 ### Concurrency Protection
 
@@ -108,6 +106,7 @@ import {
 // Assuming auth is configured (see Quick Start or Usage Examples)
 const auth = createSchwabAuth({
 	/* ... your auth config ... */
+	strategy: AuthStrategy.ENHANCED,
 })
 const client = createApiClient({ auth })
 
@@ -123,11 +122,11 @@ const accounts = await client.all.trader.accounts.getAccounts()
 ## Installation
 
 ```bash
-npm install schwab-api
+npm install @sudowealth/schwab-api
 # or
-yarn add schwab-api
+yarn add @sudowealth/schwab-api
 # or
-pnpm add schwab-api
+pnpm add @sudowealth/schwab-api
 ```
 
 ## Quick Start
@@ -200,7 +199,7 @@ async function main() {
 			},
 		},
 	})
-	// For CODE_FLOW, you would then redirect the user to:
+	// For OAuth flow, you would then redirect the user to:
 	const { authUrl } = auth.getAuthorizationUrl()
 	// And after they authorize, exchange the code:
 	const tokenData = await auth.exchangeCode('THE_CODE_FROM_REDIRECT')
@@ -607,8 +606,8 @@ includes account management, order placement, and transaction history:
   })
   ```
 
-This structure reflects the `processNamespace` approach used internally to
-organize and expose API endpoints, making them discoverable and easy to use.
+This structure reflects the organization of the API endpoints to make them
+discoverable and easy to use.
 
 ## Making API Calls
 
@@ -693,15 +692,13 @@ full API surface.
 
 ### Token Persistence
 
-When using OAuth 2.0 (e.g., `AuthStrategy.CODE_FLOW` with `createSchwabAuth`),
-it's crucial to persist the `TokenData` (which includes the access token,
-refresh token, and expiration times) to avoid requiring the user to
-re-authenticate every time your application starts or their session expires.
+When using OAuth 2.0 (e.g., with `createSchwabAuth`), it's crucial to persist
+the `TokenData` (which includes the access token, refresh token, and expiration
+times) to avoid requiring the user to re-authenticate every time your
+application starts or their session expires.
 
-The `createSchwabAuth` function (when using `AuthStrategy.CODE_FLOW` or
-`AuthStrategy.CUSTOM` with a manager that supports persistence) accepts `load`
-and `save` async functions in its `oauthConfig` (for CODE_FLOW) or directly in
-`AuthClientOptions` for a custom `ITokenLifecycleManager`.
+The `createSchwabAuth` function accepts `load` and `save` async functions in its
+`oauthConfig`:
 
 - **`save(tokenData: TokenData): Promise<void>`**: Called after a new token is
   obtained or an existing token is refreshed. You should store the `tokenData`
@@ -725,7 +722,7 @@ import fs from 'fs/promises' // Example using Node.js fs
 const TOKEN_FILE_PATH = './schwab-tokens.json'
 
 const auth = createSchwabAuth({
-	strategy: AuthStrategy.CODE_FLOW,
+	strategy: AuthStrategy.ENHANCED,
 	oauthConfig: {
 		clientId: process.env.SCHWAB_CLIENT_ID!,
 		clientSecret: process.env.SCHWAB_CLIENT_SECRET!,
@@ -782,13 +779,12 @@ API calls and token refreshes.
   import {
   	ITokenLifecycleManager,
   	TokenData,
-  	buildTokenManager,
   	createSchwabAuth,
   	AuthStrategy,
   } from '@sudowealth/schwab-api'
 
   class MyCustomTokenManager implements ITokenLifecycleManager {
-  	privatecurrentTokenData: TokenData | null = null
+  	private currentTokenData: TokenData | null = null
 
   	constructor() {
   		// Initialize with loading tokens, e.g., from a secure async storage
@@ -1125,8 +1121,7 @@ valid but others are not. In such cases, the response body will contain data for
 valid symbols and error information for invalid ones.
 
 The library provides utility functions to help manage these scenarios, located
-within the `client.marketData.quotes` namespace (originating from
-`src/market-data/quotes/index.ts`).
+within the `client.marketData.quotes` namespace:
 
 - **`hasSymbolError(responseBody: QuotesResponse, symbol: string): boolean`**:
   Checks if a specific symbol has an error in the quotes response.
@@ -1208,9 +1203,8 @@ middleware configuration.
 ### Middleware Pipeline
 
 The client uses a middleware pipeline to handle common tasks like
-authentication, rate limiting, and retries. This pipeline is built using
-`buildMiddlewarePipeline` and is configurable via the `middleware` option in
-`createApiClient`.
+authentication, rate limiting, and retries. This pipeline is configurable via
+the `middleware` option in `createApiClient`.
 
 By default, the pipeline includes:
 
@@ -1234,7 +1228,7 @@ import {
 
 // Assuming auth is configured
 const auth = createSchwabAuth({
-	strategy: AuthStrategy.STATIC,
+	strategy: AuthStrategy.ENHANCED,
 	accessToken: 'YOUR_TOKEN',
 })
 
@@ -1297,17 +1291,9 @@ async function exampleCall() {
 exampleCall()
 ```
 
-This approach replaces older methods of chaining individual middleware functions
-like `withRetry` or `withRateLimit` directly. The `middleware` configuration
-object provides a centralized way to manage these aspects. The pipeline also
-automatically uses concurrency-protected token refresh if an authentication
-manager that supports refresh (e.g., via `createSchwabAuth` with
-`AuthStrategy.CODE_FLOW`) is provided.
-
-### Custom Fetch Implementation
-
-The client uses a custom fetch implementation to handle network requests. This
-allows for more granular control over request and response processing.
+This approach provides a centralized way to manage middleware aspects. The
+pipeline also automatically uses concurrency-protected token refresh when an
+authentication manager that supports refresh is provided.
 
 ## API Reference
 
@@ -1332,9 +1318,6 @@ const quotes = await client.marketData.quotes.getQuotes({
 })
 ```
 
-Direct imports from submodules are no longer recommended. For more details on
-import patterns, see [Import Patterns](./docs/import-patterns.md).
-
 ### Public API Surface
 
 The Schwab API client provides a clear distinction between its public API
@@ -1345,14 +1328,13 @@ use.
 ### Authentication
 
 - `createSchwabAuth(config)`: Unified authentication factory (recommended)
-  - `config.strategy`: Specify authentication strategy
-    (`AuthStrategy.CODE_FLOW`, `AuthStrategy.STATIC`, or `AuthStrategy.CUSTOM`)
-  - `config.accessToken`: Required for STATIC strategy
-  - `config.tokenManager`: Required for CUSTOM strategy
-  - `config.oauthConfig`: Required for CODE_FLOW strategy // Properties of the
-    auth object returned by createSchwabAuth:
-  - `auth.getAuthorizationUrl()`: Generate auth URL (for CODE_FLOW)
-  - `auth.exchangeCode(code)`: Exchange code for tokens (for CODE_FLOW)
+  - `config.strategy`: Specify authentication strategy (`AuthStrategy.ENHANCED`)
+  - `config.accessToken`: For static token strategy
+  - `config.tokenManager`: For custom manager strategy
+  - `config.oauthConfig`: For OAuth strategies
+  - Properties of the auth object returned by createSchwabAuth:
+  - `auth.getAuthorizationUrl()`: Generate auth URL
+  - `auth.exchangeCode(code)`: Exchange code for tokens
   - `auth.refresh()`: Attempt to refresh access token (if manager
     supportsRefresh)
   - `auth.onRefresh(callback)`: Register a callback triggered after a successful
@@ -1374,20 +1356,14 @@ use.
 
 ### Token Management
 
-- `buildTokenManager(input, options)`: Unified function to create a token
-  manager from various inputs
-  - Automatically handles static tokens, existing token managers, and adds
-    concurrency protection
-  - Recommended approach for all token management needs
-- `ITokenLifecycleManager`: Interface for token lifecycle management
 - `EnhancedTokenManager`: Robust implementation for token lifecycle management
   that handles authentication, refresh, and concurrency protection
+- `ITokenLifecycleManager`: Interface for token lifecycle management
 
 #### Public Token Utility Functions
 
 - `isTokenLifecycleManager(obj)`: Type guard to check if an object implements
   the token manager interface
-- `EnhancedTokenManager`: Create a fully-featured token manager
 
 ### Public Middleware Components
 
@@ -1396,71 +1372,12 @@ request pipeline:
 
 - `withTokenAuth(tokenManager)`: Add auth headers and auto-refresh
 - `withRateLimit(options)`: Add rate limiting (enabled by default)
-- `
+- `withRetry(options)`: Add retry logic with exponential backoff
 
 ## Authentication Debugging Tools
 
 The package includes several tools to help diagnose and fix authentication
 issues, particularly "Unauthorized" (401) errors.
-
-### Enhanced Token Validation and Debugging
-
-```javascript
-const {
-	validateTokens,
-} = require('@sudowealth/schwab-api/examples/validate-tokens')
-
-// Validate your current tokens
-const result = await validateTokens()
-
-// Output includes detailed token validation information:
-// - Token format validation
-// - Expiration status
-// - Endpoint compatibility
-// - Authorization header format
-```
-
-### Token Refresh Debugging
-
-For diagnosing issues with token refresh, particularly in Cloudflare Workers:
-
-```javascript
-const {
-	debugTokenRefresh,
-} = require('@sudowealth/schwab-api/examples/debug-token-refresh')
-
-// Capture detailed information about token refresh
-const result = await debugTokenRefresh()
-
-// Returns comprehensive information including:
-// - HTTP request/response details during refresh
-// - Token format validation
-// - Refresh success/failure analysis
-```
-
-### Request/Response Debugging
-
-You can add detailed request/response logging to debug authentication issues:
-
-```javascript
-const { createApiClient, middleware } = require('@sudowealth/schwab-api')
-const { withDebug } = middleware
-
-const client = createApiClient({
-	// your auth config here
-	middleware: {
-		before: [
-			withDebug({
-				tag: 'auth-debug',
-				logRequest: true,
-				logResponse: true,
-				logBodies: true, // Be careful with sensitive data
-				prettyPrint: true,
-			}),
-		],
-	},
-})
-```
 
 ### Token Refresh Tracing
 
@@ -1484,3 +1401,12 @@ console.log('Refresh summary:', report.summary)
 For more comprehensive documentation on troubleshooting authentication issues,
 see the
 [Token Refresh Troubleshooting Guide](./docs/token-refresh-troubleshooting.md).
+
+## Development
+
+For information on contributing to the project, running tests, and building the
+library, please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
+
+## License
+
+MIT
