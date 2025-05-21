@@ -165,6 +165,7 @@ export {
 	FrequencyEnum,
 	GetPriceHistoryRequestQueryParamsSchema,
 	GetQuoteBySymbolIdRequestPathParamsSchema,
+	GetQuoteBySymbolIdRequestQueryParamsSchema,
 	GetQuotesRequestQueryParamsSchema,
 	GetQuotesResponseBodySchema,
 	InstrumentAssetTypeEnum,

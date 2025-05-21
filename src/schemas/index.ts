@@ -58,6 +58,7 @@ export {
 // Quotes
 export {
 	GetQuoteBySymbolIdRequestPathParamsSchema,
+	GetQuoteBySymbolIdRequestQueryParamsSchema,
 	GetQuotesRequestQueryParamsSchema,
 	GetQuotesResponseBodySchema,
 } from '../market-data/quotes/schema'
