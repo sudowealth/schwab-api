@@ -157,9 +157,12 @@ export class BaseTokenHandler implements FullAuthClient {
 	/**
 	 * Get the authorization URL for initiating the OAuth flow
 	 */
-	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): {
+	async getAuthorizationUrl(opts?: {
+		scope?: string[]
+		state?: string
+	}): Promise<{
 		authUrl: string
-	} {
+	}> {
 		const scope = opts?.scope || this.defaultScope
 
 		// Create a request context for URL generation with default config
