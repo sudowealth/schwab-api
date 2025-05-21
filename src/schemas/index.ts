@@ -9,13 +9,10 @@
 export { mergeShapes } from '../utils/schema-utils'
 
 // --- Base Schemas ---
-export {
-	AssetTypeEnum,
-	BaseInstrumentSchema,
-} from './base/base-instrument.schema'
+export { AssetTypeEnum, BaseInstrumentSchema } from './base-instrument.schema'
 
 // Re-export types for TypeScript usage
-export type { AssetType, BaseInstrument } from './base/base-instrument.schema'
+export type { AssetType, BaseInstrument } from './base-instrument.schema'
 
 // --- Market Data Schemas ---
 // Instruments

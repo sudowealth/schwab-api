@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { BaseInstrumentSchema } from '../../schemas/base/base-instrument.schema'
+import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema'
 
 // Enum for projection parameter
 export const InstrumentProjectionEnum = z.enum([
