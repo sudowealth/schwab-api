@@ -594,44 +594,74 @@ export class EnhancedTokenManager implements FullAuthClient {
 				)
 			) {
 				if (this.config.debug) {
-					console.log(
-						'[EnhancedTokenManager.initialize] Token needs refresh, attempting refreshIfNeeded.',
-					)
+					console.log('[EnhancedTokenManager.initialize] Token needs refresh.')
 				}
 				if (!tokenData.refreshToken) {
 					if (this.config.debug) {
 						console.warn(
-							'[EnhancedTokenManager.initialize] Token needs refresh, but no refresh token available.',
+							'[EnhancedTokenManager.initialize] Token needs refresh, but no refresh token available. Cannot refresh during init.',
 						)
 					}
-					return false // Cannot refresh
+					return false // Cannot refresh, indicate initialization didn't achieve a fully ready state
 				}
-				await this.refreshIfNeeded({
-					refreshToken: tokenData.refreshToken,
-					force: true,
-				})
-				// Check again after refresh
-				const refreshedTokenData = await this.getTokenData()
-				return !!(
-					refreshedTokenData &&
-					refreshedTokenData.accessToken &&
-					!this.shouldRefreshToken(refreshedTokenData.expiresAt, 0)
-				)
+
+				try {
+					if (this.config.debug) {
+						console.log(
+							'[EnhancedTokenManager.initialize] Attempting refreshIfNeeded due to expiring token.',
+						)
+					}
+					// This internal refreshIfNeeded CAN throw if the refresh token is actually bad.
+					// We want to catch that here so initialize() itself doesn't throw.
+					await this.refreshIfNeeded({
+						refreshToken: tokenData.refreshToken,
+						force: true,
+					})
+
+					// After a refresh attempt, re-fetch tokenData to get the latest state.
+					const refreshedTokenData = await this.getTokenData()
+					const isNowValid = !!(
+						refreshedTokenData &&
+						refreshedTokenData.accessToken &&
+						!this.shouldRefreshToken(refreshedTokenData.expiresAt, 0)
+					)
+					if (this.config.debug) {
+						console.log(
+							`[EnhancedTokenManager.initialize] Post-refresh check, token is now valid: ${isNowValid}`,
+						)
+					}
+					return isNowValid
+				} catch (refreshError) {
+					// Log the error, but don't let it propagate from initialize()
+					const message =
+						refreshError instanceof Error
+							? refreshError.message
+							: String(refreshError)
+					console.warn(
+						`[EnhancedTokenManager.initialize] Refresh attempt during initialization failed: ${message}`,
+					)
+					if (this.config.debug && refreshError instanceof Error) {
+						console.error(refreshError) // Log full error in debug mode
+					}
+					// Even if refresh failed, check if the *original* tokenData is still usable (e.g., refresh failed due to network, but token not yet hard expired)
+					// However, it's safer to return false, as we couldn't get to a definitively good state.
+					return false
+				}
 			}
 			if (this.config.debug) {
 				console.log(
-					'[EnhancedTokenManager.initialize] Initialization successful, token is valid.',
+					'[EnhancedTokenManager.initialize] Initialization successful, token is valid and does not need immediate refresh.',
 				)
 			}
 			return true
 		} catch (error) {
+			// Catch errors from the initial getTokenData() or other unexpected issues
 			const message = error instanceof Error ? error.message : String(error)
 			console.error(
 				`[EnhancedTokenManager.initialize] Error during initialization: ${message}`,
 			)
-			if (this.config.debug) {
-				// Log full error for debugging
-				console.error(error)
+			if (this.config.debug && error instanceof Error) {
+				console.error(error) // Log full error
 			}
 			return false
 		}
