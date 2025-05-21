@@ -73,13 +73,11 @@ export function tokenIsExpiringSoon(
 /**
  * Determine if tokens need refreshing based on comprehensive checks
  * @param tokens The token data to check
- * @param refreshTokenCreatedAt When the refresh token was created
  * @param refreshThresholdMs Time before expiration to trigger refresh
  * @returns True if tokens should be refreshed
  */
 export function shouldRefreshTokens(
 	tokens: TokenData | TokenSet | null | undefined,
-	refreshTokenCreatedAt?: number,
 	refreshThresholdMs: number = DEFAULT_REFRESH_THRESHOLD_MS,
 ): boolean {
 	// No tokens available

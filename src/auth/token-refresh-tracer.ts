@@ -1,4 +1,3 @@
-import { type RequestContext } from '../core/http'
 import { type TokenData } from './types'
 
 /**
@@ -706,7 +705,6 @@ export class TokenRefreshTracer {
  * @returns A wrapped fetch function that traces token operations
  */
 export function createTracingFetch(
-	context: RequestContext,
 	fetchFn: (req: Request) => Promise<Response>,
 ): (req: Request) => Promise<Response> {
 	return async (req: Request) => {

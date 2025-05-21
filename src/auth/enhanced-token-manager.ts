@@ -1,5 +1,4 @@
 import * as base64js from 'base64-js'
-import * as oidc from 'openid-client'
 import pkceChallenge from 'pkce-challenge'
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
@@ -133,8 +132,6 @@ export class EnhancedTokenManager implements FullAuthClient {
 		onTokenEvent: TokenPersistenceEventHandler | undefined
 	}
 
-	// OIDC configuration for direct token management
-	private oidcConfig: oidc.Configuration
 	private tokenSet?: SchwabTokenResponse
 
 	// Persistence-related properties (integrated from TokenPersistenceManager)
@@ -150,9 +147,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private refreshCallbacks: Array<(t: TokenSet) => void> = []
 	private reconnectionHandlers: Array<() => Promise<void>> = []
 	private isReconnecting: boolean = false
-	private lastRefreshAttempt: number = 0
 	private refreshLock: Promise<TokenData> | null = null
-	private codeVerifier: string | null = null
 
 	constructor(options: EnhancedTokenManagerOptions) {
 		// Set default configuration values
@@ -180,18 +175,6 @@ export class EnhancedTokenManager implements FullAuthClient {
 			traceOperations: options.traceOperations ?? false,
 			issuerBaseUrl: baseIssuerUrl,
 		}
-
-		// Initialize OIDC configuration for token management
-		const server = {
-			issuer: baseIssuerUrl,
-			authorization_endpoint: `${baseIssuerUrl}/oauth/authorize`,
-			token_endpoint: `${baseIssuerUrl}/oauth/token`,
-		} as oidc.ServerMetadata
-
-		this.oidcConfig = new oidc.Configuration(server, this.config.clientId, {
-			client_secret: this.config.clientSecret,
-			redirect_uris: [this.config.redirectUri],
-		})
 
 		// Create dummy implementations for when the actual functions are missing
 		const dummySave =
@@ -1637,9 +1620,6 @@ export class EnhancedTokenManager implements FullAuthClient {
 	): Promise<TokenData> {
 		let lastError: unknown
 		let attempt = 0
-
-		// Record the refresh attempt time
-		this.lastRefreshAttempt = Date.now()
 
 		// Try up to maxRetryAttempts times
 		while (attempt < this.config.maxRetryAttempts) {
