@@ -113,6 +113,41 @@ export interface AuthDiagnosticsResult {
 		 */
 		clientIdSegment?: string
 	}
+
+	/**
+	 * Authorization header test results
+	 */
+	authHeaderTest?: {
+		/**
+		 * Whether the test was successful
+		 */
+		success: boolean
+
+		/**
+		 * Whether the format is correct (Bearer + token)
+		 */
+		isCorrectFormat?: boolean
+
+		/**
+		 * Format description
+		 */
+		format?: string
+
+		/**
+		 * Preview of the auth header (first 8 characters of token)
+		 */
+		preview?: string
+
+		/**
+		 * Reason for failure if unsuccessful
+		 */
+		reason?: string
+
+		/**
+		 * Error message if an error occurred
+		 */
+		error?: string
+	}
 }
 
 /**

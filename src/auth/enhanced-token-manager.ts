@@ -1,6 +1,11 @@
 import * as oidc from 'openid-client'
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
+import {
+	getAuthDiagnostics,
+	type AuthDiagnosticsOptions,
+	type AuthDiagnosticsResult,
+} from './auth-diagnostics'
 import { TokenRefreshTracer } from './token-refresh-tracer'
 import {
 	type TokenData,
@@ -228,15 +233,21 @@ export class EnhancedTokenManager implements FullAuthClient {
 	/**
 	 * Get the authorization URL for the OAuth flow
 	 */
-	getAuthorizationUrl(opts?: { scope?: string[] }): { authUrl: string } {
+	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): {
+		authUrl: string
+	} {
 		const scope = opts?.scope || this.config.scope
 		const baseIssuerUrl = this.config.issuerBaseUrl
 
-		const authParams = {
+		const authParams: Record<string, string> = {
 			client_id: this.config.clientId,
 			scope: scope.join(' '),
 			response_type: 'code',
 			redirect_uri: this.config.redirectUri,
+		}
+
+		if (opts?.state) {
+			authParams.state = opts.state
 		}
 
 		const authUrl = `${baseIssuerUrl}/oauth/authorize?${new URLSearchParams(authParams).toString()}`
@@ -1343,6 +1354,56 @@ export class EnhancedTokenManager implements FullAuthClient {
 			tokenValidation,
 			refreshHistory: this.tracer.getLatestRefreshReport(),
 		}
+	}
+
+	/**
+	 * Get diagnostics information about the current authentication state
+	 * This method helps troubleshoot 401 Unauthorized errors by providing token status details
+	 *
+	 * @param options Options for diagnostics
+	 * @returns Detailed diagnostics information
+	 */
+	public async getDiagnostics(
+		options: AuthDiagnosticsOptions = {},
+	): Promise<AuthDiagnosticsResult> {
+		const environmentInfo = {
+			apiEnvironment: this.config.issuerBaseUrl.includes('sandbox')
+				? 'SANDBOX'
+				: 'PRODUCTION',
+			clientId: this.config.clientId, // Or first 8 chars
+		}
+
+		// Call the existing getAuthDiagnostics function
+		const diagnostics = await getAuthDiagnostics(this, environmentInfo, options)
+
+		// Integrate authHeaderTest logic
+		try {
+			const accessToken = await this.getAccessToken()
+			if (accessToken) {
+				const authHeader = `Bearer ${accessToken}`
+				const isCorrectFormat = authHeader.startsWith('Bearer ')
+				diagnostics.authHeaderTest = {
+					success: true,
+					isCorrectFormat,
+					format: isCorrectFormat ? 'Valid Bearer format' : 'Incorrect format',
+					preview: `Bearer ${accessToken.substring(0, 8)}...`,
+				}
+			} else {
+				diagnostics.authHeaderTest = {
+					success: false,
+					reason: 'No access token available',
+				}
+			}
+		} catch (headerError) {
+			diagnostics.authHeaderTest = {
+				success: false,
+				error:
+					headerError instanceof Error
+						? headerError.message
+						: String(headerError),
+			}
+		}
+		return diagnostics
 	}
 
 	/**

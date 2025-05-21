@@ -157,7 +157,9 @@ export class BaseTokenHandler implements FullAuthClient {
 	/**
 	 * Get the authorization URL for initiating the OAuth flow
 	 */
-	getAuthorizationUrl(opts?: { scope?: string[] }): { authUrl: string } {
+	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): {
+		authUrl: string
+	} {
 		const scope = opts?.scope || this.defaultScope
 
 		// Create a request context for URL generation with default config
@@ -170,6 +172,7 @@ export class BaseTokenHandler implements FullAuthClient {
 			clientId: this.clientId,
 			redirectUri: this.redirectUri,
 			scope: scope.join(' '),
+			state: opts?.state,
 		})
 
 		return { authUrl }

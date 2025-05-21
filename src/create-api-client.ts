@@ -1,6 +1,5 @@
 import * as authNs from './auth'
 import {
-	getAuthDiagnostics,
 	type AuthDiagnosticsOptions,
 	type AuthDiagnosticsResult,
 } from './auth/auth-diagnostics'
@@ -357,21 +356,12 @@ export async function createApiClient(
 			errors: errorsNs,
 		},
 		debugAuth: async (options = {}) => {
-			const { logger } = apiClientContext;
-				logger.info('[debugAuth] Starting auth diagnostics')
+			const { logger } = apiClientContext
+			logger.info('[debugAuth] Starting auth diagnostics')
 
-			// Get environment information for diagnostic context
-			const environment = {
-				apiEnvironment: finalConfig.environment,
-			}
-
-			// Use the new enhanced auth diagnostics function
 			try {
-				const diagnostics = await getAuthDiagnostics(
-					authManager,
-					environment,
-					options,
-				)
+				// Use the new getDiagnostics method from EnhancedTokenManager
+				const diagnostics = await authManager.getDiagnostics(options)
 
 				// Log diagnostics summary for troubleshooting
 				logger.info('[debugAuth] Auth diagnostics complete:', {
@@ -383,44 +373,6 @@ export async function createApiClient(
 					expiresInSeconds: diagnostics.tokenStatus.expiresInSeconds,
 					apiEnvironment: diagnostics.environment.apiEnvironment,
 				})
-
-				// Add an authorization header test
-				try {
-					const accessToken = await authManager.getAccessToken()
-					if (accessToken) {
-						// Test auth header format
-						const authHeader = `Bearer ${accessToken}`
-						const isCorrectFormat = authHeader.startsWith('Bearer ')
-						const headerTest = {
-							success: true,
-							isCorrectFormat,
-							format: isCorrectFormat
-								? 'Valid Bearer format'
-								: 'Incorrect format',
-							preview: `Bearer ${accessToken.substring(0, 8)}...`,
-						}
-						logger.info('[debugAuth] Auth header test:', headerTest)
-						// Add to the diagnostics result
-						;(diagnostics as any).authHeaderTest = headerTest
-					} else {
-						;(diagnostics as any).authHeaderTest = {
-							success: false,
-							reason: 'No access token available',
-						}
-					}
-				} catch (headerError) {
-					logger.error(
-						'[debugAuth] Error testing authorization header:',
-						headerError,
-					)
-					;(diagnostics as any).authHeaderTest = {
-						success: false,
-						error:
-							headerError instanceof Error
-								? headerError.message
-								: String(headerError),
-					}
-				}
 
 				return diagnostics
 			} catch (error) {

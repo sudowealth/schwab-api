@@ -180,7 +180,9 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	/**
 	 * Get the authorization URL for the OAuth flow
 	 */
-	getAuthorizationUrl(opts?: { scope?: string[] }): { authUrl: string }
+	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): {
+		authUrl: string
+	}
 
 	/**
 	 * Load tokens from storage if available
