@@ -241,9 +241,30 @@ function processNamespace<T extends Record<string, any>>(
 	return result as ProcessNamespaceResult<T>
 }
 
+// Overload: when auth is an EnhancedTokenManager, returns SchwabApiClient directly
+export function createApiClient(
+	options: CreateApiClientOptions & { auth: EnhancedTokenManager },
+): SchwabApiClient
+
+// Overload: when auth is a string token, returns Promise<SchwabApiClient> (async path)
+export function createApiClient(
+	options: CreateApiClientOptions & { auth: string },
+): Promise<SchwabApiClient>
+
+// Overload: when auth is an AuthFactoryConfig, returns Promise<SchwabApiClient> (async path)
+export function createApiClient(
+	options: CreateApiClientOptions & { auth: authNs.AuthFactoryConfig },
+): Promise<SchwabApiClient>
+
+// Overload: when no auth or undefined auth, returns SchwabApiClient directly (sync path with dummy auth)
+export function createApiClient(
+	options?: CreateApiClientOptions,
+): SchwabApiClient
+
+// Implementation signature
 export function createApiClient(
 	options: CreateApiClientOptions = {},
-): SchwabApiClient {
+): SchwabApiClient | Promise<SchwabApiClient> {
 	const finalConfig = { ...getSchwabApiConfigDefaults(), ...options.config }
 
 	let authManager: EnhancedTokenManager
