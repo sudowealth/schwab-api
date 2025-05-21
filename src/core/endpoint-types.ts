@@ -47,7 +47,7 @@ import { type EndpointMetadata, type SchwabFetchRequestOptions } from './http'
 /**
  * Extracts parameter types from an EndpointMetadata object
  */
-export type ExtractEndpointTypes<T extends EndpointMetadata> = {
+type ExtractEndpointTypes<T extends EndpointMetadata> = {
 	PathParams: T extends EndpointMetadata<infer P, any, any, any, any, any>
 		? P
 		: never
@@ -139,7 +139,7 @@ type HasRequiredBody<T extends EndpointMetadata> = T['method'] extends
  * A combined type representing both metadata and endpoint function
  * Instead of nesting properties, this makes a flat structure where both exist side by side
  */
-export type EndpointPair<M extends EndpointMetadata> = {
+type EndpointPair<M extends EndpointMetadata> = {
 	[PropertyKey in keyof M]: M[PropertyKey] // All metadata properties
 } & {
 	[ignored: string]: EndpointFunction<M> // The endpoint function itself
@@ -148,7 +148,7 @@ export type EndpointPair<M extends EndpointMetadata> = {
 /**
  * Manually mapped module structure for trader.accounts
  */
-export interface ProcessedAccounts {
+interface ProcessedAccounts {
 	// Metadata objects
 	getAccountsMeta: typeof getAccountsMeta
 	getAccountByNumberMeta: typeof getAccountByNumberMeta
@@ -163,7 +163,7 @@ export interface ProcessedAccounts {
 /**
  * Manually mapped module structure for trader.orders
  */
-export interface ProcessedOrders {
+interface ProcessedOrders {
 	// Metadata objects
 	getOrdersMeta: typeof getOrdersMeta
 	getOrdersByAccountMeta: typeof getOrdersByAccountMeta
@@ -184,7 +184,7 @@ export interface ProcessedOrders {
 /**
  * Manually mapped module structure for trader.transactions
  */
-export interface ProcessedTransactions {
+interface ProcessedTransactions {
 	// Metadata objects
 	getTransactionsMeta: typeof getTransactionsMeta
 	getTransactionByIdMeta: typeof getTransactionByIdMeta
@@ -197,7 +197,7 @@ export interface ProcessedTransactions {
 /**
  * Manually mapped module structure for trader.userPreference
  */
-export interface ProcessedUserPreference {
+interface ProcessedUserPreference {
 	// Metadata objects
 	getUserPreferenceMeta: typeof getUserPreferenceMeta
 
@@ -208,7 +208,7 @@ export interface ProcessedUserPreference {
 /**
  * Manually mapped module structure for marketData.quotes
  */
-export interface ProcessedQuotes {
+interface ProcessedQuotes {
 	// Metadata objects
 	getQuotesMeta: typeof getQuotesMeta
 	getQuoteBySymbolIdMeta: typeof getQuoteBySymbolIdMeta
@@ -225,7 +225,7 @@ export interface ProcessedQuotes {
 /**
  * Manually mapped module structure for marketData.instruments
  */
-export interface ProcessedInstruments {
+interface ProcessedInstruments {
 	// Metadata objects
 	getInstrumentsMeta: typeof getInstrumentsMeta
 	getInstrumentByCusipMeta: typeof getInstrumentByCusipMeta
@@ -238,7 +238,7 @@ export interface ProcessedInstruments {
 /**
  * Manually mapped module structure for marketData.marketHours
  */
-export interface ProcessedMarketHours {
+interface ProcessedMarketHours {
 	// Metadata objects
 	getMarketHoursMeta: typeof getMarketHoursMeta
 	getMarketHoursByMarketIdMeta: typeof getMarketHoursByMarketIdMeta
@@ -253,7 +253,7 @@ export interface ProcessedMarketHours {
 /**
  * Manually mapped module structure for marketData.movers
  */
-export interface ProcessedMovers {
+interface ProcessedMovers {
 	// Metadata objects
 	getMoversMeta: typeof getMoversMeta
 
@@ -264,7 +264,7 @@ export interface ProcessedMovers {
 /**
  * Manually mapped module structure for marketData.options
  */
-export interface ProcessedOptions {
+interface ProcessedOptions {
 	// Metadata objects
 	getOptionChainMeta: typeof getOptionChainMeta
 	getOptionExpirationChainMeta: typeof getOptionExpirationChainMeta
@@ -279,7 +279,7 @@ export interface ProcessedOptions {
 /**
  * Manually mapped module structure for marketData.priceHistory
  */
-export interface ProcessedPriceHistory {
+interface ProcessedPriceHistory {
 	// Metadata objects
 	getPriceHistoryMeta: typeof getPriceHistoryMeta
 
@@ -290,7 +290,7 @@ export interface ProcessedPriceHistory {
 /**
  * Trader namespace with all modules properly typed
  */
-export interface ProcessedTraderNamespace {
+interface ProcessedTraderNamespace {
 	accounts: ProcessedAccounts
 	orders: ProcessedOrders
 	transactions: ProcessedTransactions
@@ -301,7 +301,7 @@ export interface ProcessedTraderNamespace {
 /**
  * Market data namespace with all modules properly typed
  */
-export interface ProcessedMarketDataNamespace {
+interface ProcessedMarketDataNamespace {
 	instruments: ProcessedInstruments
 	marketHours: ProcessedMarketHours
 	movers: ProcessedMovers
@@ -315,7 +315,7 @@ export interface ProcessedMarketDataNamespace {
  * A more generic type for processing namespaces - this delegates to our manual type definitions
  * where possible, but falls back to basic type transformation for unknown modules
  */
-export type ProcessedNamespace<T> =
+type ProcessedNamespace<T> =
 	// Using conditionals instead of typeof import() to avoid ESLint warnings
 	// The type information is still preserved via our manually defined interfaces
 	T extends { getAccountsMeta: any }

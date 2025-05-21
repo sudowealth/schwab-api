@@ -10,6 +10,7 @@ import {
 	sanitizeAuthCode,
 	safeBase64Encode,
 	safeBase64Decode,
+	DEFAULT_REFRESH_THRESHOLD_MS,
 } from './auth-utils'
 import { TokenRefreshTracer } from './token-refresh-tracer'
 import {
@@ -47,11 +48,6 @@ export type TokenPersistenceEventHandler = (
 	data: TokenData,
 	metadata?: Record<string, any>,
 ) => void
-
-// Default constants for token management
-export const DEFAULT_REFRESH_THRESHOLD_MS = 300_000 // 5 minutes before expiration
-export const REFRESH_TOKEN_EXPIRATION_MS = 604_800_000 // 7 days
-export const REFRESH_TOKEN_WARNING_THRESHOLD_MS = 518_400_000 // 6 days
 
 /**
  * Enhanced token manager configuration options

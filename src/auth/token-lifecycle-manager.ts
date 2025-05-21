@@ -2,7 +2,6 @@ import { SchwabAuthError, AuthErrorCode } from '../errors'
 import {
 	type TokenData,
 	type ITokenLifecycleManager,
-	type TokenManagerOptions,
 	type RefreshOptions,
 } from './types'
 
@@ -56,34 +55,5 @@ export async function forceRefreshTokens(
 	})
 }
 
-/**
- * Retrieves the current access token, refreshing it if needed.
- * This is a helper function to simplify token retrieval when you just need the access token.
- *
- * @param manager The token lifecycle manager to get the token from
- * @param options Optional refresh options
- * @returns The current access token, or null if not available
- */
-export async function getCurrentAccessToken(
-	manager: ITokenLifecycleManager,
-): Promise<string | null> {
-	// Try to get the token using the manager's getAccessToken method
-	if (
-		'getAccessToken' in manager &&
-		typeof manager.getAccessToken === 'function'
-	) {
-		return manager.getAccessToken()
-	}
-
-	// Fall back to getTokenData if getAccessToken is not implemented
-	const tokenData = await manager.getTokenData()
-	return tokenData ? tokenData.accessToken : null
-}
-
 // Re-export types from the types module for convenience
-export type {
-	TokenData,
-	ITokenLifecycleManager,
-	TokenManagerOptions,
-	RefreshOptions,
-}
+export type { TokenData, ITokenLifecycleManager }

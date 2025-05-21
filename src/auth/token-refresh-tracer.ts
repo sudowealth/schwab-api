@@ -3,7 +3,7 @@ import { type TokenData } from './types'
 /**
  * Options for token refresh tracing
  */
-export interface TokenRefreshTracerOptions {
+interface TokenRefreshTracerOptions {
 	/**
 	 * Whether to include the raw HTTP responses in the trace
 	 * WARNING: This will include sensitive token data
@@ -32,7 +32,7 @@ export interface TokenRefreshTracerOptions {
 /**
  * Types of token refresh trace events
  */
-export enum TokenRefreshEventType {
+enum TokenRefreshEventType {
 	REFRESH_STARTED = 'refresh_started',
 	REFRESH_HTTP_REQUEST = 'refresh_http_request',
 	REFRESH_HTTP_RESPONSE = 'refresh_http_response',
@@ -47,7 +47,7 @@ export enum TokenRefreshEventType {
 /**
  * Token refresh trace event structure
  */
-export interface TokenRefreshTraceEvent {
+interface TokenRefreshTraceEvent {
 	/**
 	 * Unique ID for the refresh operation
 	 */
@@ -695,134 +695,5 @@ export class TokenRefreshTracer {
 		}
 
 		return result
-	}
-}
-
-/**
- * Create a wrapped fetch function that traces token refresh operations
- * @param context The request context
- * @param fetchFn The original fetch function
- * @returns A wrapped fetch function that traces token operations
- */
-export function createTracingFetch(
-	fetchFn: (req: Request) => Promise<Response>,
-): (req: Request) => Promise<Response> {
-	return async (req: Request) => {
-		const url = req.url
-		const method = req.method
-
-		// Only trace token-related operations
-		if (url.includes('/token') || url.includes('/oauth2')) {
-			const tracer = TokenRefreshTracer.getInstance()
-			const refreshId = tracer.startRefreshTrace()
-
-			// Clone the request to read its body without consuming it
-			const reqClone = req.clone()
-
-			// Extract headers
-			const headers: Record<string, string> = {}
-			req.headers.forEach((value, key) => {
-				headers[key] = value
-			})
-
-			// Extract body if it exists
-			let body: any
-			try {
-				if (method !== 'GET' && method !== 'HEAD') {
-					const contentType = req.headers.get('content-type') || ''
-
-					if (contentType.includes('application/json')) {
-						body = await reqClone.clone().json()
-					} else if (
-						contentType.includes('application/x-www-form-urlencoded')
-					) {
-						body = await reqClone.clone().text()
-					}
-				}
-			} catch (e) {
-				// Failed to extract request body
-				console.error('Error extracting request body', e)
-			}
-
-			// Record the request
-			tracer.recordRefreshRequest(refreshId, url, method, headers, body)
-
-			try {
-				// Execute the original fetch
-				const response = await fetchFn(req)
-
-				// Clone the response to read its body without consuming it
-				const resClone = response.clone()
-
-				// Extract headers
-				const resHeaders: Record<string, string> = {}
-				response.headers.forEach((value, key) => {
-					resHeaders[key] = value
-				})
-
-				// Extract body
-				let resBody: any
-				try {
-					const contentType = response.headers.get('content-type') || ''
-
-					if (contentType.includes('application/json')) {
-						resBody = await resClone.clone().json()
-					} else {
-						resBody = await resClone.clone().text()
-					}
-				} catch (e) {
-					console.error('Error extracting response body', e)
-					resBody = '[Failed to parse response body]'
-				}
-
-				// Record the response
-				tracer.recordRefreshResponse(
-					refreshId,
-					response.status,
-					resHeaders,
-					resBody,
-				)
-
-				// Record success or failure based on status code
-				if (response.ok) {
-					// Try to extract token data
-					try {
-						if (typeof resBody === 'object' && resBody !== null) {
-							const tokenData: Partial<TokenData> = {
-								accessToken: resBody.access_token,
-								refreshToken: resBody.refresh_token,
-								expiresAt:
-									resBody.expires_at ||
-									(resBody.expires_in
-										? Date.now() + resBody.expires_in * 1000
-										: undefined),
-							}
-
-							tracer.recordRefreshSuccess(refreshId, tokenData)
-						} else {
-							tracer.recordRefreshSuccess(refreshId, {})
-						}
-					} catch (e) {
-						console.error('Error extracting token data', e)
-						tracer.recordRefreshSuccess(refreshId, {})
-					}
-				} else {
-					tracer.recordRefreshFailure(refreshId, {
-						message: `HTTP ${response.status}: ${response.statusText}`,
-						name: 'HttpError',
-						status: response.status,
-					})
-				}
-
-				return response
-			} catch (error) {
-				// Record failure
-				tracer.recordRefreshFailure(refreshId, error)
-				throw error
-			}
-		}
-
-		// For non-token requests, just use the original fetch
-		return fetchFn(req)
 	}
 }
