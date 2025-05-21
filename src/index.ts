@@ -8,6 +8,7 @@ import {
 	SchwabAuthError,
 	SchwabError,
 	isSchwabError,
+	AuthErrorCode,
 } from './errors'
 
 // Import the SchwabApiLogger type for re-export
@@ -35,6 +36,7 @@ export * as errors from './errors'
  * Directly export core error types for convenience and backward compatibility.
  */
 export {
+	AuthErrorCode,
 	SchwabError,
 	isSchwabError,
 	SchwabApiError,
