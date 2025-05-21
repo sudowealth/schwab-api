@@ -243,22 +243,30 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * Get the authorization URL for the OAuth flow with PKCE support
 	 * This is an asynchronous method to properly generate and include the code challenge
 	 */
+	private codeVerifierForCurrentFlow: string | null = null // Use this to hold the verifier for the current auth URL generation
+
 	async getAuthorizationUrl(opts?: {
 		scope?: string[]
-		state?: string
+		state?: string // This 'state' is from the calling application (schwab-mcp's AuthRequest)
 	}): Promise<{
 		authUrl: string
+		generatedState: string // Return the state we constructed so MCP can use it
 	}> {
 		const scope = opts?.scope || this.config.scope
 		const baseIssuerUrl = this.config.issuerBaseUrl
 
-		// Generate PKCE code verifier
-		this.codeVerifier = this.generateRandomString(128)
+		// Generate PKCE code verifier for this specific authorization request
+		this.codeVerifierForCurrentFlow = this.generateRandomString(128) // Store it temporarily
+		const codeChallenge = await this.generateCodeChallenge(
+			this.codeVerifierForCurrentFlow,
+		)
 
-		// Generate the actual code challenge with SHA-256 and base64url encoding
-		const codeChallenge = await this.generateCodeChallenge(this.codeVerifier)
+		if (this.config.debug) {
+			console.log(
+				`[EnhancedTokenManager] PKCE for getAuthUrl: verifier (len ${this.codeVerifierForCurrentFlow.length}), challenge (len ${codeChallenge.length}, starts ${codeChallenge.substring(0, 10)}...)`,
+			)
+		}
 
-		// Create auth params with the properly generated code_challenge
 		const authParams: Record<string, string> = {
 			client_id: this.config.clientId,
 			scope: scope.join(' '),
@@ -268,43 +276,37 @@ export class EnhancedTokenManager implements FullAuthClient {
 			code_challenge_method: 'S256',
 		}
 
-		// Store state - include the code_verifier for reliable retrieval during callback
+		// Construct the state to be sent to Schwab
+		// It will contain the calling app's original state AND our pkce_code_verifier
+		let appSpecificStateData: any = {}
 		if (opts?.state) {
-			// Preserve the existing state but also store code verifier
 			try {
-				// Try to decode the state as base64, merge with verifier info, and re-encode
-				const decodedState = JSON.parse(atob(opts.state))
-				const combinedState = {
-					...decodedState,
-					pkce_code_verifier: this.codeVerifier,
-				}
-				authParams.state = btoa(JSON.stringify(combinedState))
+				appSpecificStateData = JSON.parse(atob(opts.state))
 			} catch (e) {
-				// If not valid base64 JSON, treat as opaque and store separately
 				if (this.config.debug) {
-					console.log(
-						'[EnhancedTokenManager] State parameter is not base64 JSON, using as-is.',
+					console.warn(
+						`[EnhancedTokenManager] opts.state in getAuthorizationUrl was not valid base64 JSON. Treating as opaque string. Original state: ${opts.state}`,
 					)
 				}
-				authParams.state = opts.state
+				console.error('Error parsing opts.state in getAuthorizationUrl:', e) // Good to log the error
+				// If not JSON, we might need a different strategy or ensure it's always JSON
+				// For now, let's wrap it if it's not already an object.
+				appSpecificStateData = { original_app_state: opts.state } // THIS IS THE REFINEMENT POINT
 			}
-		} else {
-			// No state provided, create one with just the code verifier
-			const stateObj = { pkce_code_verifier: this.codeVerifier }
-			authParams.state = btoa(JSON.stringify(stateObj))
 		}
 
-		if (this.config.debug) {
-			console.log(
-				`[EnhancedTokenManager] PKCE: verifier (len ${this.codeVerifier.length}), challenge (len ${codeChallenge.length}, starts ${codeChallenge.substring(0, 10)}...)`,
-			)
+		const combinedStateObject = {
+			...appSpecificStateData, // The calling app's state (e.g., oauthReqInfo)
+			pkce_code_verifier: this.codeVerifierForCurrentFlow, // Our PKCE verifier
 		}
+
+		const finalStateParamForSchwab = btoa(JSON.stringify(combinedStateObject))
+		authParams.state = finalStateParamForSchwab
 
 		const authUrl = `${baseIssuerUrl}/oauth/authorize?${new URLSearchParams(authParams).toString()}`
 
-		return { authUrl }
+		return { authUrl, generatedState: finalStateParamForSchwab } // Return the state we built
 	}
-
 	/**
 	 * Sanitize authorization code for Schwab's OAuth requirements
 	 * This handles any encoding issues that might come up with special characters
@@ -333,119 +335,160 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * @param stateParam Optional state parameter received in the callback, may contain code_verifier
 	 */
 	async exchangeCode(code: string, stateParam?: string): Promise<TokenSet> {
-		// Handle exchange internally using direct token exchange
-		try {
-			// Log the raw authorization code for debugging
-			if (this.config.debug) {
-				console.log(
-					`[EnhancedTokenManager] Received authorization code for exchange: '${code}' (length: ${code.length})`,
-				)
+		if (this.config.debug) {
+			console.log(
+				`[EnhancedTokenManager.exchangeCode] Received raw authorization code (length: ${code.length}): '${code.substring(0, 15)}...'`,
+			)
+			console.log(
+				`[EnhancedTokenManager.exchangeCode] Received raw stateParam (length: ${stateParam?.length || 0}): '${stateParam ? stateParam.substring(0, 30) + '...' : 'undefined'}'`,
+			)
+		}
 
-				// Check for potentially problematic characters in the code
-				const hasSpecialChars = /[+/=@.]/g.test(code)
-				if (hasSpecialChars) {
+		const sanitizedCode = this.sanitizeAuthCode(code)
+		if (this.config.debug && sanitizedCode !== code) {
+			console.log(
+				`[EnhancedTokenManager.exchangeCode] Code was sanitized to: '${sanitizedCode.substring(0, 15)}...'`,
+			)
+		}
+
+		let retrievedCodeVerifier: string | null = null
+
+		if (!stateParam) {
+			console.error(
+				'[EnhancedTokenManager.exchangeCode] CRITICAL: stateParam is missing. PKCE code_verifier cannot be retrieved from state. This will likely lead to token exchange failure.',
+			)
+			// Attempt to use instance-stored verifier as a last resort, though this is less reliable across redirects
+			// if a new ETM instance is created for the callback.
+			if (this.codeVerifierForCurrentFlow) {
+				// Assuming you renamed this.codeVerifier to this.codeVerifierForCurrentFlow
+				console.warn(
+					'[EnhancedTokenManager.exchangeCode] Attempting to use instance-stored codeVerifierForCurrentFlow as fallback due to missing stateParam.',
+				)
+				retrievedCodeVerifier = this.codeVerifierForCurrentFlow
+			}
+		} else {
+			try {
+				const decodedStateString = atob(stateParam)
+				if (this.config.debug) {
 					console.log(
-						`[EnhancedTokenManager] Note: Authorization code contains special characters that might need sanitization`,
+						`[EnhancedTokenManager.exchangeCode] Decoded state string from base64: '${decodedStateString.substring(0, 100)}...'`,
 					)
 				}
-			}
+				const decodedStateObject = JSON.parse(decodedStateString)
 
-			// Sanitize the code using the same logic from token.ts
-			const sanitizedCode = this.sanitizeAuthCode(code)
-
-			if (this.config.debug && sanitizedCode !== code) {
-				console.log(
-					`[EnhancedTokenManager] Code was sanitized for Schwab API requirements`,
-				)
-			}
-
-			// Retrieve code_verifier from state or use stored verifier
-			let codeVerifier = this.codeVerifier
-
-			// If state parameter is provided, try to extract code_verifier from it
-			if (stateParam) {
-				try {
-					const decodedState = JSON.parse(atob(stateParam))
-					if (decodedState.pkce_code_verifier) {
-						codeVerifier = decodedState.pkce_code_verifier
-
-						if (this.config.debug) {
-							console.log(
-								`[EnhancedTokenManager] Retrieved code_verifier from state parameter`,
-							)
-						}
-					}
-				} catch (e) {
+				if (decodedStateObject && decodedStateObject.pkce_code_verifier) {
+					retrievedCodeVerifier = decodedStateObject.pkce_code_verifier
 					if (this.config.debug) {
 						console.log(
-							`[EnhancedTokenManager] Failed to decode state parameter: ${e}`,
+							`[EnhancedTokenManager.exchangeCode] Successfully retrieved pkce_code_verifier from stateParam (length: ${retrievedCodeVerifier?.length}, starts with: ${retrievedCodeVerifier?.substring(0, 10)}...)`,
 						)
 					}
-					// Fall back to stored codeVerifier
+				} else {
+					console.warn(
+						'[EnhancedTokenManager.exchangeCode] pkce_code_verifier NOT found in decoded stateParam object. Decoded state:',
+						decodedStateObject,
+					)
+				}
+			} catch (e: any) {
+				console.error(
+					`[EnhancedTokenManager.exchangeCode] Failed to decode (atob) or parse (JSON) stateParam. This is likely the cause of 'String length must be a multiple of four' or similar errors if stateParam is not valid Base64 JSON. Error: ${e.message}. Raw stateParam was: '${stateParam}'`,
+				)
+				// Even if state decoding fails, check if this.codeVerifierForCurrentFlow (instance property) was set as a desperate fallback
+				if (this.codeVerifierForCurrentFlow) {
+					console.warn(
+						'[EnhancedTokenManager.exchangeCode] State decoding failed. Attempting to use instance-stored codeVerifierForCurrentFlow as fallback.',
+					)
+					retrievedCodeVerifier = this.codeVerifierForCurrentFlow
 				}
 			}
+		}
 
-			if (!codeVerifier) {
-				// This should not happen in correctly implemented PKCE flow
-				console.warn(
-					'[EnhancedTokenManager] No code_verifier available for PKCE token exchange',
-				)
-			} else if (this.config.debug) {
+		if (!retrievedCodeVerifier) {
+			const errorMessage =
+				'[EnhancedTokenManager.exchangeCode] CRITICAL: No code_verifier available for PKCE token exchange. Cannot proceed with token exchange.'
+			console.error(errorMessage)
+			if (this.config.debug && this.codeVerifierForCurrentFlow) {
+				// This log helps understand if getAuthorizationUrl did set it on the instance
 				console.log(
-					`[EnhancedTokenManager] Using code_verifier for PKCE (length: ${codeVerifier.length})`,
+					`[EnhancedTokenManager.exchangeCode] Debug info: this.codeVerifierForCurrentFlow was (len ${this.codeVerifierForCurrentFlow.length}): ${this.codeVerifierForCurrentFlow.substring(0, 10)}...`,
 				)
 			}
+			throw new SchwabAuthError(
+				AuthErrorCode.INVALID_CODE, // Or a more specific PKCE error code if you define one
+				'PKCE code_verifier is missing or could not be retrieved. Token exchange cannot be completed.',
+			)
+		}
 
-			// Prepare parameters for token exchange
-			const params: Record<string, string> = {
-				grant_type: 'authorization_code',
-				code: sanitizedCode,
-				redirect_uri: this.config.redirectUri,
-				client_id: this.config.clientId,
-				client_secret: this.config.clientSecret,
-			}
+		const params: Record<string, string> = {
+			grant_type: 'authorization_code',
+			code: sanitizedCode,
+			redirect_uri: this.config.redirectUri,
+			client_id: this.config.clientId,
+			client_secret: this.config.clientSecret, // Schwab requires client_secret for server-side token exchange even with PKCE
+			code_verifier: retrievedCodeVerifier,
+		}
 
-			// Add code_verifier if available (required for PKCE)
-			if (codeVerifier) {
-				params.code_verifier = codeVerifier
-			}
+		if (this.config.debug) {
+			const paramsForLog = { ...params }
+			if (paramsForLog.client_secret) paramsForLog.client_secret = '[REDACTED]'
+			if (paramsForLog.code)
+				paramsForLog.code = `${paramsForLog.code.substring(0, 10)}... (len: ${paramsForLog.code.length})`
+			if (paramsForLog.code_verifier)
+				paramsForLog.code_verifier = `${paramsForLog.code_verifier.substring(0, 10)}... (len: ${paramsForLog.code_verifier.length})`
 
-			// Extra logging for debugging
-			if (this.config.debug) {
-				// Info log removed
-			}
+			console.log(
+				'[EnhancedTokenManager.exchangeCode] Parameters for performDirectTokenExchange:',
+				paramsForLog,
+			)
+		}
 
-			// Perform token exchange directly
-			const tokenData = await this.performDirectTokenExchange(params)
+		try {
+			const tokenResponseData = await this.performDirectTokenExchange(params)
 
-			// Map the response to our TokenSet format
 			const tokenSet: TokenSet = {
-				accessToken: tokenData.access_token!,
-				refreshToken: tokenData.refresh_token || '',
-				expiresAt: Date.now() + (tokenData.expires_in || 0) * 1000,
+				accessToken: tokenResponseData.access_token!,
+				refreshToken: tokenResponseData.refresh_token || '',
+				expiresAt: Date.now() + (tokenResponseData.expires_in || 0) * 1000,
 			}
 
-			// Store the tokens and persist them with metadata about the code exchange
-			this.tokenSet = tokenData
+			this.tokenSet = tokenResponseData // Store the raw response
 			await this.persistTokens(tokenSet, {
 				operation: 'code_exchange',
-				codeLength: code.length,
-				usedPkce: !!codeVerifier,
+				codeLength: code.length, // Original code length
+				usedPkce: true,
 				timestamp: Date.now(),
 			})
 
-			// Clear stored code verifier after successful exchange
-			this.codeVerifier = null
+			// Clear the instance verifier after successful use if it was the source
+			// If it came from state, this.codeVerifierForCurrentFlow might be for a *previous* auth attempt if not careful with instance reuse.
+			// It's generally safer to rely on the state-passed verifier for the specific exchange.
+			this.codeVerifierForCurrentFlow = null
 
-			// Return the mapped tokens
+			if (this.config.debug) {
+				console.log(
+					'[EnhancedTokenManager.exchangeCode] Token exchange successful. Access token preview:',
+					`${tokenSet.accessToken.substring(0, 8)}...`,
+					`Expires in: ${tokenResponseData.expires_in}s`,
+				)
+			}
+
 			return tokenSet
-		} catch (error) {
-			// Handle exchange error
-			throw this.formatTokenError(
-				error,
-				'Failed to exchange authorization code for tokens',
-				AuthErrorCode.UNAUTHORIZED,
+		} catch (error: any) {
+			console.error(
+				'[EnhancedTokenManager.exchangeCode] Error during performDirectTokenExchange:',
+				error.message || error,
 			)
+			// The error from performDirectTokenExchange might already be well-formatted.
+			// If it's a generic Error, re-wrap it.
+			if (!(error instanceof SchwabAuthError)) {
+				throw this.formatTokenError(
+					// Ensure formatTokenError exists and works
+					error,
+					'Failed to exchange authorization code for tokens during direct exchange.',
+					AuthErrorCode.UNAUTHORIZED, // Default, performDirectTokenExchange might throw more specific
+				)
+			}
+			throw error // Re-throw if already a SchwabAuthError
 		}
 	}
 

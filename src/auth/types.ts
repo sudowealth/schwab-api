@@ -183,6 +183,7 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	 */
 	getAuthorizationUrl(opts?: { scope?: string[]; state?: string }): Promise<{
 		authUrl: string
+		generatedState?: string // Optional state value generated for PKCE
 	}>
 
 	/**
