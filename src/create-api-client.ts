@@ -241,64 +241,42 @@ function processNamespace<T extends Record<string, any>>(
 	return result as ProcessNamespaceResult<T>
 }
 
-export async function createApiClient(
+export function createApiClient(
 	options: CreateApiClientOptions = {},
-): Promise<SchwabApiClient> {
+): SchwabApiClient {
 	const finalConfig = { ...getSchwabApiConfigDefaults(), ...options.config }
 
 	let authManager: EnhancedTokenManager
+
 	if (typeof options.auth === 'string') {
-		// For string tokens, create an EnhancedTokenManager directly
-		// and then set the token manually
-		const manager = new authNs.EnhancedTokenManager({
-			clientId: 'temp-client',
-			clientSecret: 'temp-secret',
-			redirectUri: 'https://example.com/callback',
-		})
-
-		// Set the token value
-		await manager.clearTokens()
-		await manager.saveTokens({
-			accessToken: options.auth,
-			expiresAt: Date.now() + 60 * 60 * 1000, // 60 minutes expiration (1 hour)
-		})
-
-		authManager = manager
+		// This path makes createApiClient inherently async.
+		// For synchronous init, this path should not be taken.
+		throw new Error(
+			'createApiClient with a string token is an async operation and not supported in this synchronous path. Please provide an EnhancedTokenManager instance.',
+		)
 	} else if (options.auth && 'strategy' in options.auth) {
-		// Create auth client using the provided factory config
-		// Always use ENHANCED strategy regardless of what was requested
-		const authConfig = {
-			...(options.auth as authNs.AuthFactoryConfig),
-			strategy: authNs.AuthStrategy.ENHANCED,
-		}
-		const auth = authNs.createSchwabAuth(authConfig)
-		// Cast to ensure type compatibility
-		authManager = auth as unknown as EnhancedTokenManager
-	} else if (options.auth) {
-		authManager = options.auth as EnhancedTokenManager
+		// This path is also async because createSchwabAuth could be async or ETM setup could be.
+		throw new Error(
+			'createApiClient with AuthFactoryConfig is an async operation and not supported in this synchronous path. Please provide an EnhancedTokenManager instance.',
+		)
+	} else if (options.auth instanceof authNs.EnhancedTokenManager) {
+		authManager = options.auth
 	} else {
 		// Default to a simple EnhancedTokenManager with no tokens
 		authManager = new authNs.EnhancedTokenManager({
-			clientId: 'dummy-client',
-			clientSecret: 'dummy-secret',
-			redirectUri: 'https://example.com/callback',
+			clientId: 'dummy-client-sync',
+			clientSecret: 'dummy-secret-sync',
+			redirectUri: 'https://example.com/callback-sync',
 		})
-		if (finalConfig.logger) {
-			finalConfig.logger.warn(
-				'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
-			)
-		} else {
-			console.warn(
-				'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
-			)
-		}
+		const loggerToUse = finalConfig.logger || console
+		loggerToUse.warn(
+			'Schwab API Client (sync): No ETM auth instance provided. Using a dummy token manager. API calls will likely fail until a real ETM is configured or OAuth flow completes.',
+		)
 	}
 
 	const middlewareConfig = options.middleware ?? {}
-	const middleware = await buildMiddlewarePipeline(
-		middlewareConfig,
-		authManager,
-	)
+	// Call the synchronous buildMiddlewarePipeline, ensuring authManager is an ETM instance
+	const middleware = buildMiddlewarePipeline(middlewareConfig, authManager)
 	const chain = compose(...middleware)
 	const apiClientContext = createRequestContext(finalConfig, (req) =>
 		chain(req),
@@ -355,13 +333,16 @@ export async function createApiClient(
 			auth: authNs,
 			errors: errorsNs,
 		},
-		debugAuth: async (options = {}) => {
+		debugAuth: async (debugOptions = {}) => {
+			// Ensure authManager is the one associated with this client instance
+			const currentAuthManager = authManager // Capture from closure
 			const { logger } = apiClientContext
 			logger.info('[debugAuth] Starting auth diagnostics')
 
 			try {
 				// Use the new getDiagnostics method from EnhancedTokenManager
-				const diagnostics = await authManager.getDiagnostics(options)
+				const diagnostics =
+					await currentAuthManager.getDiagnostics(debugOptions)
 
 				// Log diagnostics summary for troubleshooting
 				logger.info('[debugAuth] Auth diagnostics complete:', {

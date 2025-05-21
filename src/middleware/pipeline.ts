@@ -1,4 +1,4 @@
-import { EnhancedTokenManager } from '../auth/enhanced-token-manager'
+import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
 import { type Middleware } from './compose'
 import { type RateLimitOptions } from './with-rate-limit'
 import { type RetryOptions } from './with-retry'
@@ -71,69 +71,44 @@ export interface MiddlewarePipelineOptions {
  * @param token Authentication token or token manager
  * @returns Array of middleware functions in execution order
  */
-export async function buildMiddlewarePipeline(
+export function buildMiddlewarePipeline(
 	options: MiddlewarePipelineOptions = {},
-	token?: string | EnhancedTokenManager,
-): Promise<Middleware[]> {
-	// Import middleware lazily to avoid circular dependencies
+	tokenManagerInstance?: EnhancedTokenManager,
+): Middleware[] {
 	const { withTokenAuth } = require('./with-token-auth')
 	const { withRateLimit } = require('./with-rate-limit')
 	const { withRetry } = require('./with-retry')
 
-	// Start with empty pipeline
 	const pipeline: Middleware[] = []
-
-	// Get list of disabled middleware
 	const disabled = options.disable || []
 
-	// Add any custom "before" middleware first
 	if (options.before && options.before.length > 0) {
 		pipeline.push(...options.before)
 	}
 
-	// Add auth middleware if not disabled and token is provided
-	if (!disabled.includes('auth') && token) {
-		try {
-			// Create auth middleware with token
-			let tokenManager: EnhancedTokenManager
-
-			// If it's a string token, create a new EnhancedTokenManager with it
-			if (typeof token === 'string') {
-				// Create a temporary token manager for the access token
-				tokenManager = new EnhancedTokenManager({
-					clientId: 'temp-static-token',
-					clientSecret: 'static-token-secret',
-					redirectUri: 'https://example.com/callback',
-				})
-
-				// Manually set the token
-				await tokenManager.clearTokens()
-				await tokenManager.saveTokens({
-					accessToken: token,
-					expiresAt: Date.now() + 60 * 60 * 1000, // 60 minutes (1 hour)
-				})
-			} else {
-				// Use the provided EnhancedTokenManager
-				tokenManager = token
-			}
-
-			// Create auth middleware with options
-			const authOptions: TokenAuthOptions = {
-				tokenManager,
-				advanced: {
-					...DEFAULT_TOKEN_AUTH_OPTIONS.advanced,
-					...options.auth?.advanced,
-				},
-			}
-
-			pipeline.push(withTokenAuth(authOptions))
-		} catch (error) {
-			console.error('Failed to create token manager:', error)
-			// Continue without auth middleware
+	if (!disabled.includes('auth') && tokenManagerInstance) {
+		const authOptions: TokenAuthOptions = {
+			tokenManager: tokenManagerInstance, // Directly use the passed ETM instance
+			advanced: {
+				...DEFAULT_TOKEN_AUTH_OPTIONS.advanced,
+				...options.auth?.advanced,
+			},
 		}
+		pipeline.push(withTokenAuth(authOptions))
+	} else if (
+		!disabled.includes('auth') &&
+		tokenManagerInstance === undefined &&
+		options.auth !== undefined
+	) {
+		// This case handles if a string token was attempted to be passed via createApiClient options implicitly
+		// Forcing sync, we cannot handle async setup of ETM from string here.
+		console.error(
+			'[buildMiddlewarePipeline] Auth options provided but no ETM instance, and string token setup is async. Auth middleware will be skipped or this should throw.',
+		)
+		// Depending on strictness, you might throw here:
+		// throw new Error("Synchronous buildMiddlewarePipeline requires an EnhancedTokenManager instance for auth; string token setup is async.");
 	}
 
-	// Add middleware that goes between auth and rate limit
 	if (
 		options.between?.authAndRateLimit &&
 		options.between.authAndRateLimit.length > 0
