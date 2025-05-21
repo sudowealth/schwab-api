@@ -8,6 +8,16 @@ import {
 type ApiVersion = keyof typeof API_VERSIONS
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none'
 
+/**
+ * Logger interface that can be implemented by consuming applications
+ */
+export interface SchwabApiLogger {
+	debug: (message: string, ...args: any[]) => void
+	info: (message: string, ...args: any[]) => void
+	warn: (message: string, ...args: any[]) => void
+	error: (message: string, ...args: any[]) => void
+}
+
 export interface SchwabApiConfig {
 	/**
 	 * Base URL for API requests
@@ -44,6 +54,23 @@ export interface SchwabApiConfig {
 	 * @default TIMEOUTS.DEFAULT_REQUEST
 	 */
 	timeout: number
+
+	/**
+	 * Custom logger implementation
+	 * If not provided, a default console logger will be used
+	 * @default undefined
+	 */
+	logger?: SchwabApiLogger
+}
+
+/**
+ * Default console logger implementation
+ */
+export const DEFAULT_CONSOLE_LOGGER: SchwabApiLogger = {
+	debug: (message: string, ...args: any[]) => console.debug(message, ...args),
+	info: (message: string, ...args: any[]) => console.info(message, ...args),
+	warn: (message: string, ...args: any[]) => console.warn(message, ...args),
+	error: (message: string, ...args: any[]) => console.error(message, ...args),
 }
 
 // Default API configuration
@@ -54,13 +81,18 @@ const DEFAULT_API_CONFIG: SchwabApiConfig = {
 	logLevel: 'info',
 	apiVersion: 'v1',
 	timeout: TIMEOUTS.DEFAULT_REQUEST,
+	// Default logger not set here, will be added in getSchwabApiConfigDefaults
 }
 
 /**
  * Get a copy of the default API configuration
  */
 export function getSchwabApiConfigDefaults(): SchwabApiConfig {
-	return { ...DEFAULT_API_CONFIG }
+	return {
+		...DEFAULT_API_CONFIG,
+		// Add default logger if enableLogging is true
+		logger: DEFAULT_CONSOLE_LOGGER,
+	}
 }
 
 /**

@@ -7,6 +7,7 @@ import {
 } from '../errors'
 import {
 	type SchwabApiConfig,
+	type SchwabApiLogger,
 	getSchwabApiConfigDefaults,
 	resolveBaseUrl,
 } from './config'
@@ -54,10 +55,11 @@ export interface SchwabFetchRequestOptions<
 	init?: Omit<RequestInit, 'body' | 'method'>
 }
 
-// Request context containing config and fetch function
+// Request context containing config, fetch function, and logger
 export interface RequestContext {
 	config: SchwabApiConfig
 	fetchFn: (req: Request) => Promise<Response>
+	logger: SchwabApiLogger
 }
 
 /**
@@ -67,9 +69,13 @@ export function createRequestContext(
 	config: SchwabApiConfig = getSchwabApiConfigDefaults(),
 	fetchFn: (req: Request) => Promise<Response> = globalFetch,
 ): RequestContext {
+	// Ensure we have a logger (use the one from config or fall back to default)
+	const logger = config.logger || getSchwabApiConfigDefaults().logger!
+
 	return {
 		config,
 		fetchFn,
+		logger,
 	}
 }
 
@@ -80,7 +86,7 @@ function log(
 	message: string,
 	data?: any,
 ) {
-	const { config } = context
+	const { config, logger } = context
 	if (!config.enableLogging) return
 
 	const logLevels = {
@@ -93,10 +99,10 @@ function log(
 
 	// Only log if the current level is sufficient
 	if (logLevels[level] >= logLevels[config.logLevel]) {
-		if (data !== undefined && level === 'debug') {
-			console[level](message, data)
+		if (data !== undefined) {
+			logger[level](message, data)
 		} else {
-			console[level](message)
+			logger[level](message)
 		}
 	}
 }

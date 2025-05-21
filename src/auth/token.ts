@@ -28,17 +28,17 @@ function tokenLogWithContext(
 	message: string,
 	data?: any,
 ): void {
-	const { config } = context
+	const { config, logger } = context
 	if (!config.enableLogging) return
 
 	const prefix = '[Schwab Auth]'
 
 	if (data && level === 'info') {
-		console[level](`${prefix} ${message}`)
+		logger[level](`${prefix} ${message}`)
 	} else if (data) {
-		console[level](`${prefix} ${message}`, data)
+		logger[level](`${prefix} ${message}`, data)
 	} else {
-		console[level](`${prefix} ${message}`)
+		logger[level](`${prefix} ${message}`)
 	}
 }
 

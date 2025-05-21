@@ -39,7 +39,7 @@ export type TokenPersistenceEventHandler = (
 ) => void
 
 // Default constants for token management
-export const DEFAULT_REFRESH_THRESHOLD_MS = 300_000 // 5 minutes
+export const DEFAULT_REFRESH_THRESHOLD_MS = 300_000 // 5 minutes before expiration
 export const REFRESH_TOKEN_EXPIRATION_MS = 604_800_000 // 7 days
 export const REFRESH_TOKEN_WARNING_THRESHOLD_MS = 518_400_000 // 6 days
 

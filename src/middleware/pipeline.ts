@@ -110,7 +110,7 @@ export async function buildMiddlewarePipeline(
 				await tokenManager.clearTokens()
 				await tokenManager.saveTokens({
 					accessToken: token,
-					expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
+					expiresAt: Date.now() + 60 * 60 * 1000, // 60 minutes (1 hour)
 				})
 			} else {
 				// Use the provided EnhancedTokenManager

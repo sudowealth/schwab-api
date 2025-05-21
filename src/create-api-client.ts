@@ -261,7 +261,7 @@ export async function createApiClient(
 		await manager.clearTokens()
 		await manager.saveTokens({
 			accessToken: options.auth,
-			expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes expiration
+			expiresAt: Date.now() + 60 * 60 * 1000, // 60 minutes expiration (1 hour)
 		})
 
 		authManager = manager
@@ -284,9 +284,15 @@ export async function createApiClient(
 			clientSecret: 'dummy-secret',
 			redirectUri: 'https://example.com/callback',
 		})
-		console.warn(
-			'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
-		)
+		if (finalConfig.logger) {
+			finalConfig.logger.warn(
+				'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
+			)
+		} else {
+			console.warn(
+				'Schwab API Client: No authentication strategy provided. Using a dummy token manager. API calls will likely fail.',
+			)
+		}
 	}
 
 	const middlewareConfig = options.middleware ?? {}
@@ -351,7 +357,8 @@ export async function createApiClient(
 			errors: errorsNs,
 		},
 		debugAuth: async (options = {}) => {
-			console.log('[debugAuth] Starting auth diagnostics')
+			const { logger } = apiClientContext;
+				logger.info('[debugAuth] Starting auth diagnostics')
 
 			// Get environment information for diagnostic context
 			const environment = {
@@ -367,7 +374,7 @@ export async function createApiClient(
 				)
 
 				// Log diagnostics summary for troubleshooting
-				console.log('[debugAuth] Auth diagnostics complete:', {
+				logger.info('[debugAuth] Auth diagnostics complete:', {
 					authManagerType: diagnostics.authManagerType,
 					supportsRefresh: diagnostics.supportsRefresh,
 					hasAccessToken: diagnostics.tokenStatus.hasAccessToken,
@@ -392,7 +399,7 @@ export async function createApiClient(
 								: 'Incorrect format',
 							preview: `Bearer ${accessToken.substring(0, 8)}...`,
 						}
-						console.log('[debugAuth] Auth header test:', headerTest)
+						logger.info('[debugAuth] Auth header test:', headerTest)
 						// Add to the diagnostics result
 						;(diagnostics as any).authHeaderTest = headerTest
 					} else {
@@ -402,7 +409,7 @@ export async function createApiClient(
 						}
 					}
 				} catch (headerError) {
-					console.error(
+					logger.error(
 						'[debugAuth] Error testing authorization header:',
 						headerError,
 					)
@@ -417,7 +424,7 @@ export async function createApiClient(
 
 				return diagnostics
 			} catch (error) {
-				console.error('[debugAuth] Error during diagnostics:', error)
+				logger.error('[debugAuth] Error during diagnostics:', error)
 
 				// Return error information in a consistent format
 				return {
