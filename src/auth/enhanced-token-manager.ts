@@ -398,94 +398,54 @@ export class EnhancedTokenManager implements FullAuthClient {
 		// First trim any whitespace
 		const trimmedCode = code.trim()
 
-		// Valid Base64 characters are A-Z, a-z, 0-9, +, /, and = for padding
-		// Valid Base64URL characters are A-Z, a-z, 0-9, -, _, and no padding
+		// Only perform URL-decoding while preserving structure
+		let processedCode = trimmedCode
 
-		// Step 1: Filter out any non-standard Base64 characters
-		// This includes handling %40 (@) symbols which are causing issues
-		let preProcessedCode = trimmedCode
-
-		// Remove URL encoded characters
-		if (preProcessedCode.includes('%')) {
+		// Handle URL-encoded characters if present
+		if (processedCode.includes('%')) {
 			try {
-				// Try to decode URL-encoded parts
-				preProcessedCode = decodeURIComponent(preProcessedCode)
+				// Selectively handle URL-encoded characters that might appear in codes
+				// Only handle specific known URL encodings to preserve structure
+				processedCode = processedCode
+					.replace(/%40/g, '@') // %40 = @
+					.replace(/%7E/g, '~') // %7E = ~
+					.replace(/%2B/g, '+') // %2B = +
+					.replace(/%2F/g, '/') // %2F = /
+					.replace(/%3D/g, '=') // %3D = =
+					.replace(/%20/g, ' ') // %20 = space
+				// DO NOT modify periods or other structural elements
+
 				if (this.config.debug) {
 					console.log(
-						`[EnhancedTokenManager.sanitizeAuthCode] Decoded URL-encoded characters: '${trimmedCode.substring(0, 15)}...' => '${preProcessedCode.substring(0, 15)}...'`,
+						`[EnhancedTokenManager.sanitizeAuthCode] URL-decoded specific characters: '${trimmedCode.substring(0, 15)}...' => '${processedCode.substring(0, 15)}...'`,
 					)
 				}
 			} catch (e) {
+				// If specific URL decoding fails, preserve original code
 				console.error(
-					`[EnhancedTokenManager.sanitizeAuthCode] Failed to decode URL-encoded characters: ${(e as Error).message}`,
+					`[EnhancedTokenManager.sanitizeAuthCode] Error handling URL-encoded characters: ${(e as Error).message}`,
 				)
-				// If decoding fails, manually remove problematic sequences
-				preProcessedCode = preProcessedCode.replace(/%40/g, '') // Remove @
-				preProcessedCode = preProcessedCode.replace(/%20/g, '') // Remove spaces
-
-				if (this.config.debug) {
-					console.log(
-						`[EnhancedTokenManager.sanitizeAuthCode] Manually removed URL-encoded characters: '${trimmedCode.substring(0, 15)}...' => '${preProcessedCode.substring(0, 15)}...'`,
-					)
-				}
-			}
-		}
-
-		// Remove any illegal Base64 characters after URL decoding
-		// Only keep A-Z, a-z, 0-9, +, /, -, _, = (valid in base64 and base64url)
-		const filteredCode = preProcessedCode.replace(/[^A-Za-z0-9+/\-_=]/g, '')
-
-		if (filteredCode !== preProcessedCode && this.config.debug) {
-			console.log(
-				`[EnhancedTokenManager.sanitizeAuthCode] Removed illegal Base64 characters: '${preProcessedCode.substring(0, 15)}...' => '${filteredCode.substring(0, 15)}...'`,
-			)
-		}
-
-		// Step 2: Normalize to standard Base64 format (from possible Base64URL format)
-		// Convert from base64url to base64 if needed
-		let sanitizedCode = filteredCode.replace(/-/g, '+').replace(/_/g, '/')
-
-		// Step 3: Add padding if needed to make length a multiple of 4
-		while (sanitizedCode.length % 4 !== 0) {
-			sanitizedCode += '='
-		}
-
-		// Final validation to ensure it's a valid Base64 string
-		// The resulting string should only contain A-Z, a-z, 0-9, +, /, and = for padding
-		let isValidBase64 = false
-
-		try {
-			// Test if the string can be decoded by base64-js
-			base64js.toByteArray(sanitizedCode)
-			isValidBase64 = true
-		} catch (e) {
-			isValidBase64 = false
-			if (this.config.debug) {
-				console.warn(
-					`[EnhancedTokenManager.sanitizeAuthCode] base64-js validation failed: ${(e as Error).message}`,
-				)
+				processedCode = trimmedCode // Revert to original
 			}
 		}
 
 		if (this.config.debug) {
-			if (sanitizedCode !== trimmedCode) {
+			// Log if the code contains periods for debugging purposes
+			if (processedCode.includes('.')) {
 				console.log(
-					`[EnhancedTokenManager.sanitizeAuthCode] Code was sanitized from '${trimmedCode.substring(0, 15)}...' to '${sanitizedCode.substring(0, 15)}...'`,
+					`[EnhancedTokenManager.sanitizeAuthCode] Code contains periods. Format preserved as: ${processedCode
+						.split('.')
+						.map((segment) => segment.substring(0, 5) + '...')
+						.join('.')}`,
 				)
 			}
 
 			console.log(
-				`[EnhancedTokenManager.sanitizeAuthCode] Final code validation: ${isValidBase64 ? 'VALID Base64 format' : 'INVALID Base64 format'}`,
+				`[EnhancedTokenManager.sanitizeAuthCode] Minimal processing applied, preserving structure: '${processedCode.substring(0, 15)}...'`,
 			)
-
-			if (!isValidBase64) {
-				console.warn(
-					`[EnhancedTokenManager.sanitizeAuthCode] Warning: Final sanitized code still contains invalid Base64 characters`,
-				)
-			}
 		}
 
-		return sanitizedCode
+		return processedCode
 	}
 
 	/**
@@ -1381,24 +1341,18 @@ export class EnhancedTokenManager implements FullAuthClient {
 			fetchFn = globalThis.fetch.bind(globalThis)
 		}
 
-		// Additional validation and sanitization for authorization code
+		// Only perform URL-decoding while preserving structure for authorization code
 		if (
 			formData.get('grant_type') === 'authorization_code' &&
 			formData.has('code')
 		) {
 			const originalCode = formData.get('code') || ''
-
-			// IMPORTANT: DO NOT aggressively filter out characters as it may remove
-			// important information Schwab needs in the authorization code
-
-			// Only make minimal changes to ensure the code structure is preserved
-			// Just handle URL encoding and ensure proper padding if needed
-
-			// Decode URL-encoded characters that commonly appear in codes
 			let processedCode = originalCode
+
+			// Only URL-decode specific encoded characters if present
 			if (processedCode.includes('%')) {
 				try {
-					// Handle specific URL encodings without altering the structure
+					// Only handle specific known URL encodings to preserve structure
 					processedCode = processedCode
 						.replace(/%40/g, '@') // %40 = @
 						.replace(/%7E/g, '~') // %7E = ~
@@ -1406,47 +1360,47 @@ export class EnhancedTokenManager implements FullAuthClient {
 						.replace(/%2F/g, '/') // %2F = /
 						.replace(/%3D/g, '=') // %3D = =
 						.replace(/%20/g, ' ') // %20 = space
-				} catch (e) {
+					// DO NOT modify periods (%2E) or other structural elements
+
 					if (this.config.debug) {
-						console.warn(
-							`[EnhancedTokenManager.performDirectTokenExchange] Failed to handle URL encoding: ${(e as Error).message}`,
+						console.log(
+							`[EnhancedTokenManager.performDirectTokenExchange] URL-decoded specific characters: '${originalCode.substring(0, 15)}...' => '${processedCode.substring(0, 15)}...'`,
+						)
+					}
+				} catch (e) {
+					// If specific URL decoding fails, preserve original code
+					console.error(
+						`[EnhancedTokenManager.performDirectTokenExchange] Error handling URL-encoded characters: ${(e as Error).message}`,
+					)
+					processedCode = originalCode // Revert to original
+				}
+
+				// Apply the changes if we made any
+				if (processedCode !== originalCode) {
+					formData.set('code', processedCode)
+
+					if (this.config.debug) {
+						console.log(
+							`[EnhancedTokenManager.performDirectTokenExchange] Updated code with minimal URL-decoding while preserving structure`,
 						)
 					}
 				}
 			}
 
-			// If the code is base64-like but missing padding, add it
-			if (
-				/^[A-Za-z0-9+/\-_]+$/.test(processedCode) &&
-				processedCode.length % 4 !== 0
-			) {
-				const originalLength = processedCode.length
-				while (processedCode.length % 4 !== 0) {
-					processedCode += '='
+			if (this.config.debug) {
+				// Add some debugging info about the format for troubleshooting
+				if (processedCode.includes('.')) {
+					console.log(
+						`[EnhancedTokenManager.performDirectTokenExchange] Authorization code contains periods. Format preserved as: ${processedCode
+							.split('.')
+							.map((segment) => segment.substring(0, 5) + '...')
+							.join('.')}`,
+					)
 				}
 
-				if (this.config.debug) {
-					console.log(
-						`[EnhancedTokenManager.performDirectTokenExchange] Added ${processedCode.length - originalLength} padding character(s) to code`,
-					)
-				}
-			}
-
-			// Only update if we made changes
-			if (processedCode !== originalCode) {
-				formData.set('code', processedCode)
-
-				if (this.config.debug) {
-					console.warn(
-						`[EnhancedTokenManager.performDirectTokenExchange] ⚠️ Minimally processed authorization code`,
-					)
-					console.log(
-						`[EnhancedTokenManager.performDirectTokenExchange] Original code: '${originalCode.substring(0, 15)}...'`,
-					)
-					console.log(
-						`[EnhancedTokenManager.performDirectTokenExchange] Processed code: '${processedCode.substring(0, 15)}...'`,
-					)
-				}
+				console.log(
+					`[EnhancedTokenManager.performDirectTokenExchange] Final authorization code (with minimal processing): '${processedCode.substring(0, 15)}...'`,
+				)
 			}
 		}
 
