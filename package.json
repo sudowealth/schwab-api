@@ -42,6 +42,7 @@
   ],
   "dependencies": {
     "openid-client": "^6.5.0",
+    "pkce-challenge": "^5.0.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

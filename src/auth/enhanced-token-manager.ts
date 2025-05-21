@@ -1,4 +1,5 @@
 import * as oidc from 'openid-client'
+import pkceChallenge from 'pkce-challenge'
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
 import {
@@ -15,14 +16,6 @@ import {
 	type FullAuthClient,
 	type SchwabTokenResponse,
 } from './types'
-
-// Crypto polyfill for environments without crypto API
-const cryptoAPI =
-	typeof crypto !== 'undefined'
-		? crypto
-		: typeof window !== 'undefined' && 'crypto' in window
-			? window.crypto
-			: null
 
 // Define additional error codes for enhanced token manager
 export enum TokenErrorCode {
@@ -255,13 +248,12 @@ export class EnhancedTokenManager implements FullAuthClient {
 		const scope = opts?.scope || this.config.scope
 		const baseIssuerUrl = this.config.issuerBaseUrl
 
-		// Generate PKCE code verifier for this specific authorization request
-		this.codeVerifierForCurrentFlow = this.generateRandomString(128) // Store it temporarily
-		const codeChallenge = await this.generateCodeChallenge(
-			this.codeVerifierForCurrentFlow,
-		)
+		// Generate PKCE code verifier and challenge using pkce-challenge package
+		const pkce = await pkceChallenge()
+		this.codeVerifierForCurrentFlow = pkce.code_verifier // Store the verifier for later use
+		const codeChallenge = pkce.code_challenge // Get the pre-computed challenge
 
-		if (this.config.debug) {
+		if (this.config.debug && this.codeVerifierForCurrentFlow) {
 			console.log(
 				`[EnhancedTokenManager] PKCE for getAuthUrl: verifier (len ${this.codeVerifierForCurrentFlow.length}), challenge (len ${codeChallenge.length}, starts ${codeChallenge.substring(0, 10)}...)`,
 			)
@@ -385,7 +377,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 	/**
 	 * Sanitize authorization code for Schwab's OAuth requirements
 	 * This handles any encoding issues that might come up with special characters
-	 * and ensures base64 padding is correctly handled
+	 * and ensures base64 padding is correctly handled.
+	 *
+	 * Specifically addresses:
+	 * - Removing invalid base64 characters (like @ symbols)
+	 * - Converting from base64url to standard base64 format
+	 * - Adding proper padding to make length a multiple of 4
+	 * - Handling URL-encoded characters
 	 * @private
 	 */
 	private sanitizeAuthCode(code: string): string {
@@ -1551,79 +1549,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 	}
 
 	/**
-	 * Generate a cryptographically random string for PKCE code_verifier
-	 * @param length The length of the random string (43-128 chars)
-	 * @returns A random string using allowed characters for PKCE
+	 * PKCE functionality is now handled by the pkce-challenge package
+	 *
+	 * The package handles:
+	 * 1. Generating a cryptographically random code verifier
+	 * 2. Computing the code challenge using SHA-256 hashing
+	 * 3. Proper base64url encoding of both values
 	 */
-	private generateRandomString(length: number = 128): string {
-		if (!cryptoAPI) {
-			throw new Error('Crypto API not available for PKCE generation')
-		}
-
-		const charset =
-			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
-		let result = ''
-		const randomValues = new Uint8Array(length)
-		cryptoAPI.getRandomValues(randomValues)
-
-		for (let i = 0; i < length; i++) {
-			result += charset[randomValues[i]! % charset.length]
-		}
-
-		return result
-	}
-
-	/**
-	 * Generate a code challenge from a code verifier using SHA-256
-	 * @param verifier The code verifier string
-	 * @returns A base64url encoded SHA-256 hash of the verifier
-	 */
-	private async generateCodeChallenge(verifier: string): Promise<string> {
-		if (!cryptoAPI || !cryptoAPI.subtle) {
-			throw new Error(
-				'WebCrypto subtle API not available for PKCE code challenge generation',
-			)
-		}
-
-		try {
-			const encoder = new TextEncoder()
-			const data = encoder.encode(verifier)
-			const hashBuffer = await cryptoAPI.subtle.digest('SHA-256', data)
-
-			// Convert hash buffer to base64url string
-			const hashArray = Array.from(new Uint8Array(hashBuffer))
-			const hashString = String.fromCharCode(...hashArray)
-
-			// Get base64 using appropriate method for environment
-			let base64: string
-			if (typeof btoa === 'function') {
-				base64 = btoa(hashString)
-			} else if (typeof Buffer !== 'undefined') {
-				base64 = Buffer.from(hashBuffer).toString('base64')
-			} else {
-				// Fallback to our string-based base64 encoder
-				throw new Error('No base64 encoding method available')
-			}
-
-			// Convert to URL-safe format without padding
-			const base64url = base64
-				.replace(/\+/g, '-')
-				.replace(/\//g, '_')
-				.replace(/=+$/, '')
-
-			if (this.config.debug) {
-				console.log(
-					`[EnhancedTokenManager] Generated code challenge (length: ${base64url.length}): ${base64url.substring(0, 20)}...`,
-				)
-			}
-
-			return base64url
-		} catch (error) {
-			const errorMessage = `PKCE code challenge generation failed: ${(error as Error).message}`
-			console.error(`[EnhancedTokenManager] ${errorMessage}`)
-			throw new Error(errorMessage)
-		}
-	}
 
 	/**
 	 * Handle token refresh with auto-reconnection
