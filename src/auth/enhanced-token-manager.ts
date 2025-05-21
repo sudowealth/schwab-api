@@ -1,5 +1,4 @@
 import * as base64js from 'base64-js'
-import * as oidc from 'openid-client'
 import pkceChallenge from 'pkce-challenge'
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
@@ -133,9 +132,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		onTokenEvent: TokenPersistenceEventHandler | undefined
 	}
 
-	// OIDC configuration for direct token management
-	private oidcConfig: oidc.Configuration
-	private tokenSet?: SchwabTokenResponse
+        private tokenSet?: SchwabTokenResponse
 
 	// Persistence-related properties (integrated from TokenPersistenceManager)
 	private saveFn?: (tokens: TokenSet) => Promise<void>
@@ -149,10 +146,8 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private tracer: TokenRefreshTracer
 	private refreshCallbacks: Array<(t: TokenSet) => void> = []
 	private reconnectionHandlers: Array<() => Promise<void>> = []
-	private isReconnecting: boolean = false
-	private lastRefreshAttempt: number = 0
-	private refreshLock: Promise<TokenData> | null = null
-	private codeVerifier: string | null = null
+        private isReconnecting: boolean = false
+        private refreshLock: Promise<TokenData> | null = null
 
 	constructor(options: EnhancedTokenManagerOptions) {
 		// Set default configuration values
@@ -181,19 +176,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			issuerBaseUrl: baseIssuerUrl,
 		}
 
-		// Initialize OIDC configuration for token management
-		const server = {
-			issuer: baseIssuerUrl,
-			authorization_endpoint: `${baseIssuerUrl}/oauth/authorize`,
-			token_endpoint: `${baseIssuerUrl}/oauth/token`,
-		} as oidc.ServerMetadata
-
-		this.oidcConfig = new oidc.Configuration(server, this.config.clientId, {
-			client_secret: this.config.clientSecret,
-			redirect_uris: [this.config.redirectUri],
-		})
-
-		// Create dummy implementations for when the actual functions are missing
+                // Create dummy implementations for when the actual functions are missing
 		const dummySave =
 			this.config.save ||
 			(async () => {
@@ -1638,10 +1621,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		let lastError: unknown
 		let attempt = 0
 
-		// Record the refresh attempt time
-		this.lastRefreshAttempt = Date.now()
-
-		// Try up to maxRetryAttempts times
+                // Try up to maxRetryAttempts times
 		while (attempt < this.config.maxRetryAttempts) {
 			try {
 				// Log retry attempt
