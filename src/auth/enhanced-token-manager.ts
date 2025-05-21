@@ -1388,32 +1388,63 @@ export class EnhancedTokenManager implements FullAuthClient {
 		) {
 			const originalCode = formData.get('code') || ''
 
-			// Ensure the code is valid Base64 format before sending
-			// This is a final check/fix to catch any issues that might have been missed
-			const isValidBase64 = /^[A-Za-z0-9+/]*={0,2}$/.test(originalCode)
+			// IMPORTANT: DO NOT aggressively filter out characters as it may remove
+			// important information Schwab needs in the authorization code
 
-			if (!isValidBase64) {
-				// If not valid, re-sanitize to be certain
-				// Filter to only valid Base64 characters
-				let sanitizedCode = originalCode.replace(/[^A-Za-z0-9+/=]/g, '')
+			// Only make minimal changes to ensure the code structure is preserved
+			// Just handle URL encoding and ensure proper padding if needed
 
-				// Adjust padding to ensure length is multiple of 4
-				while (sanitizedCode.length % 4 !== 0) {
-					sanitizedCode += '='
+			// Decode URL-encoded characters that commonly appear in codes
+			let processedCode = originalCode
+			if (processedCode.includes('%')) {
+				try {
+					// Handle specific URL encodings without altering the structure
+					processedCode = processedCode
+						.replace(/%40/g, '@') // %40 = @
+						.replace(/%7E/g, '~') // %7E = ~
+						.replace(/%2B/g, '+') // %2B = +
+						.replace(/%2F/g, '/') // %2F = /
+						.replace(/%3D/g, '=') // %3D = =
+						.replace(/%20/g, ' ') // %20 = space
+				} catch (e) {
+					if (this.config.debug) {
+						console.warn(
+							`[EnhancedTokenManager.performDirectTokenExchange] Failed to handle URL encoding: ${(e as Error).message}`,
+						)
+					}
+				}
+			}
+
+			// If the code is base64-like but missing padding, add it
+			if (
+				/^[A-Za-z0-9+/\-_]+$/.test(processedCode) &&
+				processedCode.length % 4 !== 0
+			) {
+				const originalLength = processedCode.length
+				while (processedCode.length % 4 !== 0) {
+					processedCode += '='
 				}
 
-				// Replace the code in the form data with our re-sanitized version
-				formData.set('code', sanitizedCode)
+				if (this.config.debug) {
+					console.log(
+						`[EnhancedTokenManager.performDirectTokenExchange] Added ${processedCode.length - originalLength} padding character(s) to code`,
+					)
+				}
+			}
+
+			// Only update if we made changes
+			if (processedCode !== originalCode) {
+				formData.set('code', processedCode)
 
 				if (this.config.debug) {
 					console.warn(
-						`[EnhancedTokenManager.performDirectTokenExchange] ⚠️ Authorization code was not valid Base64, re-sanitized before sending`,
+						`[EnhancedTokenManager.performDirectTokenExchange] ⚠️ Minimally processed authorization code`,
 					)
 					console.log(
 						`[EnhancedTokenManager.performDirectTokenExchange] Original code: '${originalCode.substring(0, 15)}...'`,
 					)
 					console.log(
-						`[EnhancedTokenManager.performDirectTokenExchange] Sanitized code: '${sanitizedCode.substring(0, 15)}...'`,
+						`[EnhancedTokenManager.performDirectTokenExchange] Processed code: '${processedCode.substring(0, 15)}...'`,
 					)
 				}
 			}
