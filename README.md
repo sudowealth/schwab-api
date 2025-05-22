@@ -1,6 +1,7 @@
 # Schwab API Client
 
-TypeScript client for the Charles Schwab API.
+TypeScript client for Charles Schwab API with OAuth support, market data,
+trading functionality, and complete type safety.
 
 ## Unofficial Library
 
