@@ -10,6 +10,16 @@ by Charles Schwab. It is provided as-is, and its functionality may be incomplete
 or unstable. Use at your own risk, especially when dealing with financial data
 or transactions.**
 
+## Getting Started
+
+To use the Schwab API, you'll need to register for a developer account:
+
+1. Visit
+   [Schwab Developer Portal](https://developer.schwab.com/user-guides/get-started/introduction)
+2. Sign up for a developer account
+3. Create an application to obtain your client ID and secret
+4. Review the API documentation and usage limits
+
 ## Features
 
 - **OAuth Helper**: Client-credentials OAuth flow with automatic token handling
