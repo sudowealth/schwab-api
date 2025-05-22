@@ -1,7 +1,7 @@
 {
   "name": "@sudowealth/schwab-api",
   "version": "0.0.0-semantically-released",
-  "description": "Type safe Schwab API client",
+  "description": "TypeScript client for Charles Schwab API with OAuth support, market data, trading functionality, and complete type safety",
   "type": "module",
   "publishConfig": {
     "access": "public"

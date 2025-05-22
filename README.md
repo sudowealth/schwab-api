@@ -33,6 +33,8 @@ To use the Schwab API, you'll need to register for a developer account:
 
 ## Installation
 
+Available on [npm](https://www.npmjs.com/package/@sudowealth/schwab-api):
+
 ```bash
 npm install @sudowealth/schwab-api
 ```
