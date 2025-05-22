@@ -490,19 +490,19 @@ function buildUrlWithContext(
 					/[.*+?^${}()|[\]\\]/g,
 					'\\$&',
 				)
-                                finalEndpointPath = finalEndpointPath.replace(
-                                        new RegExp(escapedPlaceholder, 'g'),
-                                        encodeURIComponent(String(value)),
-                                )
+				finalEndpointPath = finalEndpointPath.replace(
+					new RegExp(escapedPlaceholder, 'g'),
+					encodeURIComponent(String(value)),
+				)
 				replaced = true
 			}
 
 			// Check and replace colon-style placeholders separately
 			if (colonPlaceholderPattern.test(finalEndpointPath)) {
-                                finalEndpointPath = finalEndpointPath.replace(
-                                        colonPlaceholderPattern,
-                                        encodeURIComponent(String(value)),
-                                )
+				finalEndpointPath = finalEndpointPath.replace(
+					colonPlaceholderPattern,
+					encodeURIComponent(String(value)),
+				)
 				replaced = true
 			}
 

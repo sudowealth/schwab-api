@@ -1,4 +1,3 @@
-import { tokenIsExpiringSoon } from './auth-utils'
 import {
 	type ITokenLifecycleManager,
 	forceRefreshTokens,
@@ -272,37 +271,4 @@ export async function getAuthDiagnostics(
 	}
 
 	return result
-}
-
-/**
- * Create a debug log message with token status information
- * Useful for logging token state without exposing sensitive information
- *
- * @param tokenData The token data to debug log
- * @returns A safe string representation of token status for logging
- */
-export function createTokenDebugLog(tokenData?: TokenData): string {
-	if (!tokenData) {
-		return 'No token data available'
-	}
-
-	// Construct safe debug info
-	const info = {
-		hasAccessToken: !!tokenData.accessToken,
-		accessTokenLength: tokenData.accessToken?.length ?? 0,
-		hasRefreshToken: !!tokenData.refreshToken,
-		refreshTokenLength: tokenData.refreshToken?.length ?? 0,
-		expiresAt: tokenData.expiresAt,
-		expiresIn: tokenData.expiresAt
-			? `${Math.floor((tokenData.expiresAt - Date.now()) / 1000)}s`
-			: 'unknown',
-		isExpired: tokenData.expiresAt
-			? tokenData.expiresAt <= Date.now()
-			: 'unknown',
-		isExpiringSoon: tokenData.expiresAt
-			? tokenIsExpiringSoon(tokenData.expiresAt)
-			: false,
-	}
-
-	return JSON.stringify(info)
 }

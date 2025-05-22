@@ -265,8 +265,11 @@ try {
 - Install dependencies: `npm install`
 - Build: `npm run build`
 - Test: `npm run test`
+- Test (watch mode): `npm run test:watch`
 - Lint: `npm run lint`
 - Type check: `npm run typecheck`
+- Format: `npm run format`
+- Validate all: `npm run validate`
 
 ### Installing Beta Versions
 
