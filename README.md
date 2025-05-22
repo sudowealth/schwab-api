@@ -258,6 +258,134 @@ The API client is organized into logical namespaces:
   - `transactions`: Transaction history and details
   - `userPreference`: User settings and preferences
 
+## Security Best Practices
+
+### Token Storage
+
+⚠️ **NEVER store tokens in plain text**. Always encrypt sensitive data before
+storage.
+
+```typescript
+// ❌ BAD - Insecure plain text storage
+const insecureStorage = {
+	save: async (tokens) => {
+		await fs.writeFile('tokens.json', JSON.stringify(tokens))
+	},
+	load: async () => {
+		const data = await fs.readFile('tokens.json', 'utf-8')
+		return JSON.parse(data)
+	},
+}
+
+// ✅ GOOD - Encrypted storage example
+import crypto from 'crypto'
+
+const secureStorage = {
+	save: async (tokens) => {
+		// Use a secure key management system in production
+		const key = process.env.ENCRYPTION_KEY
+		const iv = crypto.randomBytes(16)
+		const cipher = crypto.createCipheriv(
+			'aes-256-gcm',
+			Buffer.from(key, 'hex'),
+			iv,
+		)
+
+		let encrypted = cipher.update(JSON.stringify(tokens), 'utf8', 'hex')
+		encrypted += cipher.final('hex')
+
+		const authTag = cipher.getAuthTag()
+
+		await secureStore.set('tokens', {
+			encrypted,
+			iv: iv.toString('hex'),
+			authTag: authTag.toString('hex'),
+		})
+	},
+	load: async () => {
+		const data = await secureStore.get('tokens')
+		if (!data) return null
+
+		const key = process.env.ENCRYPTION_KEY
+		const decipher = crypto.createDecipheriv(
+			'aes-256-gcm',
+			Buffer.from(key, 'hex'),
+			Buffer.from(data.iv, 'hex'),
+		)
+
+		decipher.setAuthTag(Buffer.from(data.authTag, 'hex'))
+
+		let decrypted = decipher.update(data.encrypted, 'hex', 'utf8')
+		decrypted += decipher.final('utf8')
+
+		return JSON.parse(decrypted)
+	},
+}
+```
+
+### Credential Management
+
+- **Never commit credentials**: Keep `.env` files in `.gitignore`
+- **Use environment variables**: Store sensitive data in environment variables
+  or secure vaults
+- **Rotate credentials regularly**: Implement a credential rotation policy
+- **Principle of least privilege**: Only grant the minimum required permissions
+
+```bash
+# .env (never commit this file)
+SCHWAB_CLIENT_ID=your-client-id
+SCHWAB_CLIENT_SECRET=your-client-secret
+ENCRYPTION_KEY=your-256-bit-hex-key
+```
+
+### Security Checklist
+
+- [ ] Use HTTPS for all API communications
+- [ ] Encrypt tokens before storing them
+- [ ] Never log tokens or sensitive data
+- [ ] Implement proper error handling that doesn't leak information
+- [ ] Use secure key management (AWS KMS, Azure Key Vault, etc.)
+- [ ] Monitor for suspicious activity
+- [ ] Implement request signing if available
+- [ ] Keep dependencies up to date
+
+### Common Security Mistakes to Avoid
+
+1. **Logging Sensitive Data**
+
+   ```typescript
+   // ❌ NEVER log tokens
+   console.log('Access token:', tokens.access_token)
+
+   // ✅ Log only non-sensitive metadata
+   console.log('Token refreshed successfully')
+   ```
+
+2. **Storing Secrets in Code**
+
+   ```typescript
+   // ❌ NEVER hardcode secrets
+   const clientSecret = 'abc123-secret-key'
+
+   // ✅ Use environment variables
+   const clientSecret = process.env.SCHWAB_CLIENT_SECRET
+   ```
+
+3. **Exposing Error Details**
+
+   ```typescript
+   // ❌ Don't expose internal details
+   catch (error) {
+     res.json({ error: error.stack })
+   }
+
+   // ✅ Return generic error messages
+   catch (error) {
+     console.error('Internal error:', error) // Log internally
+     res.json({ error: 'Authentication failed' }) // Generic response
+   }
+   ```
+
 ## Error Handling
 
 ```typescript

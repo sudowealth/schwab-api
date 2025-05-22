@@ -14,8 +14,13 @@ import {
 } from './auth-utils'
 import { TokenRefreshTracer } from './token-refresh-tracer'
 import {
+	validateTokenData,
+	validateTokenDetailed,
+	ensureCompleteTokenData,
+	type TokenValidationResult,
+} from './token-validation'
+import {
 	type TokenData,
-	type TokenSet,
 	type RefreshOptions,
 	type AuthClientOptions,
 	type FullAuthClient,
@@ -135,8 +140,8 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private tokenSet?: SchwabTokenResponse
 
 	// Persistence-related properties (integrated from TokenPersistenceManager)
-	private saveFn?: (tokens: TokenSet) => Promise<void>
-	private loadFn?: () => Promise<TokenSet | null>
+	private saveFn?: (tokens: TokenData) => Promise<void>
+	private loadFn?: () => Promise<TokenData | null>
 	private persistenceDebugEnabled: boolean
 	private validateOnLoad: boolean
 	private persistenceEventHandler?: TokenPersistenceEventHandler
@@ -144,7 +149,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private lastLoadedTokens?: TokenData
 
 	private tracer: TokenRefreshTracer
-	private refreshCallbacks: Array<(t: TokenSet) => void> = []
+	private refreshCallbacks: Array<(t: TokenData) => void> = []
 	private reconnectionHandlers: Array<() => Promise<void>> = []
 	private isReconnecting: boolean = false
 	private refreshLock: Promise<TokenData> | null = null
@@ -366,7 +371,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * @param code The authorization code received from the OAuth server
 	 * @param stateParam Optional state parameter received in the callback, may contain code_verifier
 	 */
-	async exchangeCode(code: string, stateParam?: string): Promise<TokenSet> {
+	async exchangeCode(code: string, stateParam?: string): Promise<TokenData> {
 		if (this.config.debug) {
 			console.log(
 				`[EnhancedTokenManager.exchangeCode] Received raw authorization code (length: ${code.length}): '${code.substring(0, 15)}...'`,
@@ -511,14 +516,14 @@ export class EnhancedTokenManager implements FullAuthClient {
 		try {
 			const tokenResponseData = await this.performDirectTokenExchange(params)
 
-			const tokenSet: TokenSet = {
+			const tokenData: TokenData = {
 				accessToken: tokenResponseData.access_token!,
 				refreshToken: tokenResponseData.refresh_token || '',
 				expiresAt: Date.now() + (tokenResponseData.expires_in || 0) * 1000,
 			}
 
 			this.tokenSet = tokenResponseData // Store the raw response
-			await this.persistTokens(tokenSet, {
+			await this.persistTokens(tokenData, {
 				operation: 'code_exchange',
 				codeLength: code.length, // Original code length
 				usedPkce: true,
@@ -533,12 +538,12 @@ export class EnhancedTokenManager implements FullAuthClient {
 			if (this.config.debug) {
 				console.log(
 					'[EnhancedTokenManager.exchangeCode] Token exchange successful. Access token preview:',
-					`${tokenSet.accessToken.substring(0, 8)}...`,
+					`${tokenData.accessToken.substring(0, 8)}...`,
 					`Expires in: ${tokenResponseData.expires_in}s`,
 				)
 			}
 
-			return tokenSet
+			return tokenData
 		} catch (error: any) {
 			console.error(
 				'[EnhancedTokenManager.exchangeCode] Error during performDirectTokenExchange:',
@@ -840,7 +845,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	/**
 	 * Register a callback to be notified when tokens are refreshed
 	 */
-	onRefresh(callback: (tokenData: TokenSet) => void): void {
+	onRefresh(callback: (tokenData: TokenData) => void): void {
 		this.refreshCallbacks.push(callback)
 	}
 
@@ -851,7 +856,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	async refresh(
 		refreshToken: string,
 		options?: { force?: boolean },
-	): Promise<TokenSet> {
+	): Promise<TokenData> {
 		const tokenData = await this.refreshIfNeeded({
 			refreshToken,
 			force: options?.force,
@@ -1038,7 +1043,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * @param metadata Optional metadata about the persistence operation
 	 */
 	private async persistTokens(
-		tokens: TokenSet,
+		tokens: TokenData,
 		metadata?: Record<string, any>,
 	): Promise<void> {
 		try {
@@ -1091,35 +1096,8 @@ export class EnhancedTokenManager implements FullAuthClient {
 	/**
 	 * Validate tokens to ensure they meet basic requirements
 	 */
-	private validateTokens(tokens: TokenSet): boolean {
-		// Basic validation
-		if (!tokens || typeof tokens !== 'object') {
-			return false
-		}
-
-		// Access token is required
-		if (!tokens.accessToken || typeof tokens.accessToken !== 'string') {
-			return false
-		}
-
-		// Expiration time must be a valid number
-		if (
-			tokens.expiresAt === undefined ||
-			typeof tokens.expiresAt !== 'number' ||
-			tokens.expiresAt <= 0
-		) {
-			return false
-		}
-
-		// Refresh token should be a string (can be empty)
-		if (
-			tokens.refreshToken === undefined ||
-			typeof tokens.refreshToken !== 'string'
-		) {
-			return false
-		}
-
-		return true
+	private validateTokens(tokens: TokenData): boolean {
+		return validateTokenData(tokens)
 	}
 
 	/**
@@ -1153,27 +1131,23 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * @param metadata Optional metadata about the save operation
 	 */
 	public async saveTokens(
-		tokens: Partial<TokenSet>,
+		tokens: Partial<TokenData>,
 		metadata?: Record<string, any>,
 	): Promise<void> {
-		// Create a valid TokenSet from the partial input
-		const tokenSet: TokenSet = {
-			accessToken: tokens.accessToken || '',
-			refreshToken: tokens.refreshToken || '',
-			expiresAt: tokens.expiresAt || Date.now() + 3600 * 1000,
-		}
+		// Create a valid TokenData from the partial input
+		const tokenData = ensureCompleteTokenData(tokens)
 
 		// Store in memory
 		this.tokenSet = {
-			access_token: tokenSet.accessToken,
-			refresh_token: tokenSet.refreshToken,
-			expires_in: Math.floor((tokenSet.expiresAt - Date.now()) / 1000),
+			access_token: tokenData.accessToken,
+			refresh_token: tokenData.refreshToken,
+			expires_in: Math.floor((tokenData.expiresAt - Date.now()) / 1000),
 			token_type: 'bearer',
 		}
 
 		// Persist to storage if available
 		if (this.saveFn) {
-			await this.persistTokens(tokenSet, metadata)
+			await this.persistTokens(tokenData, metadata)
 		}
 	}
 
@@ -1632,8 +1606,8 @@ export class EnhancedTokenManager implements FullAuthClient {
 				// Perform the actual token refresh
 				const response = await this.performDirectTokenRefresh(refreshToken)
 
-				// Create a TokenSet from the response
-				const tokenSet: TokenSet = {
+				// Create a TokenData from the response
+				const tokenData: TokenData = {
 					accessToken: response.access_token!,
 					refreshToken: response.refresh_token || refreshToken, // Use old refresh token if not returned
 					expiresAt: Date.now() + (response.expires_in || 0) * 1000,
@@ -1643,7 +1617,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				this.tokenSet = response as SchwabTokenResponse
 
 				// Persist the tokens if storage is available with refresh metadata
-				await this.persistTokens(tokenSet, {
+				await this.persistTokens(tokenData, {
 					operation: 'refresh',
 					attempt: attempt + 1,
 					success: true,
@@ -1659,13 +1633,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 				}
 
 				// Notify listeners
-				this.notifyRefreshListeners(tokenSet)
+				this.notifyRefreshListeners(tokenData)
 
 				// Return the token data
 				return {
-					accessToken: tokenSet.accessToken,
-					refreshToken: tokenSet.refreshToken,
-					expiresAt: tokenSet.expiresAt,
+					accessToken: tokenData.accessToken,
+					refreshToken: tokenData.refreshToken,
+					expiresAt: tokenData.expiresAt,
 				}
 			} catch (error) {
 				lastError = error
@@ -1807,13 +1781,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 	/**
 	 * Notify all registered refresh listeners
 	 */
-	private notifyRefreshListeners(tokenSet: TokenSet): void {
+	private notifyRefreshListeners(tokenData: TokenData): void {
 		const failedCallbacks: Array<{ index: number; error: unknown }> = []
 
 		for (let i = 0; i < this.refreshCallbacks.length; i++) {
 			const callback = this.refreshCallbacks[i]
 			try {
-				callback?.(tokenSet)
+				callback?.(tokenData)
 			} catch (callbackError) {
 				// Collect errors but don't throw
 				failedCallbacks.push({
@@ -1919,71 +1893,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 * Validate tokens and return a detailed report
 	 * This is used by generateTokenReport to provide more detailed validation info
 	 */
-	private validateTokenReport(tokenData: TokenData): {
-		valid: boolean
-		reason?: string
-		canRefresh?: boolean
-		isExpiring?: boolean
-		expiresInSeconds?: number
-		format?: { isValid: boolean; issues?: string[] }
-	} {
-		const now = Date.now()
-		const issues: string[] = []
-
-		// Check if token exists
-		if (!tokenData.accessToken) {
-			return {
-				valid: false,
-				reason: 'No access token available',
-				format: { isValid: false, issues: ['Missing access token'] },
-			}
-		}
-
-		// Check if token is expired
-		if (!tokenData.expiresAt || tokenData.expiresAt <= now) {
-			return {
-				valid: false,
-				reason: 'Token is expired',
-				canRefresh: !!tokenData.refreshToken,
-				isExpiring: true,
-				expiresInSeconds: tokenData.expiresAt
-					? Math.floor((tokenData.expiresAt - now) / 1000)
-					: 0,
-				format: { isValid: true, issues: [] },
-			}
-		}
-
-		// Check if token is about to expire
-		const expiresInMs = tokenData.expiresAt - now
-		const isExpiring = expiresInMs <= this.config.refreshThresholdMs
-
-		// Format validation
-		let formatValid = true
-
-		// Basic token validation checks
-		if (
-			typeof tokenData.accessToken !== 'string' ||
-			tokenData.accessToken.length < 10
-		) {
-			issues.push('Access token appears malformed')
-			formatValid = false
-		}
-
-		if (tokenData.refreshToken && typeof tokenData.refreshToken !== 'string') {
-			issues.push('Refresh token is not a string')
-			formatValid = false
-		}
-
-		return {
-			valid: !isExpiring && formatValid,
-			reason: isExpiring ? 'Token is nearing expiration' : undefined,
-			canRefresh: !!tokenData.refreshToken,
-			isExpiring,
-			expiresInSeconds: Math.floor(expiresInMs / 1000),
-			format: {
-				isValid: formatValid,
-				issues: issues.length > 0 ? issues : undefined,
-			},
-		}
+	private validateTokenReport(tokenData: TokenData): TokenValidationResult {
+		return validateTokenDetailed(tokenData, this.config.refreshThresholdMs)
 	}
 }

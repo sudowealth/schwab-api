@@ -1161,51 +1161,6 @@ export class SchwabNotFoundError extends ClientApiError {
 }
 
 /**
- * Factory function to create a service unavailable error (503)
- * Replacement for SchwabServiceUnavailableError class
- * Used by middleware/with-retry.ts
- */
-export function createServiceUnavailableError(
-	body?: unknown,
-	message?: string,
-	parsedError?: ErrorResponseSchema,
-	metadata?: ErrorResponseMetadata,
-): SchwabServerError {
-	return new SchwabServerError(
-		503,
-		body,
-		message || 'Schwab Service Unavailable Error',
-		parsedError,
-		metadata,
-	)
-}
-
-/**
- * Factory function to create a gateway error (502/504)
- * Replacement for SchwabGatewayError class
- * Used by middleware/with-retry.ts
- */
-export function createGatewayError(
-	status: number = 502,
-	body?: unknown,
-	message?: string,
-	parsedError?: ErrorResponseSchema,
-	metadata?: ErrorResponseMetadata,
-): SchwabServerError {
-	if (status !== 502 && status !== 504) {
-		status = 502 // Default to 502 if an invalid status is provided
-	}
-
-	return new SchwabServerError(
-		status,
-		body,
-		message || 'Schwab Gateway Error',
-		parsedError,
-		metadata,
-	)
-}
-
-/**
  * Attempts to parse a response error and create the appropriate error
  * This provides consistent error handling across various parts of the SDK
  */

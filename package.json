@@ -41,7 +41,6 @@
     "market-data"
   ],
   "dependencies": {
-    "base64-js": "^1.5.1",
     "pkce-challenge": "^5.0.0",
     "zod": "^3.25.20"
   },

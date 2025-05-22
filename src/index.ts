@@ -71,7 +71,7 @@ export {
  *
  * For most applications, use createSchwabAuth for a unified approach.
  */
-export type { TokenSet } from './auth/types'
+export type { TokenData } from './auth/types'
 
 // Explicitly export createSchwabAuth, AuthStrategy, AND FullAuthClient from './auth'
 export {
@@ -91,7 +91,6 @@ export {
 export {
 	// Core interfaces
 	type ITokenLifecycleManager,
-	type TokenData,
 
 	// Helper functions
 	isTokenLifecycleManager,

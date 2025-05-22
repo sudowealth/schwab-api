@@ -1,5 +1,3 @@
-import * as base64js from 'base64-js'
-
 /**
  * Default refresh threshold: 5 minutes (300,000 ms)
  * This is the default time before token expiration when a refresh should be triggered
@@ -111,44 +109,28 @@ export function tokenIsExpiringSoon(
 }
 
 /**
- * Safe Base64 decoding using base64-js library
+ * Safe Base64 decoding using native Node.js Buffer
  * - Handles standard base64 and base64url formats
- * - Works consistently across Node.js and browser environments
- * - Provides improved error handling
+ * - Provides consistent behavior and error handling
  *
  * @param input The Base64 or Base64URL string to decode
  * @returns The decoded string
  */
 export function safeBase64Decode(input: string): string {
 	try {
-		// First check if we need to convert from base64url to standard base64
-		const needsUrlDecoding = input.includes('-') || input.includes('_')
-		let base64 = input
+		// Convert base64url to standard base64 if needed
+		const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
 
-		if (needsUrlDecoding) {
-			// Convert base64url to base64 for standard decoding
-			base64 = input.replace(/-/g, '+').replace(/_/g, '/')
-		}
-
-		// Add padding if needed
-		let paddedBase64 = base64
-		while (paddedBase64.length % 4 !== 0) {
-			paddedBase64 += '='
-		}
-
-		// Convert base64 string to binary data
-		const binaryData = base64js.toByteArray(paddedBase64)
-
-		// Convert binary data to string
-		return new TextDecoder().decode(binaryData)
+		// Node.js Buffer handles padding automatically
+		return Buffer.from(base64, 'base64').toString('utf-8')
 	} catch (error) {
 		throw new Error(`Base64 decode error: ${(error as Error).message}`)
 	}
 }
 
 /**
- * Safe Base64 encoding using base64-js library
- * - Encodes strings to base64 with consistent behavior across environments
+ * Safe Base64 encoding using native Node.js Buffer
+ * - Encodes strings to base64 with consistent behavior
  * - Supports URL-safe base64 format (base64url)
  * - Enhanced error handling
  *
@@ -158,11 +140,8 @@ export function safeBase64Decode(input: string): string {
  */
 export function safeBase64Encode(input: string, urlSafe = true): string {
 	try {
-		// Convert string to binary data
-		const binaryData = new TextEncoder().encode(input)
-
-		// Use base64-js to encode binary data to base64
-		let base64 = base64js.fromByteArray(binaryData)
+		// Use Node.js Buffer for encoding
+		const base64 = Buffer.from(input, 'utf-8').toString('base64')
 
 		// Convert to URL-safe format if requested
 		if (urlSafe) {

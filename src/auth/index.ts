@@ -2,6 +2,7 @@ export * from './urls'
 export * from './token'
 export * from './types'
 export * from './auth-utils'
+export * from './token-validation'
 
 // Primary auth interfaces and factory
 export {
