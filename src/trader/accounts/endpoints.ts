@@ -1,6 +1,6 @@
 import { TRADER } from '../../constants'
-import { ErrorResponseSchema } from '../../core/errors'
-import { createEndpoint } from '../../core/http'
+import { type EndpointMetadata } from '../../core/http'
+import { ErrorResponseSchema } from '../../errors'
 import {
 	GetAccountsRequestQueryParams,
 	GetAccountsResponseBody,
@@ -10,50 +10,50 @@ import {
 	GetAccountNumbersResponseBody,
 } from './schema'
 
-export const getAccounts = createEndpoint<
+export const getAccountsMeta: EndpointMetadata<
 	never,
 	GetAccountsRequestQueryParams,
 	never,
 	GetAccountsResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+> = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNTS,
 	querySchema: GetAccountsRequestQueryParams,
 	responseSchema: GetAccountsResponseBody,
 	errorSchema: ErrorResponseSchema,
 	description: 'Retrieves all accounts associated with the user.',
-})
+}
 
-export const getAccountByNumber = createEndpoint<
+export const getAccountByNumberMeta: EndpointMetadata<
 	GetAccountByNumberRequestPathParams,
 	GetAccountByNumberRequestQueryParams,
 	never,
 	GetAccountByNumberResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+> = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNT,
 	pathSchema: GetAccountByNumberRequestPathParams,
 	querySchema: GetAccountByNumberRequestQueryParams,
 	responseSchema: GetAccountByNumberResponseBody,
 	errorSchema: ErrorResponseSchema,
-	description: 'Retrieves a specific account by its number.',
-})
+	description: 'Retrieves a specific account by account number.',
+}
 
-export const getAccountNumbers = createEndpoint<
+export const getAccountNumbersMeta: EndpointMetadata<
 	never,
 	never,
 	never,
 	GetAccountNumbersResponseBody,
 	'GET',
 	ErrorResponseSchema
->({
+> = {
 	method: 'GET',
-	path: TRADER.ACCOUNTS.GET_ACCOUNTS + '/accountNumbers',
+	path: TRADER.ACCOUNTS.GET_ACCOUNT_NUMBERS,
 	responseSchema: GetAccountNumbersResponseBody,
 	errorSchema: ErrorResponseSchema,
-	description: 'Get list of account numbers and their encrypted values.',
-})
+	description: 'Retrieves all account numbers associated with the user.',
+}

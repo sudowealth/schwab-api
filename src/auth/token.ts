@@ -1,154 +1,228 @@
 import { MEDIA_TYPES, OAUTH_GRANT_TYPES } from '../constants'
-import {
-	SchwabApiError,
-	SchwabAuthorizationError,
-	SchwabServerError,
-} from '../core/errors'
-import { getEffectiveConfig } from '../core/http'
-import { getTokenUrl } from './urls'
+import { type RequestContext } from '../core/http'
+import { handleApiError, createSchwabApiError } from '../errors'
+import { sanitizeAuthCode } from './auth-utils'
+import { type SchwabTokenResponse } from './types'
+import { getTokenUrlWithContext } from './urls'
 
 export interface ExchangeCodeForTokenOptions {
 	clientId: string
 	clientSecret: string
 	code: string
 	redirectUri: string
-	tokenUrl?: string // default from getTokenUrl()
-	fetch?: typeof fetch // Optional fetch override
-}
-
-export interface SchwabTokenResponse {
-	access_token: string
-	expires_in: number
-	refresh_token?: string
-	scope: string
-	id_token?: string
-	token_type: string
+	tokenUrl?: string // default from getTokenUrlWithContext()
 }
 
 export interface RefreshTokenOptions {
 	clientId: string
 	clientSecret: string
 	refreshToken: string
-	tokenUrl?: string // default from getTokenUrl()
-	fetch?: typeof fetch // Optional fetch override
+	tokenUrl?: string // default from getTokenUrlWithContext()
 }
 
 /**
- * Utility function for logging in token-related functions
+ * Utility function for logging in token-related functions with context
  */
-function tokenLog(
+function tokenLogWithContext(
+	context: RequestContext,
 	level: 'info' | 'error' | 'warn',
 	message: string,
 	data?: any,
 ): void {
-	const config = getEffectiveConfig()
+	const { config, logger } = context
 	if (!config.enableLogging) return
 
 	const prefix = '[Schwab Auth]'
 
 	if (data && level === 'info') {
-		console[level](`${prefix} ${message}`)
+		logger[level](`${prefix} ${message}`)
 	} else if (data) {
-		console[level](`${prefix} ${message}`, data)
+		logger[level](`${prefix} ${message}`, data)
 	} else {
-		console[level](`${prefix} ${message}`)
+		logger[level](`${prefix} ${message}`)
 	}
 }
 
 /**
- * Exchange an authorization code for an access token
+ * Exchange an authorization code for an access token using the provided context
  */
-export async function exchangeCodeForToken(
+export async function exchangeCodeForTokenWithContext(
+	context: RequestContext,
 	opts: ExchangeCodeForTokenOptions,
 ): Promise<SchwabTokenResponse> {
-	const config = getEffectiveConfig()
-	const fetchFn = opts.fetch || fetch
-	const tokenEndpoint = opts.tokenUrl || getTokenUrl()
+	const { config } = context
+	const fetchFn = context.fetchFn
+	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
+
+	// Ensure code is properly formatted for Schwab API requirements
+	// Pass context.config.enableLogging for debug flag
+	const authCode = sanitizeAuthCode(opts.code, context.config.enableLogging)
+
+	tokenLogWithContext(
+		context,
+		'info',
+		`Code value for exchange: ${authCode.slice(0, 5)}... (length: ${authCode.length})`,
+	)
 
 	const body = new URLSearchParams()
 	body.append('grant_type', OAUTH_GRANT_TYPES.AUTHORIZATION_CODE)
-	body.append('code', opts.code)
+	body.append('code', authCode)
 	body.append('redirect_uri', opts.redirectUri)
 	// client_id and client_secret are sent in Authorization header (Basic Auth)
 
 	const authHeader = 'Basic ' + btoa(`${opts.clientId}:${opts.clientSecret}`)
 
-	tokenLog('info', `Exchanging code for token at: ${tokenEndpoint}`)
+	tokenLogWithContext(
+		context,
+		'info',
+		`Exchanging code for token at: ${tokenEndpoint}`,
+	)
+
+	// Debug log to help diagnose issues
+	tokenLogWithContext(
+		context,
+		'info',
+		`Token exchange details: redirect_uri=${opts.redirectUri}, body=${body.toString()}`,
+	)
 
 	try {
 		// Add timeout support
 		const controller = new AbortController()
-		const timeoutId = setTimeout(() => controller.abort(), config.timeout)
+		const timeoutId = setTimeout(
+			() => controller.abort(),
+			config.timeout as number,
+		)
 
-		const response = await fetchFn(tokenEndpoint, {
+		// Allow for customization of fetch options through config
+		const requestInit: RequestInit = {
 			method: 'POST',
 			headers: {
 				Authorization: authHeader,
 				'Content-Type': MEDIA_TYPES.FORM,
+				Accept: 'application/json',
 			},
 			body: body,
 			signal: controller.signal,
+		}
+
+		// Debug log the actual request details
+		tokenLogWithContext(context, 'info', `Token exchange request headers:`, {
+			Authorization: `Basic ***`, // Don't log the actual credentials
+			'Content-Type': MEDIA_TYPES.FORM,
+			Accept: 'application/json',
 		})
+
+		const response = await fetchFn(new Request(tokenEndpoint, requestInit))
 
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
-		const data = await response.json()
+		// Log response status and headers for debugging
+		const responseHeaders: Record<string, string> = {}
+		response.headers.forEach((value, key) => {
+			responseHeaders[key] = value
+		})
 
-		if (!response.ok) {
-			tokenLog('error', 'Token exchange failed:', data)
-			const status = typeof response.status === 'number' ? response.status : 400
+		tokenLogWithContext(
+			context,
+			'info',
+			`Token exchange response status: ${response.status}`,
+			{ headers: responseHeaders },
+		)
 
-			if (status === 401) {
-				throw new SchwabAuthorizationError(
-					data,
-					`Token exchange failed: ${data.error || 'Unauthorized'}`,
-				)
-			} else {
-				throw new SchwabApiError(
-					status,
-					data,
-					`Token exchange failed with status ${status}: ${data.error || response.statusText}`,
+		let data
+		try {
+			data = await response.json()
+		} catch (parseError) {
+			tokenLogWithContext(
+				context,
+				'error',
+				'Failed to parse token response:',
+				parseError,
+			)
+
+			// Try to get text content for better debugging
+			try {
+				const textContent = await response.text()
+				tokenLogWithContext(context, 'error', 'Raw response content:', {
+					text: textContent.slice(0, 200),
+					status: response.status,
+					statusText: response.statusText,
+				})
+			} catch (textError) {
+				// Unable to get text content
+				tokenLogWithContext(
+					context,
+					'error',
+					'Unable to get text content:',
+					textError,
 				)
 			}
+
+			throw createSchwabApiError(
+				response.status || 400,
+				{ parseError: 'Invalid JSON response' },
+				`Token exchange failed: Invalid JSON response`,
+			)
 		}
 
-		tokenLog('info', 'Token exchange successful')
+		if (!response.ok) {
+			tokenLogWithContext(context, 'error', 'Token exchange failed:', data)
+
+			// Check for specific Schwab API error codes
+			if (data && data.error) {
+				if (data.error === 'invalid_grant') {
+					// This typically means the authorization code is invalid or expired
+					tokenLogWithContext(
+						context,
+						'error',
+						'Invalid or expired authorization code',
+					)
+				} else if (data.error === 'invalid_client') {
+					// This typically means client credentials are incorrect
+					tokenLogWithContext(
+						context,
+						'error',
+						'Invalid client credentials (client_id or client_secret)',
+					)
+				} else if (data.error === 'invalid_request') {
+					// This could mean missing parameters or invalid redirect_uri
+					tokenLogWithContext(
+						context,
+						'error',
+						'Invalid request - check redirect_uri and required parameters',
+					)
+				}
+			}
+
+			// Use createSchwabApiError for consistent error creation
+			throw createSchwabApiError(
+				response.status || 400,
+				data,
+				`Token exchange failed: ${data.error || response.statusText} ${data.error_description ? `- ${data.error_description}` : ''}`,
+			)
+		}
+
+		tokenLogWithContext(context, 'info', 'Token exchange successful')
 		return data as SchwabTokenResponse
 	} catch (error) {
-		// Handle AbortError separately
-		if (error instanceof DOMException && error.name === 'AbortError') {
-			throw new SchwabApiError(
-				408, // Request Timeout
-				{ message: 'Request timed out' },
-				`Token exchange request timed out after ${config.timeout}ms`,
-			)
-		}
+		tokenLogWithContext(context, 'error', 'Error during token exchange:', error)
 
-		if (!(error instanceof SchwabApiError)) {
-			tokenLog('error', 'Error during token exchange:', error)
-
-			throw new SchwabServerError(
-				error instanceof Error
-					? { message: error.message, originalError: error }
-					: { detail: String(error), originalError: error },
-				'Network or other error during token exchange',
-			)
-		}
-
-		throw error
+		// Use the centralized error handler with context and make sure to throw
+		throw handleApiError(error, 'Token exchange failed')
 	}
 }
 
 /**
- * Refresh an access token using a refresh token
+ * Refresh an access token using a refresh token with context
  */
-export async function refreshToken(
+export async function refreshTokenWithContext(
+	context: RequestContext,
 	opts: RefreshTokenOptions,
 ): Promise<SchwabTokenResponse> {
-	const config = getEffectiveConfig()
-	const fetchFn = opts.fetch || fetch
-	const tokenEndpoint = opts.tokenUrl || getTokenUrl()
+	const { config } = context
+	const fetchFn = context.fetchFn
+	const tokenEndpoint = opts.tokenUrl || getTokenUrlWithContext(context)
 
 	const body = new URLSearchParams()
 	body.append('grant_type', OAUTH_GRANT_TYPES.REFRESH_TOKEN)
@@ -159,93 +233,167 @@ export async function refreshToken(
 
 	const authHeader = 'Basic ' + btoa(`${opts.clientId}:${opts.clientSecret}`)
 
-	tokenLog('info', `Refreshing token at: ${tokenEndpoint}`)
+	tokenLogWithContext(context, 'info', `Refreshing token at: ${tokenEndpoint}`)
 
 	// Debug log payload for troubleshooting
-	tokenLog('info', 'Token refresh request details:', {
-		grant_type: OAUTH_GRANT_TYPES.REFRESH_TOKEN,
-		refresh_token_length: opts.refreshToken.length,
-		refresh_token_prefix: opts.refreshToken.substring(0, 10) + '...',
+	tokenLogWithContext(context, 'info', 'Token refresh request details:', {
+		tokenEndpoint,
+		refreshTokenLength: opts.refreshToken.length,
 	})
+
+	// Import the token refresh tracer dynamically to avoid circular dependencies
+	const { TokenRefreshTracer } = await import('./token-refresh-tracer')
+	const tracer = TokenRefreshTracer.getInstance()
+	const refreshId = tracer.startRefreshTrace()
+
+	// Capture the full request details for diagnostics
+	const requestHeaders = {
+		Authorization: authHeader,
+		'Content-Type': MEDIA_TYPES.FORM,
+		Accept: 'application/json',
+	}
+
+	// Log very detailed request information
+	tokenLogWithContext(
+		context,
+		'info',
+		`Token refresh request [ID: ${refreshId}] to: ${tokenEndpoint}`,
+		{
+			method: 'POST',
+			contentType: MEDIA_TYPES.FORM,
+			refreshTokenLength: opts.refreshToken.length,
+			refreshTokenFirstChars: opts.refreshToken.substring(0, 4),
+			clientIdFirstChars: opts.clientId.substring(0, 4),
+			currentTimestamp: new Date().toISOString(),
+			requestId: refreshId,
+		},
+	)
+
+	// Record the HTTP request in the tracer
+	tracer.recordRefreshRequest(
+		refreshId,
+		tokenEndpoint,
+		'POST',
+		requestHeaders,
+		body.toString(),
+	)
 
 	try {
 		// Add timeout support
 		const controller = new AbortController()
-		const timeoutId = setTimeout(() => controller.abort(), config.timeout)
+		const timeoutId = setTimeout(
+			() => controller.abort(),
+			config.timeout as number,
+		)
 
-		const response = await fetchFn(tokenEndpoint, {
-			method: 'POST',
-			headers: {
-				Authorization: authHeader,
-				'Content-Type': MEDIA_TYPES.FORM,
-			},
-			body: body,
-			signal: controller.signal,
-		})
+		const startTime = Date.now()
+
+		const response = await fetchFn(
+			new Request(tokenEndpoint, {
+				method: 'POST',
+				headers: requestHeaders,
+				body: body,
+				signal: controller.signal,
+			}),
+		)
 
 		// Clear the timeout
 		clearTimeout(timeoutId)
 
-		const data = await response.json()
+		const requestDuration = Date.now() - startTime
 
-		if (!response.ok) {
-			tokenLog('error', 'Token refresh failed:', {
+		// Log response details
+		const responseHeaders: Record<string, string> = {}
+		response.headers.forEach((value, key) => {
+			responseHeaders[key] = value
+		})
+
+		tokenLogWithContext(
+			context,
+			'info',
+			`Token refresh response [ID: ${refreshId}] status: ${response.status} (${requestDuration}ms)`,
+			{
 				status: response.status,
 				statusText: response.statusText,
-				error: data.error,
-				error_description: data.error_description,
-				response: data,
-			})
-			const status = typeof response.status === 'number' ? response.status : 400
+				headers: responseHeaders,
+				durationMs: requestDuration,
+			},
+		)
 
-			// Handle specific refresh token errors with more helpful messages
+		let data
+		try {
+			data = await response.json()
+		} catch (parseError) {
+			tokenLogWithContext(
+				context,
+				'error',
+				'Failed to parse token refresh response:',
+				parseError,
+			)
+
+			// Try to get text content for better debugging
+			try {
+				const textContent = await response.text()
+				tokenLogWithContext(context, 'error', 'Raw response content:', {
+					text: textContent.slice(0, 200),
+					status: response.status,
+					statusText: response.statusText,
+				})
+			} catch (textError) {
+				// Unable to get text content
+				tokenLogWithContext(
+					context,
+					'error',
+					'Unable to get text content:',
+					textError,
+				)
+			}
+
+			throw createSchwabApiError(
+				response.status || 400,
+				{ parseError: 'Invalid JSON response' },
+				`Token refresh failed: Invalid JSON response`,
+			)
+		}
+
+		if (!response.ok) {
+			tokenLogWithContext(context, 'error', 'Token refresh failed:', data)
+
+			// Handle special cases for refresh token errors
 			if (data.error === 'refresh_token_authentication_error') {
-				throw new SchwabAuthorizationError(
+				throw createSchwabApiError(
+					401,
 					data,
 					`Refresh token authentication failed - the token may have expired or been revoked. A new authentication flow is required.`,
 				)
 			} else if (data.error === 'unsupported_token_type') {
-				throw new SchwabAuthorizationError(
+				throw createSchwabApiError(
+					401,
 					data,
 					`Token refresh failed: The refresh token format is not supported - ${data.error_description || ''}`,
 				)
-			} else if (status === 401) {
-				throw new SchwabAuthorizationError(
+			} else if (data.error === 'invalid_grant') {
+				throw createSchwabApiError(
+					401,
 					data,
-					`Token refresh failed: ${data.error || 'Unauthorized'} - ${data.error_description || ''}`,
+					`Token refresh failed: Invalid or expired refresh token. A new authentication flow is required.`,
 				)
 			} else {
-				throw new SchwabApiError(
-					status,
+				// Use createSchwabApiError for consistent error creation
+				throw createSchwabApiError(
+					response.status || 400,
 					data,
-					`Token refresh failed with status ${status}: ${data.error || response.statusText} - ${data.error_description || ''}`,
+					`Token refresh failed: ${data.error || response.statusText} - ${data.error_description || ''}`,
 				)
 			}
 		}
 
-		tokenLog('info', 'Token refresh successful')
+		tokenLogWithContext(context, 'info', 'Token refresh successful')
 		return data as SchwabTokenResponse
 	} catch (error) {
-		// Handle AbortError separately
-		if (error instanceof DOMException && error.name === 'AbortError') {
-			throw new SchwabApiError(
-				408, // Request Timeout
-				{ message: 'Request timed out' },
-				`Token refresh request timed out after ${config.timeout}ms`,
-			)
-		}
+		tokenLogWithContext(context, 'error', 'Error during token refresh:', error)
 
-		if (!(error instanceof SchwabApiError)) {
-			tokenLog('error', 'Error during token refresh:', error)
-
-			throw new SchwabServerError(
-				error instanceof Error
-					? { message: error.message, originalError: error }
-					: { detail: String(error), originalError: error },
-				'Network or other error during token refresh',
-			)
-		}
-
-		throw error
+		// Use the centralized error handler with context and make sure to throw
+		throw handleApiError(error, 'Token refresh failed')
 	}
 }

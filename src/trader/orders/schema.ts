@@ -1,5 +1,7 @@
 import { z } from 'zod'
-import { assetType } from '../transactions/schema'
+import { createISODateTimeSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
+import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
 const duration = z.enum([
@@ -201,15 +203,6 @@ const AccountMutualFund = AccountsBaseInstrument.extend({
 	assetType: z.literal('MUTUAL_FUND'),
 })
 
-const ApiCurrencyType = z.enum(['USD', 'CAD', 'EUR', 'JPY'])
-
-const AccountAPIOptionDeliverable = z.object({
-	symbol: z.string(), // Removed optional, kept string
-	deliverableUnits: z.number(), // Removed optional
-	apiCurrencyType: ApiCurrencyType, // Removed optional
-	assetType: assetType, // Removed optional
-})
-
 const AccountOption = AccountsBaseInstrument.extend({
 	assetType: z.literal('OPTION'),
 	optionDeliverables: z.array(z.lazy(() => AccountAPIOptionDeliverable)),
@@ -375,27 +368,15 @@ export const GetOrdersRequestQueryParams = z.object({
 		.describe(
 			'Specifies the maximum number of orders to return. Default is 3000.',
 		),
-	fromEnteredTime: z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.describe(
+	fromEnteredTime: createISODateTimeSchema({
+		daysOffset: -59,
+		description:
 			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date.",
-		)
-		.default(() => {
-			const date = new Date()
-			date.setDate(date.getDate() - 59)
-			return date.toISOString()
-		}),
-	toEnteredTime: z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.describe(
+	}),
+	toEnteredTime: createISODateTimeSchema({
+		description:
 			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ.",
-		)
-		.default(() => {
-			const date = new Date()
-			return date.toISOString()
-		}),
+	}),
 	status: status
 		.optional()
 		.describe(
@@ -420,27 +401,15 @@ export const GetOrdersByAccountRequestQueryParams = z.object({
 		.default(3000)
 		.optional()
 		.describe('The max number of orders to retrieve. Default is 3000.'),
-	fromEnteredTime: z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.default(() => {
-			const date = new Date()
-			date.setDate(date.getDate() - 30)
-			return date.toISOString()
-		})
-		.describe(
+	fromEnteredTime: createISODateTimeSchema({
+		daysOffset: -30,
+		description:
 			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example fromEnteredTime is '2024-03-29T00:00:00.000Z'. 'toEnteredTime' must also be set.",
-		),
-	toEnteredTime: z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.default(() => {
-			const date = new Date()
-			return date.toISOString()
-		})
-		.describe(
+	}),
+	toEnteredTime: createISODateTimeSchema({
+		description:
 			"Specifies that no orders entered after this time should be returned.Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example toEnteredTime is '2024-04-28T23:59:59.000Z'. 'fromEnteredTime' must also be set.",
-		),
+	}),
 	status: status
 		.optional()
 		.describe(
@@ -475,3 +444,14 @@ export type CancelOrderResponseBody = z.infer<typeof CancelOrderResponseBody>
 
 export const ReplaceOrderResponseBody = z.object({}).passthrough()
 export type ReplaceOrderResponseBody = z.infer<typeof ReplaceOrderResponseBody>
+
+// Request Params Schema for GET /accounts/{accountNumber}/orders (merged path + query params)
+export const GetOrdersByAccountRequestParamsSchema = z.object(
+	mergeShapes(
+		GetOrdersByAccountRequestQueryParams.shape,
+		GetOrdersByAccountRequestPathParams.shape,
+	),
+)
+export type GetOrdersByAccountRequestParamsSchema = z.infer<
+	typeof GetOrdersByAccountRequestParamsSchema
+>

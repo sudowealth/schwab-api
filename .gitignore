@@ -104,6 +104,8 @@ public
 
 # Codespaces files
 .vscode/
+.cursor/
+.claude/
 
 # Vitest coverage
 coverage/

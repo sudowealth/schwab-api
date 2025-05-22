@@ -1,5 +1,7 @@
 import { z } from 'zod'
-import { InstrumentAssetTypeEnum } from '../instruments/schema' // Reusing for marketType in response
+import { dateStringSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
+import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'markets' query parameter
 export const MarketHoursMarketQueryEnum = z.enum([
@@ -13,10 +15,23 @@ export type MarketHoursMarketQueryEnum = z.infer<
 	typeof MarketHoursMarketQueryEnum
 >
 
+// Schema for ISO 8601 datetime string (YYYY-MM-DDTHH:mm:ss±HH:mm)
+const timeStringSchema = z
+	.string()
+	// Accept ISO 8601 datetime format from the API
+	.regex(
+		/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/,
+		'Time must be in ISO 8601 format',
+	)
+
 // Schema for session interval (start and end times)
 const SessionIntervalSchema = z.object({
-	start: z.string().describe('Session start time'), // e.g., "YYYY-MM-DDTHH:mm:ssZ" or "HH:mm:ss"
-	end: z.string().describe('Session end time'), // e.g., "YYYY-MM-DDTHH:mm:ssZ" or "HH:mm:ss"
+	start: timeStringSchema.describe(
+		'Session start time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss±HH:mm)',
+	),
+	end: timeStringSchema.describe(
+		'Session end time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss±HH:mm)',
+	),
 })
 export type SessionIntervalSchema = z.infer<typeof SessionIntervalSchema>
 
@@ -29,7 +44,9 @@ export type MarketSessionHoursSchema = z.infer<typeof MarketSessionHoursSchema>
 
 // Schema for the data of a single market in the response
 export const MarketHoursDataSchema = z.object({
-	date: z.string().optional().describe('Date for the market hours, YYYY-MM-DD'), // Optional as per example where it might be part of equity.date
+	date: dateStringSchema
+		.optional()
+		.describe('Date for the market hours (Date object)'), // Optional as per example where it might be part of equity.date
 	marketType: InstrumentAssetTypeEnum.describe('Type of market'),
 	exchange: z.string().optional().describe('Exchange name'),
 	category: z.string().optional().describe('Category of the market'),
@@ -50,11 +67,9 @@ export const GetMarketHoursRequestQueryParamsSchema = z.object({
 		.describe(
 			`List of markets. Available values: ${MarketHoursMarketQueryEnum.options.join(', ')}`,
 		),
-	date: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+	date: dateStringSchema
 		.optional()
-		.describe('Date for market hours, YYYY-MM-DD. Defaults to current day.'),
+		.describe('Date for market hours. Defaults to current day.'),
 })
 export type GetMarketHoursRequestQueryParamsSchema = z.infer<
 	typeof GetMarketHoursRequestQueryParamsSchema
@@ -86,11 +101,9 @@ export type GetMarketHoursByMarketIdRequestPathParamsSchema = z.infer<
 
 // Query Parameters Schema for GET /markets/{market_id}
 export const GetMarketHoursByMarketIdRequestQueryParamsSchema = z.object({
-	date: z
-		.string()
-		.regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+	date: dateStringSchema
 		.optional()
-		.describe('Date for market hours, YYYY-MM-DD. Defaults to current day.'),
+		.describe('Date for market hours. Defaults to current day.'),
 })
 export type GetMarketHoursByMarketIdRequestQueryParamsSchema = z.infer<
 	typeof GetMarketHoursByMarketIdRequestQueryParamsSchema
@@ -108,4 +121,15 @@ export const GetMarketHoursByMarketIdResponseBodySchema = z.record(
 )
 export type GetMarketHoursByMarketIdResponseBodySchema = z.infer<
 	typeof GetMarketHoursByMarketIdResponseBodySchema
+>
+
+// Request Params Schema for GET /markets/{market_id} (merged path + query params)
+export const GetMarketHoursByMarketIdRequestParamsSchema = z.object(
+	mergeShapes(
+		GetMarketHoursByMarketIdRequestQueryParamsSchema.shape,
+		GetMarketHoursByMarketIdRequestPathParamsSchema.shape,
+	),
+)
+export type GetMarketHoursByMarketIdRequestParamsSchema = z.infer<
+	typeof GetMarketHoursByMarketIdRequestParamsSchema
 >

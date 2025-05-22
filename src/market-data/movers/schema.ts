@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { mergeShapes } from '../../utils/schema-utils'
 
 // Enum for symbol_id path parameter
 export const MoversSymbolIdEnum = z.enum([
@@ -94,4 +95,15 @@ export const GetMoversResponseBodySchema = z.object({
 })
 export type GetMoversResponseBodySchema = z.infer<
 	typeof GetMoversResponseBodySchema
+>
+
+// Request Params Schema for GET /movers/{symbol_id} (merged path + query params)
+export const GetMoversRequestParamsSchema = z.object(
+	mergeShapes(
+		GetMoversRequestQueryParamsSchema.shape,
+		GetMoversRequestPathParamsSchema.shape,
+	),
+)
+export type GetMoversRequestParamsSchema = z.infer<
+	typeof GetMoversRequestParamsSchema
 >

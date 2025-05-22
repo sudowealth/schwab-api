@@ -1,5 +1,7 @@
 import { z } from 'zod'
-import { InstrumentAssetTypeEnum } from '../instruments/schema' // Reusing for assetType
+import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
+import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'fields' query parameter
 export const QuoteFieldsEnum = z.enum([
@@ -60,17 +62,13 @@ export const QuoteBlockSchema = z.object({
 	askMICId: z.string().optional().describe('Ask Market Identifier Code'),
 	askPrice: z.number().optional().describe('Current Ask Price'),
 	askSize: z.number().int().optional().describe('Number of shares for ask'),
-	askTime: z
-		.number()
-		.int()
+	askTime: epochMillisSchema
 		.optional()
 		.describe('Last ask time in milliseconds since Epoch'),
 	bidMICId: z.string().optional().describe('Bid Market Identifier Code'),
 	bidPrice: z.number().optional().describe('Current Bid Price'),
 	bidSize: z.number().int().optional().describe('Number of shares for bid'),
-	bidTime: z
-		.number()
-		.int()
+	bidTime: epochMillisSchema
 		.optional()
 		.describe('Last bid time in milliseconds since Epoch'),
 	closePrice: z.number().optional().describe("Previous day's closing price"),
@@ -97,9 +95,7 @@ export const QuoteBlockSchema = z.object({
 		.number()
 		.optional()
 		.describe('Post-market percent change'),
-	quoteTime: z
-		.number()
-		.int()
+	quoteTime: epochMillisSchema
 		.optional()
 		.describe('Last quote time in milliseconds since Epoch'),
 	securityStatus: z
@@ -111,9 +107,7 @@ export const QuoteBlockSchema = z.object({
 		.int()
 		.optional()
 		.describe('Aggregated shares traded throughout the day'),
-	tradeTime: z
-		.number()
-		.int()
+	tradeTime: epochMillisSchema
 		.optional()
 		.describe('Last trade time in milliseconds since Epoch'),
 	volatility: z
@@ -127,17 +121,9 @@ export type QuoteBlockSchema = z.infer<typeof QuoteBlockSchema>
 export const QuotesFundamentalBlockSchema = z.object({
 	avg10DaysVolume: z.number().optional().describe('Average 10 day volume'),
 	avg1DayVolume: z.number().optional().describe('Average 1 day volume'),
-	declarationDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Declaration date in yyyy-MM-dd'T'HH:mm:ssZ format"),
+	declarationDate: isoDateTimeSchema.optional().describe('Declaration date'),
 	divAmount: z.number().optional().describe('Dividend Amount'),
-	divExDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Dividend Ex-Date in yyyy-MM-dd'T'HH:mm:ssZ format"),
+	divExDate: isoDateTimeSchema.optional().describe('Dividend Ex-Date'),
 	divFreq: z
 		.number()
 		.int()
@@ -146,11 +132,7 @@ export const QuotesFundamentalBlockSchema = z.object({
 			'Dividend Frequency (e.g., 1=annual, 2=semi-annual, 4=quarterly, 12=monthly)',
 		),
 	dividendPayAmount: z.number().optional().describe('Dividend Pay Amount'),
-	dividendPayDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Dividend Pay Date in yyyy-MM-dd'T'HH:mm:ssZ format"),
+	dividendPayDate: isoDateTimeSchema.optional().describe('Dividend Pay Date'),
 	divYield: z.number().optional().describe('Dividend Yield'),
 	eps: z.number().optional().describe('Earnings Per Share'),
 	fundLeverageFactor: z
@@ -162,42 +144,24 @@ export const QuotesFundamentalBlockSchema = z.object({
 		.number()
 		.optional()
 		.describe('Highest price traded in the past 12 months'),
-	lastEarningsDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Last earnings date in yyyy-MM-dd'T'HH:mm:ssZ format"),
+	lastEarningsDate: isoDateTimeSchema.optional().describe('Last earnings date'),
 	low52: z
 		.number()
 		.optional()
 		.describe('Lowest price traded in the past 12 months'),
 	marketCap: z.number().optional().describe('Market Capitalization'),
-	nextDivExDate: z
-		.string()
-		.datetime({ offset: true })
+	nextDivExDate: isoDateTimeSchema.optional().describe('Next Dividend Ex-Date'),
+	nextDivPayDate: isoDateTimeSchema
 		.optional()
-		.describe("Next Dividend Ex-Date in yyyy-MM-dd'T'HH:mm:ssZ format"),
-	nextDivPayDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Next Dividend Pay Date in yyyy-MM-dd'T'HH:mm:ssZ format"),
+		.describe('Next Dividend Pay Date'),
 	pbRatio: z.number().optional().describe('Price to Book Ratio'),
 	peRatio: z.number().optional().describe('Price to Earnings Ratio'),
 	pegRatio: z.number().optional().describe('Price to Earnings Growth Ratio'),
 	prRatio: z.number().optional().describe('Price to Revenue Ratio'),
 	qualifier: z.string().optional().describe('Qualifier code'),
 	volatility: z.number().optional().describe('Volatility measurement'),
-	week52HighDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Date of 52 week high in yyyy-MM-dd'T'HH:mm:ssZ format"),
-	week52LowDate: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe("Date of 52 week low in yyyy-MM-dd'T'HH:mm:ssZ format"),
+	week52HighDate: isoDateTimeSchema.optional().describe('Date of 52 week high'),
+	week52LowDate: isoDateTimeSchema.optional().describe('Date of 52 week low'),
 })
 export type QuotesFundamentalBlockSchema = z.infer<
 	typeof QuotesFundamentalBlockSchema
@@ -217,9 +181,7 @@ export const QuotesExtendedMarketBlockSchema = z.object({
 		.number()
 		.optional()
 		.describe('Extended market mark percent change'),
-	quoteTime: z
-		.number()
-		.int()
+	quoteTime: epochMillisSchema
 		.optional()
 		.describe('Extended market quote time in milliseconds since Epoch'),
 	totalVolume: z
@@ -227,9 +189,7 @@ export const QuotesExtendedMarketBlockSchema = z.object({
 		.int()
 		.optional()
 		.describe('Extended market total volume'),
-	tradeTime: z
-		.number()
-		.int()
+	tradeTime: epochMillisSchema
 		.optional()
 		.describe('Extended market trade time in milliseconds since Epoch'),
 })
@@ -246,9 +206,7 @@ export const QuotesRegularMarketBlockSchema = z.object({
 		.number()
 		.optional()
 		.describe('Regular market percent change'),
-	tradeTime: z
-		.number()
-		.int()
+	tradeTime: epochMillisSchema
 		.optional()
 		.describe('Regular market trade time in milliseconds since Epoch'),
 })
@@ -351,9 +309,7 @@ export const OptionResponseSchema = BaseQuoteAssetResponseSchema.extend({
 		.enum(['CALL', 'PUT'])
 		.optional()
 		.describe('Option contract type (CALL or PUT)'), // Example from screenshot
-	expirationDate: z
-		.string()
-		.datetime({ offset: true })
+	expirationDate: isoDateTimeSchema
 		.optional()
 		.describe('Option expiration date'),
 	daysToExpiration: z.number().int().optional().describe('Days to expiration'),
@@ -444,9 +400,7 @@ export const ReferenceFutureBlockSchema = z.object({
 	exchange: z.string().optional().describe('Exchange Code'),
 	exchangeName: z.string().optional().describe('Exchange Name'),
 	futureActiveSymbol: z.string().optional().describe('Active symbol'),
-	futureExpirationDate: z
-		.number()
-		.int()
+	futureExpirationDate: epochMillisSchema
 		.optional()
 		.describe('Future expiration date in milliseconds since epoch'),
 	futureIsActive: z.boolean().optional().describe('Future is active'),
@@ -769,9 +723,7 @@ export const ReferenceFutureOptionBlockSchema = z.object({
 	exchange: z.string().optional().describe('Exchange Code'),
 	exchangeName: z.string().optional().describe('Exchange Name'),
 	multiplier: z.number().optional().describe('Option multiplier'),
-	expirationDate: z
-		.number()
-		.int()
+	expirationDate: epochMillisSchema
 		.optional()
 		.describe('Date of expiration in long (epoch ms)'), // $int64
 	expirationStyle: z.string().optional().describe('Style of expiration'),
@@ -820,11 +772,27 @@ export type DiscriminatedQuoteResponseSchema = z.infer<
 >
 
 // --- Schema for Quote Errors ---
+/**
+ * Schema for symbol-level errors in quotes responses
+ *
+ * This schema represents the error format returned for individual symbols
+ * in a quotes response, even when the overall HTTP status is 200 (success).
+ *
+ * The quotes endpoint is unique in that it can return a successful HTTP response
+ * that contains a mix of successful quotes and individual symbol errors. This
+ * is different from the standard `SchwabApiError` that would be thrown for a
+ * failed request.
+ *
+ * To easily process these symbol-level errors, use the `extractQuoteErrors`
+ * utility function from the quotes module.
+ *
+ * @see extractQuoteErrors
+ */
 export const QuoteErrorSchema = z.object({
 	description: z
 		.string()
 		.optional()
-		.describe('Partial or Custom errors per request'),
+		.describe('Error description for this specific symbol'),
 	invalidCusips: z
 		.array(z.string())
 		.optional()
@@ -837,10 +805,6 @@ export const QuoteErrorSchema = z.object({
 		.array(z.string())
 		.optional()
 		.describe('List of invalid symbols from request'),
-	// The screenshot implies QuoteError might also have an assetType or similar discriminator if it needs to fit into a union seamlessly without an explicit wrapper.
-	// However, based on the structure provided, it seems to be a distinct object.
-	// If it needs to be part of the DiscriminatedQuoteResponseSchema, it would need an 'assetType' field.
-	// For now, defining it as a separate object to be unioned at the record value level.
 })
 export type QuoteErrorSchema = z.infer<typeof QuoteErrorSchema>
 
@@ -868,8 +832,25 @@ export type GetQuotesRequestQueryParamsSchema = z.infer<
 	typeof GetQuotesRequestQueryParamsSchema
 >
 
-// Updated Schema for the Response Body of GET /quotes
-// Each symbol in the response can now be either a valid quote (DiscriminatedQuoteResponseSchema) or a QuoteErrorSchema.
+/**
+ * Schema for the Response Body of GET /quotes
+ *
+ * This response is unique in that it supports "partial success" scenarios. Even with a
+ * successful HTTP 200 status code, the response body can contain a mix of:
+ *
+ * 1. Valid quote data (per symbol)
+ * 2. Symbol-level errors (for invalid or unrecognized symbols)
+ *
+ * The response is structured as a record (dictionary/object) where:
+ * - Keys are the requested symbols
+ * - Values are either valid quote data (DiscriminatedQuoteResponseSchema) or
+ *   error information (QuoteErrorSchema) for that specific symbol
+ *
+ * To easily process these symbol-level errors, use the `extractQuoteErrors` utility function.
+ *
+ * @see extractQuoteErrors
+ * @see hasSymbolError
+ */
 export const GetQuotesResponseBodySchema = z.record(
 	z.string(),
 	z.union([DiscriminatedQuoteResponseSchema, QuoteErrorSchema]),
@@ -905,4 +886,15 @@ export type GetQuoteBySymbolIdRequestQueryParamsSchema = z.infer<
 export const GetQuoteBySymbolIdResponseBodySchema = GetQuotesResponseBodySchema
 export type GetQuoteBySymbolIdResponseBodySchema = z.infer<
 	typeof GetQuoteBySymbolIdResponseBodySchema
+>
+
+// Request Params Schema for GET /{symbol_id}/quotes (merged path + query params)
+export const GetQuoteBySymbolIdRequestParamsSchema = z.object(
+	mergeShapes(
+		GetQuoteBySymbolIdRequestQueryParamsSchema.shape,
+		GetQuoteBySymbolIdRequestPathParamsSchema.shape,
+	),
+)
+export type GetQuoteBySymbolIdRequestParamsSchema = z.infer<
+	typeof GetQuoteBySymbolIdRequestParamsSchema
 >

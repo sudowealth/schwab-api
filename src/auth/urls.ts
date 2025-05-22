@@ -1,28 +1,32 @@
 import { OAUTH_ENDPOINTS } from '../constants'
-import { getEffectiveConfig } from '../core/http'
+import { resolveBaseUrl } from '../core/config'
+import { type RequestContext } from '../core/http'
 
 /**
- * Get the OAuth base URL based on the current configuration
+ * Get the OAuth base URL based on the current configuration using the provided context
  */
-export function getOAuthBaseUrl(): string {
-	const config = getEffectiveConfig()
-	const baseUrl = config.baseUrl
+export function getOAuthBaseUrlWithContext(context: RequestContext): string {
+	const config = context.config
+	// Use the centralized base URL resolution function
+	const baseUrl = resolveBaseUrl(config)
 	const apiVersion = config.apiVersion
 	return `${baseUrl}/${apiVersion}`
 }
 
 /**
- * Get the authorization URL based on the current configuration
+ * Get the authorization URL based on the provided context
  */
-export function getAuthorizationUrl(): string {
-	return `${getOAuthBaseUrl()}${OAUTH_ENDPOINTS.AUTHORIZE}`
+export function getAuthorizationUrlWithContext(
+	context: RequestContext,
+): string {
+	return `${getOAuthBaseUrlWithContext(context)}${OAUTH_ENDPOINTS.AUTHORIZE}`
 }
 
 /**
- * Get the token URL based on the current configuration
+ * Get the token URL based on the provided context
  */
-export function getTokenUrl(): string {
-	return `${getOAuthBaseUrl()}${OAUTH_ENDPOINTS.TOKEN}`
+export function getTokenUrlWithContext(context: RequestContext): string {
+	return `${getOAuthBaseUrlWithContext(context)}${OAUTH_ENDPOINTS.TOKEN}`
 }
 
 export interface BuildAuthorizeUrlOptions {
@@ -33,8 +37,14 @@ export interface BuildAuthorizeUrlOptions {
 	baseUrl?: string // Overrides the default base URL if provided
 }
 
-export function buildAuthorizeUrl(opts: BuildAuthorizeUrlOptions): string {
-	const authBaseUrl = opts.baseUrl || getAuthorizationUrl()
+/**
+ * Build the authorization URL with the provided context and options
+ */
+export function buildAuthorizeUrlWithContext(
+	context: RequestContext,
+	opts: BuildAuthorizeUrlOptions,
+): string {
+	const authBaseUrl = opts.baseUrl || getAuthorizationUrlWithContext(context)
 	const url = new URL(authBaseUrl)
 
 	url.searchParams.set('client_id', opts.clientId)

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema'
 
 // Enum for projection parameter
 export const InstrumentProjectionEnum = z.enum([
@@ -11,16 +12,16 @@ export const InstrumentProjectionEnum = z.enum([
 ])
 export type InstrumentProjectionEnum = z.infer<typeof InstrumentProjectionEnum>
 
-// Enum for AssetType
+// Enum for AssetType specifically used in market-data/instruments
 export const InstrumentAssetTypeEnum = z.enum([
 	'BOND',
 	'EQUITY',
 	'ETF',
-	'EXTENDED', // Assuming EXTENDED is a valid type, present in screenshot Fundamental section
+	'EXTENDED',
 	'FOREX',
 	'FUTURE',
 	'FUTURE_OPTION',
-	'FUNDAMENTAL', // This seems like a special type for the projection, also listed as an assetType
+	'FUNDAMENTAL',
 	'INDEX',
 	'INDICATOR',
 	'MUTUAL_FUND',
@@ -29,13 +30,14 @@ export const InstrumentAssetTypeEnum = z.enum([
 ])
 export type InstrumentAssetTypeEnum = z.infer<typeof InstrumentAssetTypeEnum>
 
-// Base Instrument Schema
-const InstrumentInfoSchema = z.object({
-	symbol: z.string(),
-	description: z.string(),
+// Market-data specific InstrumentInfo Schema that extends the base schema
+const InstrumentInfoSchema = BaseInstrumentSchema.pick({
+	symbol: true,
+	description: true,
+	cusip: true,
+	exchange: true,
+}).extend({
 	assetType: InstrumentAssetTypeEnum,
-	cusip: z.string().optional(), // from example, though not in screenshot
-	exchange: z.string().optional(), // from screenshot
 })
 type InstrumentInfoSchema = z.infer<typeof InstrumentInfoSchema>
 
@@ -46,13 +48,13 @@ const FundamentalDataSchema = z.object({
 	low52: z.number().optional(),
 	dividendAmount: z.number().optional(),
 	dividendYield: z.number().optional(),
-	dividendDate: z.string().optional(), // Assuming string, could be date
+	dividendDate: z.string().optional(),
 	peRatio: z.number().optional(),
 	pegRatio: z.number().optional(),
 	pbRatio: z.number().optional(),
 	pcRatio: z.number().optional(),
-	prRatio: z.number().optional(), // Assuming this is Price to Revenue (P/R)
-	marketCap: z.number().optional(), // In screenshot as MarketCap under FundamentalData
+	prRatio: z.number().optional(),
+	marketCap: z.number().optional(),
 	mark: z.number().optional(),
 	netChange: z.number().optional(),
 	volatility: z.number().optional(),
@@ -71,7 +73,7 @@ const FundamentalDataSchema = z.object({
 	lastSize: z.number().int().optional(),
 	quoteTimeInLong: z.number().int().optional(),
 	tradeTimeInLong: z.number().int().optional(),
-	lastTradeTime: z.string().datetime({ offset: true }).optional(), // Assuming ISO string with offset
+	lastTradeTime: z.string().datetime({ offset: true }).optional(),
 	grossMarginTTM: z.number().optional(),
 	grossMarginMRQ: z.number().optional(),
 	netProfitMarginTTM: z.number().optional(),
@@ -80,16 +82,16 @@ const FundamentalDataSchema = z.object({
 	operatingMarginMRQ: z.number().optional(),
 	revenuePerShareTTM: z.number().optional(),
 	revenueTTM: z.number().optional(),
-	roa: z.number().optional(), // Return on Assets
-	roe: z.number().optional(), // Return on Equity
-	roi: z.number().optional(), // Return on Investment
+	roa: z.number().optional(),
+	roe: z.number().optional(),
+	roi: z.number().optional(),
 	epsTTM: z.number().optional(),
 	epsChangePercentTTM: z.number().optional(),
 	epsChangeYear: z.number().optional(),
 	epsChangePercentYear: z.number().optional(),
 	revChangeYear: z.number().optional(),
 	revChangeTTM: z.number().optional(),
-	revChangeIn: z.number().optional(), // Assuming number based on similar fields
+	revChangeIn: z.number().optional(),
 	sharesOutstanding: z.number().optional(),
 	marketCapFloat: z.number().optional(),
 	bookValuePerShare: z.number().optional(),
@@ -97,27 +99,27 @@ const FundamentalDataSchema = z.object({
 	shortIntDayToCover: z.number().optional(),
 	dividendPayAmount: z.number().optional(),
 	dividendGrowthRate3Year: z.number().optional(),
-	dividendPayDate: z.string().optional(), // Assuming string, could be date
-	betaText: z.string().optional(), // Assuming 'beta' is numeric and there might be a text version or this is a typo in image
-	avg10DaysVolume: z.number().int().optional(), // From screenshot, avgVol3MonthAvg and avgVol10DayAvg
-	avg1DayVolume: z.number().int().optional(), // Placeholder, not in screenshot directly but good to have
-	avg3MonthVolume: z.number().int().optional(), // Renamed from vol3MonthAvg to follow camelCase
-	avg1YearVolume: z.number().int().optional(), // Placeholder
+	dividendPayDate: z.string().optional(),
+	betaText: z.string().optional(),
+	avg10DaysVolume: z.number().int().optional(),
+	avg1DayVolume: z.number().int().optional(),
+	avg3MonthVolume: z.number().int().optional(),
+	avg1YearVolume: z.number().int().optional(),
 	vol1DayAvg: z.number().int().optional(),
 	vol10DayAvg: z.number().int().optional(),
 	vol3MonthAvg: z.number().int().optional(),
-	week52HighDate: z.string().optional(), // Assuming string, could be date
-	week52LowDate: z.string().optional(), // Assuming string, could be date
-	divYield: z.number().optional(), // Duplicate of dividendYield, using one
-	divAmount: z.number().optional(), // Duplicate of dividendAmount, using one
+	week52HighDate: z.string().optional(),
+	week52LowDate: z.string().optional(),
+	divYield: z.number().optional(),
+	divAmount: z.number().optional(),
 	divFreq: z.number().int().optional(),
-	divExDate: z.string().optional(), // Assuming string, could be date
-	corpActionDate: z.string().optional(), // Assuming string, could be date
-	lastTradingDay: z.string().optional(), // Assuming string, could be date
-	nextEarningDate: z.string().optional(), // Assuming string, could be date
-	nextDividendPayDate: z.string().optional(), // Assuming string, could be date
-	nextDividendDate: z.string().optional(), // Assuming string, could be date
-	lastDividendDate: z.string().optional(), // Assuming string, could be date
+	divExDate: z.string().optional(),
+	corpActionDate: z.string().optional(),
+	lastTradingDay: z.string().optional(),
+	nextEarningDate: z.string().optional(),
+	nextDividendPayDate: z.string().optional(),
+	nextDividendDate: z.string().optional(),
+	lastDividendDate: z.string().optional(),
 	fundStrategy: z.string().optional(),
 	fundFamily: z.string().optional(),
 	fundLeverage: z.string().optional(),
@@ -136,9 +138,9 @@ export type FundamentalInstrumentSchema = z.infer<
 
 const BondInstrumentSchema = InstrumentInfoSchema.extend({
 	assetType: z.literal(InstrumentAssetTypeEnum.Enum.BOND),
-	bondFactor: z.string().optional(), // From screenshot, under BondInstrumentInfo
-	bondMultiplier: z.string().optional(), // From screenshot
-	bondPrice: z.number().optional(), // From screenshot
+	bondFactor: z.string().optional(),
+	bondMultiplier: z.string().optional(),
+	bondPrice: z.number().optional(),
 })
 export type BondInstrumentSchema = z.infer<typeof BondInstrumentSchema>
 
@@ -198,22 +200,12 @@ const UnknownInstrumentSchema = InstrumentInfoSchema.extend({
 })
 export type UnknownInstrumentSchema = z.infer<typeof UnknownInstrumentSchema>
 
-// Extended type from screenshot, assuming it extends base like others
 const ExtendedInstrumentSchema = InstrumentInfoSchema.extend({
 	assetType: z.literal(InstrumentAssetTypeEnum.Enum.EXTENDED),
 })
 export type ExtendedInstrumentSchema = z.infer<typeof ExtendedInstrumentSchema>
 
 // Discriminated Union for any Instrument type
-// Note: FUNDAMENTAL is an assetType and also indicates the presence of the 'fundamental' field.
-// The screenshot suggests that when projection=fundamental, the assetType might still be EQUITY, BOND etc.
-// but it will be wrapped or contain the fundamental data.
-// For now, making FUNDAMENTAL a distinct assetType which includes the fundamental block.
-// If an EQUITY with fundamental data is needed, the API response structure needs clarification.
-// The screenshot for InstrumentResponse shows 'InstrumentInfo' and 'FundamentalInstrument' as choices for items in 'instruments' array.
-// InstrumentInfo itself has an assetType. FundamentalInstrument *also* has an assetType.
-// This implies FundamentalInstrument is a *type* of instrument, not just a data block.
-
 const InstrumentSchema = z.discriminatedUnion('assetType', [
 	FundamentalInstrumentSchema,
 	BondInstrumentSchema,
@@ -227,7 +219,7 @@ const InstrumentSchema = z.discriminatedUnion('assetType', [
 	MutualFundInstrumentSchema,
 	OptionInstrumentSchema,
 	UnknownInstrumentSchema,
-	ExtendedInstrumentSchema, // Added from enum
+	ExtendedInstrumentSchema,
 ])
 export type InstrumentSchema = z.infer<typeof InstrumentSchema>
 
@@ -243,7 +235,6 @@ export type GetInstrumentsRequestQueryParamsSchema = z.infer<
 >
 
 // Response Schema for /instruments
-// The screenshot shows the top level response object is InstrumentResponse, which contains an array of instruments.
 export const InstrumentsResponseSchema = z.object({
 	instruments: z.array(InstrumentSchema),
 })
@@ -260,27 +251,7 @@ export type GetInstrumentByCusipRequestPathParamsSchema = z.infer<
 >
 
 // Response Body Schema for /instruments/{cusip_id}
-// This endpoint returns an object with an "instruments" array, similar to /instruments,
-// typically containing a single instrument matching the CUSIP.
 export const GetInstrumentByCusipResponseBodySchema = InstrumentsResponseSchema
 export type GetInstrumentByCusipResponseBodySchema = z.infer<
 	typeof GetInstrumentByCusipResponseBodySchema
 >
-
-// It seems the example response shows a dynamic key based on the query itself:
-// "symbolsAAPL,BAC&projection=symbol-search": { "instruments": [] }
-// If this is the case, the response schema needs to be z.record(z.string(), InstrumentsResponseSchema)
-// However, the "Schema" panel shows a direct "InstrumentResponse" object.
-// Assuming the "Schema" panel is the source of truth for the direct response structure.
-// If the key is indeed dynamic, the endpoint definition would need to handle this.
-// For now, following the explicit schema structure shown.
-
-// The example from the image: "Example Value / Schema" shows "InstrumentResponse" as the top level.
-// And "instruments" as a field in it.
-// The schema for 'instruments' items: one of {InstrumentInfo, FundamentalInstrument, BondInstrumentInfo ...}
-// This implies that the discriminated union is correct.
-// BondInstrumentInfo in the screenshot shows fields like bondFactor, bondMultiplier, bondPrice
-// these are added to BondInstrumentSchema.
-// FundamentalInstrument in the screenshot shows 'fundamental: FundamentalList'. I defined FundamentalDataSchema.
-// The screenshot also lists InstrumentInfo for types like EQUITY, ETF etc. This is handled by specific schemas
-// extending InstrumentInfoSchema and setting the literal assetType.

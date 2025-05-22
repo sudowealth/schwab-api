@@ -1,15 +1,6 @@
 import { z } from 'zod'
-import { assetType } from '../transactions/schema'
-
-const ApiCurrencyType = z.enum(['USD', 'CAD', 'EUR', 'JPY'])
-
-const AccountAPIOptionDeliverable = z.object({
-	symbol: z.string(),
-	deliverableUnits: z.number(),
-	apiCurrencyType: ApiCurrencyType,
-	assetType: assetType,
-})
-type AccountAPIOptionDeliverable = z.infer<typeof AccountAPIOptionDeliverable>
+import { mergeShapes } from '../../utils/schema-utils'
+import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 export const AccountsBaseInstrument = z.object({
 	assetType: assetType,
@@ -304,11 +295,9 @@ export type GetAccountByNumberResponseBody = z.infer<
 >
 
 // --- Get Accounts ---
-export const GetAccountsRequestQueryParams = z
-	.object({
-		fields: z.enum(['positions']).optional(),
-	})
-	.optional()
+export const GetAccountsRequestQueryParams = z.object({
+	fields: z.enum(['positions']).optional(),
+})
 export type GetAccountsRequestQueryParams = z.infer<
 	typeof GetAccountsRequestQueryParams
 >
@@ -325,4 +314,15 @@ export const GetAccountNumbersResponseBody = z.array(
 )
 export type GetAccountNumbersResponseBody = z.infer<
 	typeof GetAccountNumbersResponseBody
+>
+
+// Request Params Schema for GET /accounts/{accountNumber} (merged path + query params)
+export const GetAccountByNumberRequestParamsSchema = z.object(
+	mergeShapes(
+		GetAccountByNumberRequestPathParams.shape,
+		GetAccountByNumberRequestQueryParams.unwrap().shape,
+	),
+)
+export type GetAccountByNumberRequestParamsSchema = z.infer<
+	typeof GetAccountByNumberRequestParamsSchema
 >
