@@ -492,7 +492,7 @@ function buildUrlWithContext(
 				)
 				finalEndpointPath = finalEndpointPath.replace(
 					new RegExp(escapedPlaceholder, 'g'),
-					String(value),
+					encodeURIComponent(String(value)),
 				)
 				replaced = true
 			}
@@ -501,7 +501,7 @@ function buildUrlWithContext(
 			if (colonPlaceholderPattern.test(finalEndpointPath)) {
 				finalEndpointPath = finalEndpointPath.replace(
 					colonPlaceholderPattern,
-					String(value),
+					encodeURIComponent(String(value)),
 				)
 				replaced = true
 			}
