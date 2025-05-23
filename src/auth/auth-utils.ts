@@ -1,3 +1,7 @@
+import { createLogger } from '../utils/secure-logger'
+
+const logger = createLogger('AuthUtils')
+
 /**
  * Default refresh threshold: 5 minutes (300,000 ms)
  * This is the default time before token expiration when a refresh should be triggered
@@ -53,13 +57,13 @@ export function sanitizeAuthCode(code: string, debug: boolean = false): string {
 			// DO NOT modify periods or other structural elements
 
 			if (debug) {
-				console.log(
+				logger.debug(
 					`[sanitizeAuthCode] URL-decoded specific characters: '${trimmedCode.substring(0, 15)}...' => '${processedCode.substring(0, 15)}...'`,
 				)
 			}
 		} catch (e) {
 			// If specific URL decoding fails, preserve original code
-			console.error(
+			logger.error(
 				`[sanitizeAuthCode] Error handling URL-encoded characters: ${(e as Error).message}`,
 			)
 			processedCode = trimmedCode // Revert to original
@@ -69,7 +73,7 @@ export function sanitizeAuthCode(code: string, debug: boolean = false): string {
 	if (debug) {
 		// Log if the code contains periods for debugging purposes
 		if (processedCode.includes('.')) {
-			console.log(
+			logger.debug(
 				`[sanitizeAuthCode] Code contains periods. Format preserved as: ${processedCode
 					.split('.')
 					.map((segment) => segment.substring(0, 5) + '...')
@@ -77,7 +81,7 @@ export function sanitizeAuthCode(code: string, debug: boolean = false): string {
 			)
 		}
 
-		console.log(
+		logger.debug(
 			`[sanitizeAuthCode] Minimal processing applied, preserving structure: '${processedCode.substring(0, 15)}...'`,
 		)
 	}

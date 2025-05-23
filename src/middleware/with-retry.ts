@@ -7,8 +7,11 @@ import {
 	extractErrorMetadata,
 	isCommunicationError,
 } from '../errors'
+import { createLogger } from '../utils/secure-logger'
 import { type Middleware } from './compose'
 import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
+
+const logger = createLogger('Retry')
 
 const DEFAULT_MAX_RETRIES = 3
 const DEFAULT_BASE_MS = 1000
@@ -246,7 +249,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 					// Add debug logging for communication errors
 					const errorType =
 						lastError.cause === 'network' ? 'Network' : 'Timeout'
-					console.warn(
+					logger.warn(
 						`${errorType} error (${attempts}/${maxRetries + 1}). Will retry...`,
 					)
 				}
@@ -288,7 +291,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 
 			// Check if there was rate-limiting involved to provide better logging
 			if (lastError instanceof SchwabRateLimitError) {
-				console.warn(
+				logger.warn(
 					`Rate limit exceeded (${attempts - 1}/${maxRetries + 1}). Retrying in ${totalDelay}ms...`,
 				)
 			}

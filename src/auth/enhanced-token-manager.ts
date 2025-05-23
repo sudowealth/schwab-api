@@ -1,6 +1,7 @@
 import pkceChallenge from 'pkce-challenge'
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
+import { createLogger } from '../utils/secure-logger'
 import {
 	getAuthDiagnostics,
 	type AuthDiagnosticsOptions,
@@ -154,6 +155,9 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private isReconnecting: boolean = false
 	private refreshLock: Promise<TokenData> | null = null
 
+	// Logger instance for secure logging
+	private logger = createLogger('EnhancedTokenManager')
+
 	constructor(options: EnhancedTokenManagerOptions) {
 		// Set default configuration values
 		const baseIssuerUrl =
@@ -243,8 +247,8 @@ export class EnhancedTokenManager implements FullAuthClient {
 		const codeChallenge = pkce.code_challenge // Get the pre-computed challenge
 
 		if (this.config.debug && this.codeVerifierForCurrentFlow) {
-			console.log(
-				`[EnhancedTokenManager] PKCE for getAuthUrl: verifier (len ${this.codeVerifierForCurrentFlow.length}), challenge (len ${codeChallenge.length}, starts ${codeChallenge.substring(0, 10)}...)`,
+			this.logger.debug(
+				`PKCE for getAuthUrl: verifier (len ${this.codeVerifierForCurrentFlow.length}), challenge (len ${codeChallenge.length}, starts ${codeChallenge.substring(0, 10)}...)`,
 			)
 		}
 
@@ -268,7 +272,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 					decodedStateString = safeBase64Decode(opts.state)
 				} catch (decodeError) {
 					if (this.config.debug) {
-						console.warn(
+						this.logger.warn(
 							`[EnhancedTokenManager] opts.state in getAuthorizationUrl failed base64 decoding: ${(decodeError as Error).message}. Treating as raw string.`,
 						)
 					}
@@ -280,13 +284,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 				try {
 					appSpecificStateData = JSON.parse(decodedStateString)
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							`[EnhancedTokenManager] Successfully parsed opts.state as JSON: ${JSON.stringify(appSpecificStateData).substring(0, 100)}...`,
 						)
 					}
 				} catch (jsonError) {
 					if (this.config.debug) {
-						console.warn(
+						this.logger.warn(
 							`[EnhancedTokenManager] Decoded state string is not valid JSON. Treating as opaque string. Error: ${(jsonError as Error).message}`,
 						)
 					}
@@ -295,11 +299,14 @@ export class EnhancedTokenManager implements FullAuthClient {
 				}
 			} catch (e) {
 				if (this.config.debug) {
-					console.warn(
+					this.logger.warn(
 						`[EnhancedTokenManager] Failed to process opts.state in getAuthorizationUrl. Treating as opaque string. Original state: ${opts.state}`,
 					)
 				}
-				console.error('Error processing opts.state in getAuthorizationUrl:', e)
+				this.logger.error(
+					'Error processing opts.state in getAuthorizationUrl:',
+					e,
+				)
 				// Fall back to treating it as a raw string
 				appSpecificStateData = { original_app_state: opts.state }
 			}
@@ -318,12 +325,12 @@ export class EnhancedTokenManager implements FullAuthClient {
 				JSON.stringify(combinedStateObject),
 			)
 			if (this.config.debug) {
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager] Generated state param (len ${finalStateParamForSchwab.length}): ${finalStateParamForSchwab.substring(0, 20)}...`,
 				)
 			}
 		} catch (encodeError) {
-			console.error(
+			this.logger.error(
 				`[EnhancedTokenManager] Critical error encoding state: ${(encodeError as Error).message}`,
 			)
 			// Fall back to a simpler approach - encode just the code verifier without user state
@@ -335,12 +342,12 @@ export class EnhancedTokenManager implements FullAuthClient {
 				finalStateParamForSchwab = safeBase64Encode(
 					JSON.stringify(fallbackState),
 				)
-				console.warn(
+				this.logger.warn(
 					'[EnhancedTokenManager] Using fallback state encoding (app state discarded due to encoding error)',
 				)
 			} catch (fallbackError) {
 				// If all encoding fails, we're in a bad state but can't do much
-				console.error(
+				this.logger.error(
 					`[EnhancedTokenManager] Fatal encoding error for state: ${(fallbackError as Error).message}`,
 				)
 				// Don't include state at all - the exchange will fail but that's better than crashing here
@@ -373,23 +380,23 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 */
 	async exchangeCode(code: string, stateParam?: string): Promise<TokenData> {
 		if (this.config.debug) {
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.exchangeCode] Received raw authorization code (length: ${code.length}): '${code.substring(0, 15)}...'`,
 			)
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.exchangeCode] Received raw stateParam (length: ${stateParam?.length || 0}): '${stateParam ? stateParam.substring(0, 30) + '...' : 'undefined'}'`,
 			)
 		}
 
 		const sanitizedCode = sanitizeAuthCode(code, this.config.debug)
 		if (this.config.debug) {
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.exchangeCode] Code was sanitized to: '${sanitizedCode.substring(0, 15)}...'`,
 			)
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.exchangeCode] Code length before: ${code.length}, after: ${sanitizedCode.length}`,
 			)
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.exchangeCode] Sanitized code length validation: ${sanitizedCode.length % 4 === 0 ? 'Valid length (multiple of 4)' : 'INVALID length (not a multiple of 4)'}`,
 			)
 		}
@@ -397,14 +404,14 @@ export class EnhancedTokenManager implements FullAuthClient {
 		let retrievedCodeVerifier: string | null = null
 
 		if (!stateParam) {
-			console.error(
+			this.logger.error(
 				'[EnhancedTokenManager.exchangeCode] CRITICAL: stateParam is missing. PKCE code_verifier cannot be retrieved from state. This will likely lead to token exchange failure.',
 			)
 			// Attempt to use instance-stored verifier as a last resort, though this is less reliable across redirects
 			// if a new ETM instance is created for the callback.
 			if (this.codeVerifierForCurrentFlow) {
 				// Assuming you renamed this.codeVerifier to this.codeVerifierForCurrentFlow
-				console.warn(
+				this.logger.warn(
 					'[EnhancedTokenManager.exchangeCode] Attempting to use instance-stored codeVerifierForCurrentFlow as fallback due to missing stateParam.',
 				)
 				retrievedCodeVerifier = this.codeVerifierForCurrentFlow
@@ -414,7 +421,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			let processedStateParam = stateParam
 
 			if (this.config.debug) {
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.exchangeCode] Processing stateParam (length: ${stateParam.length}, preview: '${stateParam.substring(0, 30)}...')`,
 				)
 			}
@@ -424,13 +431,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 				try {
 					const decodedStateParam = decodeURIComponent(stateParam)
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							`[EnhancedTokenManager.exchangeCode] State appears to be URL-encoded, decoded to: '${decodedStateParam.substring(0, 30)}...'`,
 						)
 					}
 					processedStateParam = decodedStateParam
 				} catch (e) {
-					console.warn(
+					this.logger.warn(
 						`[EnhancedTokenManager.exchangeCode] Failed to URL-decode stateParam. Will use as-is. Error: ${(e as Error).message}`,
 					)
 					// Continue with original state param
@@ -441,7 +448,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				// Use our safe base64 decode function instead of atob
 				const decodedStateString = safeBase64Decode(processedStateParam)
 				if (this.config.debug) {
-					console.log(
+					this.logger.debug(
 						`[EnhancedTokenManager.exchangeCode] Decoded state string from base64: '${decodedStateString.substring(0, 100)}...'`,
 					)
 				}
@@ -450,23 +457,23 @@ export class EnhancedTokenManager implements FullAuthClient {
 				if (decodedStateObject && decodedStateObject.pkce_code_verifier) {
 					retrievedCodeVerifier = decodedStateObject.pkce_code_verifier
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							`[EnhancedTokenManager.exchangeCode] Successfully retrieved pkce_code_verifier from stateParam (length: ${retrievedCodeVerifier?.length}, starts with: ${retrievedCodeVerifier?.substring(0, 10)}...)`,
 						)
 					}
 				} else {
-					console.warn(
+					this.logger.warn(
 						'[EnhancedTokenManager.exchangeCode] pkce_code_verifier NOT found in decoded stateParam object. Decoded state:',
 						decodedStateObject,
 					)
 				}
 			} catch (e: any) {
-				console.error(
+				this.logger.error(
 					`[EnhancedTokenManager.exchangeCode] Failed to decode or parse stateParam: ${e.message}. Raw stateParam was: '${stateParam.substring(0, 50)}...'`,
 				)
 				// Even if state decoding fails, check if this.codeVerifierForCurrentFlow (instance property) was set as a desperate fallback
 				if (this.codeVerifierForCurrentFlow) {
-					console.warn(
+					this.logger.warn(
 						'[EnhancedTokenManager.exchangeCode] State decoding failed. Attempting to use instance-stored codeVerifierForCurrentFlow as fallback.',
 					)
 					retrievedCodeVerifier = this.codeVerifierForCurrentFlow
@@ -477,10 +484,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 		if (!retrievedCodeVerifier) {
 			const errorMessage =
 				'[EnhancedTokenManager.exchangeCode] CRITICAL: No code_verifier available for PKCE token exchange. Cannot proceed with token exchange.'
-			console.error(errorMessage)
+			this.logger.error(errorMessage)
 			if (this.config.debug && this.codeVerifierForCurrentFlow) {
 				// This log helps understand if getAuthorizationUrl did set it on the instance
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.exchangeCode] Debug info: this.codeVerifierForCurrentFlow was (len ${this.codeVerifierForCurrentFlow.length}): ${this.codeVerifierForCurrentFlow.substring(0, 10)}...`,
 				)
 			}
@@ -507,7 +514,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			if (paramsForLog.code_verifier)
 				paramsForLog.code_verifier = `${paramsForLog.code_verifier.substring(0, 10)}... (len: ${paramsForLog.code_verifier.length})`
 
-			console.log(
+			this.logger.debug(
 				'[EnhancedTokenManager.exchangeCode] Parameters for performDirectTokenExchange:',
 				paramsForLog,
 			)
@@ -536,7 +543,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			this.codeVerifierForCurrentFlow = null
 
 			if (this.config.debug) {
-				console.log(
+				this.logger.debug(
 					'[EnhancedTokenManager.exchangeCode] Token exchange successful. Access token preview:',
 					`${tokenData.accessToken.substring(0, 8)}...`,
 					`Expires in: ${tokenResponseData.expires_in}s`,
@@ -545,7 +552,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 			return tokenData
 		} catch (error: any) {
-			console.error(
+			this.logger.error(
 				'[EnhancedTokenManager.exchangeCode] Error during performDirectTokenExchange:',
 				error.message || error,
 			)
@@ -573,7 +580,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 */
 	public async initialize(): Promise<boolean> {
 		if (this.config.debug) {
-			console.log(
+			this.logger.debug(
 				'[EnhancedTokenManager.initialize] Explicit initialization called.',
 			)
 		}
@@ -581,7 +588,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			const tokenData = await this.getTokenData() // Triggers load and initial validation
 			if (!tokenData || !tokenData.accessToken) {
 				if (this.config.debug) {
-					console.log(
+					this.logger.debug(
 						'[EnhancedTokenManager.initialize] No token data available after getTokenData.',
 					)
 				}
@@ -595,11 +602,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 				)
 			) {
 				if (this.config.debug) {
-					console.log('[EnhancedTokenManager.initialize] Token needs refresh.')
+					this.logger.debug(
+						'[EnhancedTokenManager.initialize] Token needs refresh.',
+					)
 				}
 				if (!tokenData.refreshToken) {
 					if (this.config.debug) {
-						console.warn(
+						this.logger.warn(
 							'[EnhancedTokenManager.initialize] Token needs refresh, but no refresh token available. Cannot refresh during init.',
 						)
 					}
@@ -608,7 +617,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 				try {
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							'[EnhancedTokenManager.initialize] Attempting refreshIfNeeded due to expiring token.',
 						)
 					}
@@ -627,7 +636,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 						!this.shouldRefreshToken(refreshedTokenData.expiresAt, 0)
 					)
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							`[EnhancedTokenManager.initialize] Post-refresh check, token is now valid: ${isNowValid}`,
 						)
 					}
@@ -638,11 +647,11 @@ export class EnhancedTokenManager implements FullAuthClient {
 						refreshError instanceof Error
 							? refreshError.message
 							: String(refreshError)
-					console.warn(
+					this.logger.warn(
 						`[EnhancedTokenManager.initialize] Refresh attempt during initialization failed: ${message}`,
 					)
 					if (this.config.debug && refreshError instanceof Error) {
-						console.error(refreshError) // Log full error in debug mode
+						this.logger.error(refreshError) // Log full error in debug mode
 					}
 					// Even if refresh failed, check if the *original* tokenData is still usable (e.g., refresh failed due to network, but token not yet hard expired)
 					// However, it's safer to return false, as we couldn't get to a definitively good state.
@@ -650,7 +659,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				}
 			}
 			if (this.config.debug) {
-				console.log(
+				this.logger.debug(
 					'[EnhancedTokenManager.initialize] Initialization successful, token is valid and does not need immediate refresh.',
 				)
 			}
@@ -658,11 +667,11 @@ export class EnhancedTokenManager implements FullAuthClient {
 		} catch (error) {
 			// Catch errors from the initial getTokenData() or other unexpected issues
 			const message = error instanceof Error ? error.message : String(error)
-			console.error(
+			this.logger.error(
 				`[EnhancedTokenManager.initialize] Error during initialization: ${message}`,
 			)
 			if (this.config.debug && error instanceof Error) {
-				console.error(error) // Log full error
+				this.logger.error(error) // Log full error
 			}
 			return false
 		}
@@ -740,7 +749,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 								return loadedTokens
 							}
 
-							console.error('No valid tokens available', e)
+							this.logger.error('No valid tokens available', e)
 
 							// Otherwise, return null to indicate no valid tokens
 							return null
@@ -752,7 +761,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				}
 			} catch (error) {
 				// Error loading tokens, return null
-				console.error('Error loading tokens', error)
+				this.logger.error('Error loading tokens', error)
 				return null
 			}
 		}
@@ -903,7 +912,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				try {
 					await handler()
 				} catch (e) {
-					console.error('Error calling reconnection handler', e)
+					this.logger.error('Error calling reconnection handler', e)
 					if (this.config.debug) {
 						// Warning log removed
 					}
@@ -914,7 +923,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 				// Debug log removed
 			}
 		} catch (error) {
-			console.error('Error triggering reconnection', error)
+			this.logger.error('Error triggering reconnection', error)
 			if (this.config.debug) {
 				// Error log removed
 			}
@@ -1116,7 +1125,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 					expiresAt: 0,
 				})
 			} catch (error) {
-				console.error('Error clearing tokens', error)
+				this.logger.error('Error clearing tokens', error)
 			}
 		}
 
@@ -1171,7 +1180,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		try {
 			this.persistenceEventHandler?.(event, data, metadata)
 		} catch (error) {
-			console.error('Error dispatching token event', error)
+			this.logger.error('Error dispatching token event', error)
 		}
 	}
 
@@ -1202,7 +1211,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 						// No need to re-encode
 					}
 				} catch (e) {
-					console.error('Error decoding refresh token', e)
+					this.logger.error('Error decoding refresh token', e)
 					// Error during safe base64 decode implies not valid base64, may need encoding
 					if (this.config.debug) {
 						// Error log removed
@@ -1268,7 +1277,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 				headers.Authorization = authHeader
 			} catch (e) {
-				console.error('Error creating Basic Auth header', e)
+				this.logger.error('Error creating Basic Auth header', e)
 				if (this.config.debug) {
 					// Error log removed
 				}
@@ -1298,11 +1307,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 					redactedFormDataLog.append(key, codePreview)
 
 					// Add code-specific diagnostics
-					console.log(`[EnhancedTokenManager] Auth code diagnostics:`)
-					console.log(`  - Length: ${value.length}`)
-					console.log(`  - Preview: ${codePreview}`)
-					console.log(`  - Contains special chars: ${/[+/=@.]/g.test(value)}`)
-					console.log(
+					this.logger.debug(`[EnhancedTokenManager] Auth code diagnostics:`)
+					this.logger.debug(`  - Length: ${value.length}`)
+					this.logger.debug(`  - Preview: ${codePreview}`)
+					this.logger.debug(
+						`  - Contains special chars: ${/[+/=@.]/g.test(value)}`,
+					)
+					this.logger.debug(
 						`  - URL encoding check: ${encodeURIComponent(value) !== value ? 'Might need URL encoding' : 'Already encoded or no special chars'}`,
 					)
 				} else {
@@ -1313,11 +1324,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 			if (redactedHeaders.Authorization)
 				redactedHeaders.Authorization = 'Basic [REDACTED]'
 
-			console.log(`[EnhancedTokenManager] Performing direct token exchange.`)
-			console.log(`  Endpoint: ${tokenEndpoint}`)
-			console.log(`  Method: POST`)
-			console.log(`  Headers: ${JSON.stringify(redactedHeaders)}`)
-			console.log(`  Body: ${redactedFormDataLog.toString()}`)
+			this.logger.debug(
+				`[EnhancedTokenManager] Performing direct token exchange.`,
+			)
+			this.logger.debug(`  Endpoint: ${tokenEndpoint}`)
+			this.logger.debug(`  Method: POST`)
+			this.logger.debug(`  Headers: ${JSON.stringify(redactedHeaders)}`)
+			this.logger.debug(`  Body: ${redactedFormDataLog.toString()}`)
 		}
 
 		// Make the token request with properly bound fetch to avoid "Illegal invocation" errors
@@ -1358,13 +1371,13 @@ export class EnhancedTokenManager implements FullAuthClient {
 					// DO NOT modify periods (%2E) or other structural elements
 
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							`[EnhancedTokenManager.performDirectTokenExchange] URL-decoded specific characters: '${originalCode.substring(0, 15)}...' => '${processedCode.substring(0, 15)}...'`,
 						)
 					}
 				} catch (e) {
 					// If specific URL decoding fails, preserve original code
-					console.error(
+					this.logger.error(
 						`[EnhancedTokenManager.performDirectTokenExchange] Error handling URL-encoded characters: ${(e as Error).message}`,
 					)
 					processedCode = originalCode // Revert to original
@@ -1375,7 +1388,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 					formData.set('code', processedCode)
 
 					if (this.config.debug) {
-						console.log(
+						this.logger.debug(
 							`[EnhancedTokenManager.performDirectTokenExchange] Updated code with minimal URL-decoding while preserving structure`,
 						)
 					}
@@ -1385,7 +1398,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			if (this.config.debug) {
 				// Add some debugging info about the format for troubleshooting
 				if (processedCode.includes('.')) {
-					console.log(
+					this.logger.debug(
 						`[EnhancedTokenManager.performDirectTokenExchange] Authorization code contains periods. Format preserved as: ${processedCode
 							.split('.')
 							.map((segment) => segment.substring(0, 5) + '...')
@@ -1393,7 +1406,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 					)
 				}
 
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.performDirectTokenExchange] Final authorization code (with minimal processing): '${processedCode.substring(0, 15)}...'`,
 				)
 			}
@@ -1401,10 +1414,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 		// Additional debug logging before making the request
 		if (this.config.debug) {
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.performDirectTokenExchange] Making token request...`,
 			)
-			console.log(
+			this.logger.debug(
 				`[EnhancedTokenManager.performDirectTokenExchange] Request body length: ${formData.toString().length}`,
 			)
 
@@ -1414,20 +1427,20 @@ export class EnhancedTokenManager implements FullAuthClient {
 				formData.has('code')
 			) {
 				const code = formData.get('code')
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.performDirectTokenExchange] Code in request: length=${code?.length}, code=${code?.toString().substring(0, 15)}...`,
 				)
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.performDirectTokenExchange] Code validation: length is ${code?.length && code.length % 4 === 0 ? 'valid (multiple of 4)' : 'INVALID (not a multiple of 4)'}`,
 				)
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.performDirectTokenExchange] Is valid Base64 format: ${/^[A-Za-z0-9+/]*={0,2}$/.test(code || '') ? 'YES' : 'NO'}`,
 				)
 			}
 
 			if (formData.has('code_verifier')) {
 				const verifier = formData.get('code_verifier')
-				console.log(
+				this.logger.debug(
 					`[EnhancedTokenManager.performDirectTokenExchange] Code verifier in request: length=${verifier?.length}, starts with=${verifier?.toString().substring(0, 10)}...`,
 				)
 			}
@@ -1454,20 +1467,20 @@ export class EnhancedTokenManager implements FullAuthClient {
 				} catch (e) {
 					// Not JSON, errorBodyContent already has the text
 
-					console.error(
+					this.logger.error(
 						'[EnhancedTokenManager] Failed to parse error response body:',
 						e,
 					)
 				}
 			} catch (readError: any) {
-				console.error(
+				this.logger.error(
 					'[EnhancedTokenManager] Fatal: Failed to read error response body:',
 					readError.message || readError,
 				)
 			}
 
 			if (this.config.debug) {
-				console.error(
+				this.logger.error(
 					`[EnhancedTokenManager] Token exchange HTTP error ${response.status}. Full Response Body: ${errorBodyContent}`,
 				)
 			}

@@ -1,3 +1,7 @@
+import { createLogger } from '../utils/secure-logger'
+
+const logger = createLogger('MiddlewareMetadata')
+
 /**
  * Metadata structure for communication between middleware components
  * This information is carried along with requests and responses to coordinate actions
@@ -97,7 +101,7 @@ export function getMetadata(obj: Request | Response): MiddlewareMetadata {
 		})
 	} catch (e: any) {
 		// If we can't modify the object (e.g., frozen objects), log a warning
-		console.warn(
+		logger.warn(
 			'Could not attach metadata to object, some middleware coordination might not work properly. Error:',
 			e?.message || e,
 		)

@@ -1,4 +1,7 @@
+import { createLogger } from '../utils/secure-logger'
 import { type TokenData } from './types'
+
+const logger = createLogger('TokenRefreshTracer')
 
 /**
  * Options for token refresh tracing
@@ -282,7 +285,7 @@ export class TokenRefreshTracer {
 					sanitizedBody =
 						body.length > 100 ? body.substring(0, 100) + '...' : body
 				}
-				console.error('Error sanitizing body', e)
+				logger.error('Error sanitizing body', e)
 			}
 		} else {
 			sanitizedBody = body
@@ -634,7 +637,7 @@ export class TokenRefreshTracer {
 			try {
 				this.options.tracerCallback(event)
 			} catch (e) {
-				console.error('Error calling tracer callback', e)
+				logger.error('Error calling tracer callback', e)
 			}
 		}
 	}
@@ -691,7 +694,7 @@ export class TokenRefreshTracer {
 			}
 		} catch (error) {
 			// If anything goes wrong during iteration, return a safe empty object
-			console.error('Error sanitizing headers', error)
+			logger.error('Error sanitizing headers', error)
 		}
 
 		return result
