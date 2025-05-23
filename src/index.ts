@@ -202,6 +202,7 @@ export {
 	GetTransactionsRequestPathParams,
 	GetTransactionsRequestQueryParams,
 	GetTransactionsResponseBody,
+	GetUserPreferenceRequestParams,
 	GetUserPreferenceResponseBody,
 	AccountAPIOptionDeliverable,
 	ApiCurrencyType,
