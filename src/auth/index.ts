@@ -2,6 +2,9 @@ export * from './urls'
 export * from './token'
 export * from './types'
 export * from './auth-utils'
+export * from './pkce-handler'
+export * from './token-persistence'
+export * from './token-refresh-coordinator'
 
 // Primary auth interfaces and factory
 export {
