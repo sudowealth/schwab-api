@@ -1,6 +1,6 @@
 /**
- * Secure logger utility that sanitizes sensitive data before logging
- * This ensures no tokens, credentials, or sensitive information is exposed in logs
+ * Secure logger for Schwab API client
+ * Focuses on protecting authentication tokens and credentials
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
@@ -8,13 +8,12 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export interface LoggerConfig {
 	enabled: boolean
 	level: LogLevel
-	sanitizers?: Record<string, (value: any) => any>
 }
 
-// Default sanitization patterns
+// Patterns that indicate authentication/credential data
 const SENSITIVE_PATTERNS = [
 	/authorization/i,
-	/bearer\s+\S+/gi,
+	/bearer\s+[\w-]{1,1000}/gi, // Bounded to prevent ReDoS
 	/refresh_token/i,
 	/access_token/i,
 	/client_secret/i,
@@ -22,22 +21,25 @@ const SENSITIVE_PATTERNS = [
 	/password/i,
 	/token/i,
 	/secret/i,
-	/key/i,
-	/credential/i,
+	/api_key/i,
 ]
 
-// Fields that should always be sanitized
+// Field names that contain sensitive data
 const SENSITIVE_FIELDS = new Set([
+	// Auth headers
 	'authorization',
 	'Authorization',
+	// OAuth tokens
 	'access_token',
 	'accessToken',
 	'refresh_token',
 	'refreshToken',
+	// Client credentials
 	'client_secret',
 	'clientSecret',
 	'client_id',
 	'clientId',
+	// Generic sensitive fields
 	'password',
 	'apiKey',
 	'api_key',
@@ -46,6 +48,9 @@ const SENSITIVE_FIELDS = new Set([
 	'credential',
 	'credentials',
 ])
+
+// Minimal set of dangerous keys for prototype pollution protection
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
 export class SecureLogger {
 	private config: LoggerConfig
@@ -59,30 +64,50 @@ export class SecureLogger {
 	}
 
 	/**
+	 * Check if a string looks like a token
+	 */
+	private isLikelyToken(value: string): boolean {
+		// JWT format: xxx.yyy.zzz
+		if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value)) {
+			return true
+		}
+
+		// Base64-like token (min 20 chars)
+		if (value.length > 20 && /^[A-Za-z0-9+/=_-]{20,}$/.test(value)) {
+			return true
+		}
+
+		return false
+	}
+
+	/**
 	 * Sanitize a value to remove sensitive information
 	 */
 	private sanitizeValue(value: any): any {
+		if (value === null || value === undefined) {
+			return value
+		}
+
 		if (typeof value === 'string') {
-			// Check if the entire string looks like a token (base64-like)
-			if (value.length > 20 && /^[A-Za-z0-9+/=_-]{20,}$/.test(value)) {
-				return `${value.substring(0, 8)}...[REDACTED]`
+			// Check for token-like strings
+			if (this.isLikelyToken(value)) {
+				return `[REDACTED ${value.length} chars]`
 			}
 
-			// Replace sensitive patterns in strings
+			// Replace sensitive patterns
 			let sanitized = value
 			for (const pattern of SENSITIVE_PATTERNS) {
 				if (pattern.test(sanitized)) {
-					// Special handling for Authorization headers
-					if (/authorization:\s*bearer\s+/i.test(sanitized)) {
-						sanitized = sanitized.replace(/bearer\s+\S+/gi, 'Bearer [REDACTED]')
+					if (/authorization:\s*bearer/i.test(sanitized)) {
+						sanitized = sanitized.replace(
+							/bearer\s+[\w-]+/gi,
+							'Bearer [REDACTED]',
+						)
 					} else {
-						// For other sensitive data, show partial
+						// For other patterns, check if it's a significant match
 						const match = sanitized.match(pattern)
 						if (match && match[0].length > 10) {
-							sanitized = sanitized.replace(
-								pattern,
-								`${match[0].substring(0, 6)}...[REDACTED]`,
-							)
+							sanitized = sanitized.replace(pattern, '[REDACTED]')
 						}
 					}
 				}
@@ -95,6 +120,10 @@ export class SecureLogger {
 		}
 
 		if (value && typeof value === 'object') {
+			// Special handling for errors
+			if (value instanceof Error) {
+				return this.sanitizeError(value)
+			}
 			return this.sanitizeObject(value)
 		}
 
@@ -102,24 +131,40 @@ export class SecureLogger {
 	}
 
 	/**
-	 * Sanitize an object by checking field names and values
+	 * Sanitize error objects
+	 */
+	private sanitizeError(error: Error): string {
+		// In production, minimize error information
+		if (process.env.NODE_ENV === 'production') {
+			return `${error.name}: [Error details hidden in production]`
+		}
+
+		// In development, show sanitized stack
+		const sanitizedMessage = this.sanitizeValue(error.message)
+		return `${error.name}: ${sanitizedMessage}\n${error.stack || '[No stack]'}`
+	}
+
+	/**
+	 * Sanitize objects by checking field names
 	 */
 	private sanitizeObject(obj: Record<string, any>): Record<string, any> {
 		const sanitized: Record<string, any> = {}
 
 		for (const [key, value] of Object.entries(obj)) {
-			// Check if the field name indicates sensitive data
-			if (SENSITIVE_FIELDS.has(key)) {
-				if (typeof value === 'string' && value.length > 0) {
-					sanitized[key] = `${value.substring(0, 6)}...[REDACTED]`
-				} else {
-					sanitized[key] = '[REDACTED]'
-				}
-			} else if (
-				key.toLowerCase().includes('token') ||
-				key.toLowerCase().includes('secret') ||
-				key.toLowerCase().includes('password') ||
-				key.toLowerCase().includes('credential')
+			// Skip dangerous keys
+			if (DANGEROUS_KEYS.has(key)) {
+				continue
+			}
+
+			// Check if field name indicates sensitive data
+			const lowerKey = key.toLowerCase()
+			if (
+				SENSITIVE_FIELDS.has(key) ||
+				lowerKey.includes('token') ||
+				lowerKey.includes('secret') ||
+				lowerKey.includes('password') ||
+				lowerKey.includes('credential') ||
+				lowerKey.includes('key')
 			) {
 				sanitized[key] = '[REDACTED]'
 			} else {
@@ -128,20 +173,11 @@ export class SecureLogger {
 			}
 		}
 
-		// Apply custom sanitizers if provided
-		if (this.config.sanitizers) {
-			for (const [field, sanitizer] of Object.entries(this.config.sanitizers)) {
-				if (field in sanitized) {
-					sanitized[field] = sanitizer(sanitized[field])
-				}
-			}
-		}
-
 		return sanitized
 	}
 
 	/**
-	 * Format log arguments for safe output
+	 * Format log arguments for output
 	 */
 	private formatArgs(...args: any[]): string {
 		return args
@@ -150,11 +186,7 @@ export class SecureLogger {
 					return this.sanitizeValue(arg)
 				}
 				if (arg instanceof Error) {
-					// Don't log full stack traces in production
-					if (process.env.NODE_ENV === 'production') {
-						return `${arg.name}: ${arg.message}`
-					}
-					return arg.stack || arg.toString()
+					return this.sanitizeError(arg)
 				}
 				if (typeof arg === 'object') {
 					try {
@@ -205,36 +237,18 @@ export class SecureLogger {
 			console.error('[ERROR]', this.formatArgs(...args))
 		}
 	}
-
-	/**
-	 * Create a child logger with additional configuration
-	 */
-	child(config: Partial<LoggerConfig>): SecureLogger {
-		return new SecureLogger({
-			...this.config,
-			...config,
-			sanitizers: {
-				...this.config.sanitizers,
-				...config.sanitizers,
-			},
-		})
-	}
 }
 
 /**
  * Create a logger instance for a specific module
  */
-export function createLogger(
-	moduleName: string,
-	config?: Partial<LoggerConfig>,
-): SecureLogger {
+export function createLogger(moduleName: string): SecureLogger {
 	const logger = new SecureLogger({
 		enabled: process.env.SCHWAB_DEBUG === 'true',
 		level: (process.env.SCHWAB_LOG_LEVEL as LogLevel) || 'info',
-		...config,
 	})
 
-	// Add module name to all logs
+	// Add module name prefix
 	const originalDebug = logger.debug.bind(logger)
 	const originalInfo = logger.info.bind(logger)
 	const originalWarn = logger.warn.bind(logger)
