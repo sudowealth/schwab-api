@@ -4,9 +4,12 @@ import {
 	TIMEOUTS,
 	type ENVIRONMENTS,
 } from '../constants'
+import { createLogger } from '../utils/secure-logger'
 
 type ApiVersion = keyof typeof API_VERSIONS
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none'
+
+const logger = createLogger('Config')
 
 /**
  * Logger interface that can be implemented by consuming applications
@@ -69,8 +72,8 @@ export interface SchwabApiConfig {
 const DEFAULT_CONSOLE_LOGGER: SchwabApiLogger = {
 	debug: (message: string, ...args: any[]) => console.debug(message, ...args),
 	info: (message: string, ...args: any[]) => console.info(message, ...args),
-	warn: (message: string, ...args: any[]) => console.warn(message, ...args),
-	error: (message: string, ...args: any[]) => console.error(message, ...args),
+	warn: (message: string, ...args: any[]) => logger.warn(message, ...args),
+	error: (message: string, ...args: any[]) => logger.error(message, ...args),
 }
 
 // Default API configuration

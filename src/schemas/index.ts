@@ -106,7 +106,10 @@ export {
 } from '../trader/transactions/schema'
 
 // User Preferences
-export { GetUserPreferenceResponseBody } from '../trader/user-preference/schema'
+export {
+	GetUserPreferenceRequestParams,
+	GetUserPreferenceResponseBody,
+} from '../trader/user-preference/schema'
 
 // Shared
 export { AccountAPIOptionDeliverable } from '../trader/shared/account-api-option-deliverable.schema'

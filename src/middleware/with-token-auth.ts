@@ -1,7 +1,10 @@
 import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
 import { handleApiError } from '../errors'
+import { createLogger } from '../utils/secure-logger'
 import { type Middleware } from './compose'
 import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
+
+const logger = createLogger('TokenAuth')
 
 /**
  * Options for token authentication middleware
@@ -85,16 +88,16 @@ export function withTokenAuth(
 		}
 
 		try {
-			console.log(`[withTokenAuth] Getting access token for ${req.url}`)
+			logger.debug(`[withTokenAuth] Getting access token for ${req.url}`)
 
 			// Debug: Check token provider type
-			console.log(
+			logger.debug(
 				`[withTokenAuth] Token manager type: ${tokenManager.constructor.name}`,
 			)
 
 			// Check if token manager supports refresh
 			const supportsRefresh = tokenManager.supportsRefresh()
-			console.log(
+			logger.debug(
 				`[withTokenAuth] Token manager supports refresh: ${supportsRefresh}`,
 			)
 
@@ -104,12 +107,12 @@ export function withTokenAuth(
 			const accessToken = await tokenManager.getAccessToken()
 
 			// Debug: Log token status (not the actual token)
-			console.log(
+			logger.debug(
 				`[withTokenAuth] Token obtained: ${accessToken ? 'Yes (length: ' + accessToken.length + ')' : 'No'}`,
 			)
 
 			if (!accessToken) {
-				console.warn(
+				logger.warn(
 					`[withTokenAuth] No access token available from provider for request to ${req.method} ${req.url}. ` +
 						`Provider: ${tokenManager.constructor.name}. Proceeding without authentication.`,
 				)
@@ -124,7 +127,7 @@ export function withTokenAuth(
 			authorizedReq.headers.set('Authorization', `Bearer ${accessToken}`)
 
 			// Debug: Log the headers being sent (without sensitive values)
-			console.log(
+			logger.debug(
 				'[withTokenAuth] Request headers set:',
 				Object.fromEntries(
 					[...authorizedReq.headers.entries()].map(([k, v]) =>
@@ -134,13 +137,13 @@ export function withTokenAuth(
 			)
 
 			// Execute the request
-			console.log(
+			logger.debug(
 				`[withTokenAuth] Executing authenticated request to ${req.url}`,
 			)
 			const response = await next(authorizedReq)
 
 			// Debug: Log response status
-			console.log(
+			logger.debug(
 				`[withTokenAuth] Response status: ${response.status} for ${req.url}`,
 			)
 
@@ -151,7 +154,7 @@ export function withTokenAuth(
 			return response
 		} catch (error) {
 			// Log the error with more context for debugging
-			console.error('[withTokenAuth] Failed to get access token:', error)
+			logger.error('[withTokenAuth] Failed to get access token:', error)
 
 			// Provide detailed context for the error
 			const context = `Failed to retrieve authentication token for request to ${req.method} ${req.url}`

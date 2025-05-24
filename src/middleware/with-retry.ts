@@ -2,16 +2,16 @@ import {
 	createSchwabApiError,
 	SchwabError,
 	SchwabRateLimitError,
-	SchwabServerError,
-	createServiceUnavailableError,
-	createGatewayError,
 	SchwabApiError,
 	isAuthError,
 	extractErrorMetadata,
 	isCommunicationError,
 } from '../errors'
+import { createLogger } from '../utils/secure-logger'
 import { type Middleware } from './compose'
 import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
+
+const logger = createLogger('Retry')
 
 const DEFAULT_MAX_RETRIES = 3
 const DEFAULT_BASE_MS = 1000
@@ -151,60 +151,27 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 					}
 
 					// Create appropriate typed error based on status with metadata
-					let error: SchwabApiError
-					switch (response.status) {
-						case 429:
-							error = new SchwabRateLimitError(
-								errorBody,
-								`withRetry: Rate limit exceeded (attempt ${attempts}/${maxRetries + 1})`,
-								undefined,
-								responseMetadata,
-							)
-							break
-						case 503:
-							error = createServiceUnavailableError(
-								errorBody,
-								`withRetry: Service unavailable (attempt ${attempts}/${maxRetries + 1})`,
-								undefined,
-								responseMetadata,
-							)
-							break
-						case 502:
-							error = createGatewayError(
-								502,
-								errorBody,
-								`withRetry: Bad gateway (attempt ${attempts}/${maxRetries + 1})`,
-								undefined,
-								responseMetadata,
-							)
-							break
-						case 504:
-							error = createGatewayError(
-								504,
-								errorBody,
-								`withRetry: Gateway timeout (attempt ${attempts}/${maxRetries + 1})`,
-								undefined,
-								responseMetadata,
-							)
-							break
-						case 500:
-							error = new SchwabServerError(
-								500,
-								errorBody,
-								`withRetry: Server error (attempt ${attempts}/${maxRetries + 1})`,
-								undefined,
-								responseMetadata,
-							)
-							break
-						default:
-							// Create a generic API error for other status codes
-							error = createSchwabApiError(
-								response.status,
-								errorBody,
-								`withRetry: HTTP error ${response.status} (attempt ${attempts}/${maxRetries + 1})`,
-								responseMetadata,
-							)
-					}
+					const error: SchwabApiError = createSchwabApiError(
+						response.status,
+						errorBody,
+						(() => {
+							switch (response.status) {
+								case 429:
+									return `withRetry: Rate limit exceeded (attempt ${attempts}/${maxRetries + 1})`
+								case 503:
+									return `withRetry: Service unavailable (attempt ${attempts}/${maxRetries + 1})`
+								case 502:
+									return `withRetry: Bad gateway (attempt ${attempts}/${maxRetries + 1})`
+								case 504:
+									return `withRetry: Gateway timeout (attempt ${attempts}/${maxRetries + 1})`
+								case 500:
+									return `withRetry: Server error (attempt ${attempts}/${maxRetries + 1})`
+								default:
+									return `withRetry: HTTP error ${response.status} (attempt ${attempts}/${maxRetries + 1})`
+							}
+						})(),
+						responseMetadata,
+					)
 
 					// Check if the error is retryable
 					if (!error.isRetryable({ ignoreRetryAfter: !respectRetryAfter })) {
@@ -282,7 +249,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 					// Add debug logging for communication errors
 					const errorType =
 						lastError.cause === 'network' ? 'Network' : 'Timeout'
-					console.warn(
+					logger.warn(
 						`${errorType} error (${attempts}/${maxRetries + 1}). Will retry...`,
 					)
 				}
@@ -324,7 +291,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 
 			// Check if there was rate-limiting involved to provide better logging
 			if (lastError instanceof SchwabRateLimitError) {
-				console.warn(
+				logger.warn(
 					`Rate limit exceeded (${attempts - 1}/${maxRetries + 1}). Retrying in ${totalDelay}ms...`,
 				)
 			}

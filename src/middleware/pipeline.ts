@@ -1,4 +1,5 @@
 import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
+import { createLogger } from '../utils/secure-logger'
 import { type Middleware } from './compose'
 import { type RateLimitOptions } from './with-rate-limit'
 import { type RetryOptions } from './with-retry'
@@ -6,6 +7,8 @@ import {
 	type TokenAuthOptions,
 	DEFAULT_TOKEN_AUTH_OPTIONS,
 } from './with-token-auth'
+
+const logger = createLogger('Pipeline')
 
 /**
  * Configuration options for the middleware pipeline
@@ -102,7 +105,7 @@ export function buildMiddlewarePipeline(
 	) {
 		// This case handles if a string token was attempted to be passed via createApiClient options implicitly
 		// Forcing sync, we cannot handle async setup of ETM from string here.
-		console.error(
+		logger.error(
 			'[buildMiddlewarePipeline] Auth options provided but no ETM instance, and string token setup is async. Auth middleware will be skipped or this should throw.',
 		)
 		// Depending on strictness, you might throw here:

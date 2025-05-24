@@ -160,12 +160,12 @@ export interface AuthClientOptions {
 	/**
 	 * Function to load tokens from storage
 	 */
-	load?: () => Promise<TokenSet | null>
+	load?: () => Promise<TokenData | null>
 
 	/**
 	 * Function to save tokens to storage
 	 */
-	save?: (t: TokenSet) => Promise<void>
+	save?: (t: TokenData) => Promise<void>
 }
 
 /**
@@ -176,7 +176,7 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	/**
 	 * Exchange an authorization code for tokens
 	 */
-	exchangeCode(code: string): Promise<TokenSet>
+	exchangeCode(code: string): Promise<TokenData>
 
 	/**
 	 * Refresh the access token using a refresh token
@@ -186,7 +186,7 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	refresh(
 		refreshToken: string,
 		options?: { force?: boolean },
-	): Promise<TokenSet>
+	): Promise<TokenData>
 
 	/**
 	 * Get the authorization URL for the OAuth flow
@@ -200,7 +200,7 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	/**
 	 * Load tokens from storage if available
 	 */
-	load?(): Promise<TokenSet | null>
+	load?(): Promise<TokenData | null>
 
 	/**
 	 * Manually save tokens
@@ -208,12 +208,12 @@ export interface FullAuthClient extends ITokenLifecycleManager {
 	 * @param metadata Optional metadata about the save operation
 	 */
 	saveTokens?(
-		tokens: Partial<TokenSet>,
+		tokens: Partial<TokenData>,
 		metadata?: Record<string, any>,
 	): Promise<void>
 
 	/**
 	 * Register a callback for token refresh events
 	 */
-	onRefresh?(callback: (tokenSet: TokenSet) => void): void
+	onRefresh?(callback: (tokenData: TokenData) => void): void
 }

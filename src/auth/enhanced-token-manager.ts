@@ -1,5 +1,6 @@
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
+import { createLogger } from '../utils/secure-logger'
 import {
 	getAuthDiagnostics,
 	type AuthDiagnosticsOptions,
@@ -12,7 +13,6 @@ import { TokenRefreshCoordinator } from './token-refresh-coordinator'
 import { type TokenRefreshTracer } from './token-refresh-tracer'
 import {
 	type TokenData,
-	type TokenSet,
 	type RefreshOptions,
 	type AuthClientOptions,
 	type FullAuthClient,
