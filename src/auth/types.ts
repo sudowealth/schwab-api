@@ -15,6 +15,17 @@ export interface SchwabTokenResponse {
 }
 
 /**
+ * Represents a snapshot of token state as stored in persistence
+ * @internal Used by token persistence and diagnostics
+ */
+export interface TokenSnapshot {
+	access_token?: string
+	refresh_token?: string
+	expires_at?: number // epoch seconds
+	issued_at?: number // epoch seconds
+}
+
+/**
  * Represents a set of authentication tokens including access token,
  * refresh token, and expiration time.
  */

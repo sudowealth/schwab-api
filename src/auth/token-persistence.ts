@@ -3,7 +3,7 @@ import {
 	TokenPersistenceEvent,
 	type TokenPersistenceEventHandler,
 } from './enhanced-token-manager'
-import { type TokenData, type TokenSet } from './types'
+import { type TokenData, type TokenSet, type TokenSnapshot } from './types'
 
 export interface PersistenceOptions {
 	save?: (tokens: TokenSet) => Promise<void>
@@ -19,6 +19,7 @@ export class TokenPersistence {
 	private validate: boolean
 	private eventHandler?: TokenPersistenceEventHandler
 	private debug: boolean
+	public readonly key: string = 'schwab-auth-tokens'
 
 	constructor(opts: PersistenceOptions) {
 		this.saveFn = opts.save
@@ -50,6 +51,23 @@ export class TokenPersistence {
 		}
 	}
 
+	async read(): Promise<TokenSnapshot | null> {
+		const data = await this.load()
+		if (!data) return null
+
+		// Convert TokenData to TokenSnapshot format
+		return {
+			access_token: data.accessToken,
+			refresh_token: data.refreshToken,
+			expires_at: data.expiresAt
+				? Math.floor(data.expiresAt / 1000)
+				: undefined,
+			issued_at: data.expiresAt
+				? Math.floor((data.expiresAt - 3600 * 1000) / 1000)
+				: undefined,
+		}
+	}
+
 	async save(tokens: TokenSet, metadata?: Record<string, any>): Promise<void> {
 		if (!this.saveFn) return
 		try {
@@ -61,5 +79,17 @@ export class TokenPersistence {
 			})
 			throw err
 		}
+	}
+
+	async write(snapshot: TokenSnapshot): Promise<void> {
+		// Convert TokenSnapshot to TokenSet format
+		const tokens: TokenSet = {
+			accessToken: snapshot.access_token || '',
+			refreshToken: snapshot.refresh_token || '',
+			expiresAt: snapshot.expires_at
+				? snapshot.expires_at * 1000
+				: Date.now() + 3600 * 1000,
+		}
+		await this.save(tokens)
 	}
 }

@@ -37,7 +37,13 @@ export function extractVerifier(stateParam: string): string | null {
 		return typeof obj.pkce_code_verifier === 'string'
 			? obj.pkce_code_verifier
 			: null
-	} catch {
+	} catch (error) {
+		// If decode still fails after the second chance in safeBase64Decode,
+		// it might be due to double-encoding in the redirect URI
+		console.error(
+			'Invalid PKCE state – check that the redirect URI is not double-encoded',
+			error,
+		)
 		return null
 	}
 }

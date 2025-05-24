@@ -1,9 +1,15 @@
 import { API_URLS, API_VERSIONS } from '../constants'
 import { SchwabAuthError, AuthErrorCode } from '../errors'
+import {
+	getAuthDiagnostics,
+	type AuthDiagnosticsOptions,
+	type AuthDiagnosticsResult,
+} from './auth-diagnostics'
 import { sanitizeAuthCode, DEFAULT_REFRESH_THRESHOLD_MS } from './auth-utils'
 import { generatePkcePair, buildState, extractVerifier } from './pkce-handler'
 import { TokenPersistence } from './token-persistence'
 import { TokenRefreshCoordinator } from './token-refresh-coordinator'
+import { type TokenRefreshTracer } from './token-refresh-tracer'
 import {
 	type TokenData,
 	type TokenSet,
@@ -45,15 +51,20 @@ export interface EnhancedTokenManagerOptions extends AuthClientOptions {
 	onTokenEvent?: TokenPersistenceEventHandler
 	traceOperations?: boolean
 	issuerBaseUrl?: string
+	tracer?: TokenRefreshTracer
 }
 
 export class EnhancedTokenManager implements FullAuthClient {
 	private config: Required<
-		Omit<EnhancedTokenManagerOptions, 'save' | 'load' | 'onTokenEvent'>
+		Omit<
+			EnhancedTokenManagerOptions,
+			'save' | 'load' | 'onTokenEvent' | 'tracer'
+		>
 	> & {
 		save: AuthClientOptions['save']
 		load: AuthClientOptions['load']
 		onTokenEvent: TokenPersistenceEventHandler | undefined
+		tracer: TokenRefreshTracer | undefined
 	}
 	private tokenSet?: TokenSet
 	private pkce?: { verifier: string; challenge: string }
@@ -83,6 +94,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			onTokenEvent: options.onTokenEvent,
 			traceOperations: options.traceOperations ?? false,
 			issuerBaseUrl: baseIssuerUrl,
+			tracer: options.tracer,
 		}
 		this.persistence = new TokenPersistence({
 			save: this.config.save,
@@ -96,6 +108,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 			{
 				refreshThresholdMs: this.config.refreshThresholdMs,
 				debug: this.config.debug,
+				maxRetryAttempts: this.config.maxRetryAttempts,
+				initialRetryDelayMs: this.config.initialRetryDelayMs,
+				backoffMultiplier: this.config.useExponentialBackoff ? 2 : 1,
+				tracer: this.config.tracer,
 			},
 		)
 	}
@@ -220,22 +236,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 		this.refreshCoordinator.onRefresh(callback)
 	}
 
-	async getDiagnostics(_opts?: any): Promise<any> {
-		const token = await this.getTokenData()
-		const expiresInSeconds = token
-			? Math.floor(((token.expiresAt ?? Date.now()) - Date.now()) / 1000)
-			: 0
-		return {
-			authManagerType: 'EnhancedTokenManager',
-			supportsRefresh: true,
-			tokenStatus: {
-				hasAccessToken: !!token?.accessToken,
-				hasRefreshToken: !!token?.refreshToken,
-				isExpired: token ? (token.expiresAt ?? 0) <= Date.now() : true,
-				expiresInSeconds,
-			},
-			environment: { apiEnvironment: this.config.issuerBaseUrl },
-		}
+	public async getAuthDiagnostics(
+		opts?: AuthDiagnosticsOptions,
+	): Promise<AuthDiagnosticsResult> {
+		return getAuthDiagnostics(this.persistence, opts)
 	}
 
 	async initialize(): Promise<boolean> {

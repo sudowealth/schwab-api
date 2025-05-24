@@ -1,4 +1,5 @@
 import { SchwabAuthError, AuthErrorCode } from '../errors'
+import { type TokenRefreshTracer } from './token-refresh-tracer'
 import { type TokenSet, type TokenData } from './types'
 
 export interface RefreshDependencies {
@@ -8,6 +9,10 @@ export interface RefreshDependencies {
 export interface RefreshConfig {
 	refreshThresholdMs: number
 	debug?: boolean
+	tracer?: TokenRefreshTracer
+	maxRetryAttempts?: number
+	initialRetryDelayMs?: number
+	backoffMultiplier?: number
 }
 
 export class TokenRefreshCoordinator {
@@ -49,7 +54,7 @@ export class TokenRefreshCoordinator {
 			)
 		}
 
-		const promise = this.doRefresh(refreshTok)
+		const promise = this.doRefreshWithRetry(refreshTok)
 		this.refreshLock = promise
 		try {
 			const result = await promise
@@ -59,14 +64,44 @@ export class TokenRefreshCoordinator {
 		}
 	}
 
-	private async doRefresh(refreshToken: string): Promise<TokenData> {
-		const tokens = await this.deps.performRefresh(refreshToken)
-		const data: TokenData = {
-			accessToken: tokens.accessToken,
-			refreshToken: tokens.refreshToken,
-			expiresAt: tokens.expiresAt,
+	private async doRefreshWithRetry(refreshToken: string): Promise<TokenData> {
+		const {
+			maxRetryAttempts = 3,
+			initialRetryDelayMs = 500,
+			backoffMultiplier = 2,
+			tracer,
+		} = this.config
+
+		let delay = initialRetryDelayMs
+		for (let attempt = 1; attempt <= maxRetryAttempts; attempt++) {
+			const start = Date.now()
+			try {
+				const tokens = await this.deps.performRefresh(refreshToken)
+				const data: TokenData = {
+					accessToken: tokens.accessToken,
+					refreshToken: tokens.refreshToken,
+					expiresAt: tokens.expiresAt,
+				}
+				tracer?.log({
+					attempt,
+					succeeded: true,
+					latencyMs: Date.now() - start,
+				})
+				for (const cb of this.callbacks) cb(tokens)
+				return data
+			} catch (err) {
+				tracer?.log({
+					attempt,
+					succeeded: false,
+					latencyMs: Date.now() - start,
+					error: err,
+				})
+				if (attempt === maxRetryAttempts) throw err
+				await new Promise((r) => setTimeout(r, delay))
+				delay *= backoffMultiplier
+			}
 		}
-		for (const cb of this.callbacks) cb(tokens)
-		return data
+		/* istanbul ignore next */
+		throw new Error('Unreachable')
 	}
 }
