@@ -15,8 +15,31 @@ export interface SchwabTokenResponse {
 }
 
 /**
- * Primary token interface used throughout the library
- * Represents authentication tokens with optional refresh capabilities
+ * Represents a snapshot of token state as stored in persistence
+ * @internal Used by token persistence and diagnostics
+ */
+export interface TokenSnapshot {
+	access_token?: string
+	refresh_token?: string
+	expires_at?: number // epoch seconds
+	issued_at?: number // epoch seconds
+}
+
+/**
+ * Represents a set of authentication tokens including access token,
+ * refresh token, and expiration time.
+ */
+export interface TokenSet {
+	accessToken: string
+	refreshToken: string
+	expiresAt: number // epoch ms
+}
+
+/**
+ * Consolidated token interface representing a set of tokens
+ * with access token, optional refresh token, and expiration.
+ *
+ * Similar to TokenSet but with optional refreshToken and expiresAt.
  */
 export interface TokenData {
 	/**

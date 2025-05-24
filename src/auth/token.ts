@@ -241,10 +241,11 @@ export async function refreshTokenWithContext(
 		refreshTokenLength: opts.refreshToken.length,
 	})
 
-	// Import the token refresh tracer dynamically to avoid circular dependencies
-	const { TokenRefreshTracer } = await import('./token-refresh-tracer')
-	const tracer = TokenRefreshTracer.getInstance()
-	const refreshId = tracer.startRefreshTrace()
+	// TODO: Re-implement tracer integration with new simplified tracer interface
+	// const { TokenRefreshTracer } = await import('./token-refresh-tracer')
+	// const tracer = TokenRefreshTracer.getInstance()
+	// const refreshId = tracer.startRefreshTrace()
+	const refreshId = `refresh-${Date.now()}`
 
 	// Capture the full request details for diagnostics
 	const requestHeaders = {
@@ -269,14 +270,14 @@ export async function refreshTokenWithContext(
 		},
 	)
 
-	// Record the HTTP request in the tracer
-	tracer.recordRefreshRequest(
-		refreshId,
-		tokenEndpoint,
-		'POST',
-		requestHeaders,
-		body.toString(),
-	)
+	// TODO: Record the HTTP request in the tracer
+	// tracer.recordRefreshRequest(
+	// 	refreshId,
+	// 	tokenEndpoint,
+	// 	'POST',
+	// 	requestHeaders,
+	// 	body.toString(),
+	// )
 
 	try {
 		// Add timeout support

@@ -121,14 +121,50 @@ export function tokenIsExpiringSoon(
  * @returns The decoded string
  */
 export function safeBase64Decode(input: string): string {
+	// Try URL-safe base64 first
 	try {
-		// Convert base64url to standard base64 if needed
-		const base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+		// First check if we need to convert from base64url to standard base64
+		const needsUrlDecoding = input.includes('-') || input.includes('_')
+		let base64 = input
 
-		// Node.js Buffer handles padding automatically
-		return Buffer.from(base64, 'base64').toString('utf-8')
-	} catch (error) {
-		throw new Error(`Base64 decode error: ${(error as Error).message}`)
+		if (needsUrlDecoding) {
+			// Convert base64url to base64 for standard decoding
+			base64 = input.replace(/-/g, '+').replace(/_/g, '/')
+		}
+
+		// Add padding if needed
+		let paddedBase64 = base64
+		while (paddedBase64.length % 4 !== 0) {
+			paddedBase64 += '='
+		}
+
+		// Convert base64 string to binary data
+		const binaryData = base64js.toByteArray(paddedBase64)
+
+		// Convert binary data to string
+		return new TextDecoder().decode(binaryData)
+	} catch {
+		// Second chance: un-escape %xx sequences, then decode
+		try {
+			const cleaned = decodeURIComponent(input)
+			// Try again with the cleaned input
+			const needsUrlDecoding = cleaned.includes('-') || cleaned.includes('_')
+			let base64 = cleaned
+
+			if (needsUrlDecoding) {
+				base64 = cleaned.replace(/-/g, '+').replace(/_/g, '/')
+			}
+
+			let paddedBase64 = base64
+			while (paddedBase64.length % 4 !== 0) {
+				paddedBase64 += '='
+			}
+
+			const binaryData = base64js.toByteArray(paddedBase64)
+			return new TextDecoder().decode(binaryData)
+		} catch (error) {
+			throw new Error(`Base64 decode error: ${(error as Error).message}`)
+		}
 	}
 }
 

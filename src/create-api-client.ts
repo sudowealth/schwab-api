@@ -1,8 +1,4 @@
 import * as authNs from './auth'
-import {
-	type AuthDiagnosticsOptions,
-	type AuthDiagnosticsResult,
-} from './auth/auth-diagnostics'
 import { type EnhancedTokenManager } from './auth/enhanced-token-manager'
 import {
 	type SchwabApiConfig,
@@ -174,7 +170,7 @@ export interface SchwabApiClient {
 	 * @param options Options for debugging auth
 	 * @returns Detailed diagnostics information about the auth state
 	 */
-	debugAuth(options?: AuthDiagnosticsOptions): Promise<AuthDiagnosticsResult>
+	debugAuth(options?: any): Promise<any>
 }
 
 /**
@@ -361,41 +357,35 @@ export function createApiClient(
 			logger.info('[debugAuth] Starting auth diagnostics')
 
 			try {
-				// Use the new getDiagnostics method from EnhancedTokenManager
+				// Use the new getAuthDiagnostics method from EnhancedTokenManager
 				const diagnostics =
-					await currentAuthManager.getDiagnostics(debugOptions)
+					await currentAuthManager.getAuthDiagnostics(debugOptions)
 
 				// Log diagnostics summary for troubleshooting
 				logger.info('[debugAuth] Auth diagnostics complete:', {
-					authManagerType: diagnostics.authManagerType,
-					supportsRefresh: diagnostics.supportsRefresh,
-					hasAccessToken: diagnostics.tokenStatus.hasAccessToken,
-					hasRefreshToken: diagnostics.tokenStatus.hasRefreshToken,
-					isExpired: diagnostics.tokenStatus.isExpired,
-					expiresInSeconds: diagnostics.tokenStatus.expiresInSeconds,
-					apiEnvironment: diagnostics.environment.apiEnvironment,
+					issuedAt: diagnostics.issuedAt,
+					expiresAt: diagnostics.expiresAt,
+					secondsUntilExpiry: diagnostics.secondsUntilExpiry,
+					hasRefreshToken: diagnostics.hasRefreshToken,
+					storageKey: diagnostics.storageKey,
+					warnings: diagnostics.warnings,
 				})
 
 				return diagnostics
 			} catch (error) {
 				logger.error('[debugAuth] Error during diagnostics:', error)
 
-				// Return error information in a consistent format
+				// Return error information in the new format
 				return {
-					authManagerType: authManager.constructor.name,
-					supportsRefresh: authManager.supportsRefresh(),
-					tokenStatus: {
-						hasAccessToken: false,
-						hasRefreshToken: false,
-						isExpired: true,
-						errorMessage:
-							error instanceof Error ? error.message : String(error),
-						diagnosticsError: true,
-					},
-					environment: {
-						apiEnvironment: finalConfig.environment,
-					},
-				} as AuthDiagnosticsResult
+					issuedAt: null,
+					expiresAt: null,
+					secondsUntilExpiry: null,
+					hasRefreshToken: false,
+					storageKey: 'schwab-auth-tokens',
+					warnings: [
+						`diagnostics error: ${error instanceof Error ? error.message : String(error)}`,
+					],
+				}
 			}
 		},
 	}
