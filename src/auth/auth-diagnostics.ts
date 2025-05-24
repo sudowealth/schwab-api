@@ -1,56 +1,274 @@
-import { type TokenPersistence } from './token-persistence'
-import { type TokenSnapshot } from './types'
+import {
+	type ITokenLifecycleManager,
+	forceRefreshTokens,
+} from './token-lifecycle-manager'
+import { type TokenData } from './types'
 
+/**
+ * Options for the auth diagnostics function
+ */
 export interface AuthDiagnosticsOptions {
-	includeTokenValues?: boolean // default: false
-}
+	/**
+	 * Force refresh the tokens before returning the diagnostics
+	 * @default false
+	 */
+	forceRefresh?: boolean
 
-export interface AuthDiagnosticsResult {
-	issuedAt: Date | null
-	expiresAt: Date | null
-	secondsUntilExpiry: number | null
-	hasRefreshToken: boolean
-	storageKey: string
-	warnings: string[]
+	/**
+	 * Return the full tokens (only for diagnostic purposes, handle with care)
+	 * @default false
+	 */
+	includeTokens?: boolean
+
+	/**
+	 * Include token segments (first 8 chars) for debugging without exposing full tokens
+	 * @default true
+	 */
+	includeTokenSegments?: boolean
 }
 
 /**
- * Produce a human-readable snapshot of token state
- * without mutating anything.
+ * Authentication diagnostics result
+ */
+export interface AuthDiagnosticsResult {
+	/**
+	 * Type of auth manager being used
+	 */
+	authManagerType: string
+
+	/**
+	 * Whether the auth manager supports token refresh
+	 */
+	supportsRefresh: boolean
+
+	/**
+	 * Detailed token status information
+	 */
+	tokenStatus: {
+		/**
+		 * Whether an access token is present
+		 */
+		hasAccessToken: boolean
+
+		/**
+		 * Whether a refresh token is present
+		 */
+		hasRefreshToken: boolean
+
+		/**
+		 * Whether the token is expired
+		 */
+		isExpired: boolean
+
+		/**
+		 * Time in milliseconds until token expires
+		 * Negative value means the token is already expired
+		 */
+		expiresInMs?: number
+
+		/**
+		 * Time in seconds until token expires (for human readability)
+		 */
+		expiresInSeconds?: number
+
+		/**
+		 * Whether a refresh was successfully performed
+		 */
+		refreshSuccessful?: boolean
+
+		/**
+		 * New expiration time after refresh
+		 */
+		newExpiresAt?: number
+
+		/**
+		 * First 8 characters of the access token (for debugging)
+		 */
+		accessTokenSegment?: string
+
+		/**
+		 * First 8 characters of the refresh token (for debugging)
+		 */
+		refreshTokenSegment?: string
+
+		/**
+		 * Full token details (only returned if includeTokens is true)
+		 * WARNING: This contains sensitive information!
+		 */
+		tokens?: TokenData
+	}
+
+	/**
+	 * Detailed environment information
+	 */
+	environment: {
+		/**
+		 * API environment (sandbox or production)
+		 */
+		apiEnvironment: string
+
+		/**
+		 * Client ID (first 8 characters)
+		 */
+		clientIdSegment?: string
+	}
+
+	/**
+	 * Authorization header test results
+	 */
+	authHeaderTest?: {
+		/**
+		 * Whether the test was successful
+		 */
+		success: boolean
+
+		/**
+		 * Whether the format is correct (Bearer + token)
+		 */
+		isCorrectFormat?: boolean
+
+		/**
+		 * Format description
+		 */
+		format?: string
+
+		/**
+		 * Preview of the auth header (first 8 characters of token)
+		 */
+		preview?: string
+
+		/**
+		 * Reason for failure if unsuccessful
+		 */
+		reason?: string
+
+		/**
+		 * Error message if an error occurred
+		 */
+		error?: string
+	}
+}
+
+/**
+ * Diagnostic function to get detailed information about authentication state
+ * Helps troubleshoot 401 Unauthorized errors by providing token status details
+ *
+ * @param tokenManager The token lifecycle manager to diagnose
+ * @param options Options for diagnostics
+ * @returns Detailed diagnostics information
  */
 export async function getAuthDiagnostics(
-	persistence: TokenPersistence,
-	opts: AuthDiagnosticsOptions = {},
+	tokenManager: ITokenLifecycleManager,
+	environment: {
+		apiEnvironment: string
+		clientId?: string
+	},
+	options: AuthDiagnosticsOptions = {},
 ): Promise<AuthDiagnosticsResult> {
-	const snap: TokenSnapshot | null = await persistence.read()
+	const {
+		forceRefresh = false,
+		includeTokens = false,
+		includeTokenSegments = true,
+	} = options
 
-	if (!snap) {
-		return {
-			issuedAt: null,
-			expiresAt: null,
-			secondsUntilExpiry: null,
-			hasRefreshToken: false,
-			storageKey: persistence.key,
-			warnings: ['no token stored'],
+	// Get the current token status
+	const tokenData = await tokenManager.getTokenData()
+
+	// Check if the token manager supports refresh
+	const supportsRefresh = tokenManager.supportsRefresh()
+
+	// Extract basic token status
+	const hasAccessToken = !!tokenData?.accessToken
+	const hasRefreshToken = !!tokenData?.refreshToken
+	const isExpired = tokenData?.expiresAt
+		? tokenData.expiresAt <= Date.now()
+		: false
+
+	// Calculate time until expiration
+	const expiresInMs = tokenData?.expiresAt
+		? tokenData.expiresAt - Date.now()
+		: undefined
+	const expiresInSeconds =
+		expiresInMs !== undefined ? Math.floor(expiresInMs / 1000) : undefined
+
+	// Base diagnostic result
+	const result: AuthDiagnosticsResult = {
+		authManagerType: tokenManager.constructor.name,
+		supportsRefresh,
+		tokenStatus: {
+			hasAccessToken,
+			hasRefreshToken,
+			isExpired,
+			expiresInMs,
+			expiresInSeconds,
+		},
+		environment: {
+			apiEnvironment: environment.apiEnvironment,
+		},
+	}
+
+	// Add token segments for debugging (first 8 characters)
+	if (includeTokenSegments && tokenData) {
+		if (tokenData.accessToken) {
+			result.tokenStatus.accessTokenSegment = tokenData.accessToken.substring(
+				0,
+				8,
+			)
+		}
+
+		if (tokenData.refreshToken) {
+			result.tokenStatus.refreshTokenSegment = tokenData.refreshToken.substring(
+				0,
+				8,
+			)
 		}
 	}
 
-	const now = Date.now() / 1000 // seconds
-	const warnings: string[] = []
-
-	if (snap.expires_at && snap.expires_at < now) {
-		warnings.push('token already expired')
-	} else if (snap.expires_at && snap.expires_at - now < 300) {
-		warnings.push('token expires in <5 min')
+	// Add client ID segment if available
+	if (environment.clientId) {
+		result.environment.clientIdSegment = environment.clientId.substring(0, 8)
 	}
 
-	return {
-		issuedAt: snap.issued_at ? new Date(snap.issued_at * 1000) : null,
-		expiresAt: snap.expires_at ? new Date(snap.expires_at * 1000) : null,
-		secondsUntilExpiry: snap.expires_at ? snap.expires_at - now : null,
-		hasRefreshToken: Boolean(snap.refresh_token),
-		storageKey: persistence.key,
-		warnings,
-		...(opts.includeTokenValues ? { accessToken: snap.access_token } : {}),
+	// Include full tokens if requested (only for diagnostic purposes!)
+	if (includeTokens) {
+		result.tokenStatus.tokens = tokenData ?? undefined
 	}
+
+	// Force refresh if requested and the token manager supports it
+	if (forceRefresh && supportsRefresh && tokenManager.refreshIfNeeded) {
+		try {
+			// Attempt to force refresh the tokens
+			const refreshedTokens = await forceRefreshTokens(tokenManager)
+
+			// Update the diagnostic result with refresh information
+			result.tokenStatus.refreshSuccessful = true
+			result.tokenStatus.newExpiresAt = refreshedTokens.expiresAt
+
+			// Update token segments after refresh
+			if (includeTokenSegments) {
+				if (refreshedTokens.accessToken) {
+					result.tokenStatus.accessTokenSegment =
+						refreshedTokens.accessToken.substring(0, 8)
+				}
+
+				if (refreshedTokens.refreshToken) {
+					result.tokenStatus.refreshTokenSegment =
+						refreshedTokens.refreshToken.substring(0, 8)
+				}
+			}
+
+			// Update full tokens if requested
+			if (includeTokens) {
+				result.tokenStatus.tokens = refreshedTokens
+			}
+		} catch (error) {
+			// Record that refresh failed
+			result.tokenStatus.refreshSuccessful = false
+
+			// Re-throw the error for proper handling
+			throw error
+		}
+	}
+
+	return result
 }
