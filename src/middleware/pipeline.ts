@@ -1,11 +1,12 @@
 import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
 import { createLogger } from '../utils/secure-logger'
 import { type Middleware } from './compose'
-import { type RateLimitOptions } from './with-rate-limit'
-import { type RetryOptions } from './with-retry'
+import { type RateLimitOptions, withRateLimit } from './with-rate-limit'
+import { type RetryOptions, withRetry } from './with-retry'
 import {
 	type TokenAuthOptions,
 	DEFAULT_TOKEN_AUTH_OPTIONS,
+	withTokenAuth,
 } from './with-token-auth'
 
 const logger = createLogger('Pipeline')
@@ -78,10 +79,6 @@ export function buildMiddlewarePipeline(
 	options: MiddlewarePipelineOptions = {},
 	tokenManagerInstance?: EnhancedTokenManager,
 ): Middleware[] {
-	const { withTokenAuth } = require('./with-token-auth')
-	const { withRateLimit } = require('./with-rate-limit')
-	const { withRetry } = require('./with-retry')
-
 	const pipeline: Middleware[] = []
 	const disabled = options.disable || []
 
