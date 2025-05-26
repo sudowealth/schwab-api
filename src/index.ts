@@ -63,6 +63,14 @@ export {
 } from './create-api-client'
 
 /**
+ * Configuration Constants
+ *
+ * These exports provide configuration constants for the Schwab API.
+ * Use ENVIRONMENTS and Environment type to specify the API environment.
+ */
+export { ENVIRONMENTS, type Environment } from './constants'
+
+/**
  * Authentication Modules
  *
  * These exports provide tools for handling OAuth authentication with Schwab.

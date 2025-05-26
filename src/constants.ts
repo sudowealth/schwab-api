@@ -93,7 +93,10 @@ export const OAUTH_GRANT_TYPES = {
 export const ENVIRONMENTS = {
 	PRODUCTION: 'production',
 	SANDBOX: 'sandbox',
-}
+} as const
+
+// Environment type
+export type Environment = (typeof ENVIRONMENTS)[keyof typeof ENVIRONMENTS]
 
 // Default timeout (in ms)
 export const TIMEOUTS = {
