@@ -70,7 +70,9 @@ export async function exchangeCodeForTokenWithContext(
 	body.append('redirect_uri', opts.redirectUri)
 	// client_id and client_secret are sent in Authorization header (Basic Auth)
 
-	const authHeader = 'Basic ' + btoa(`${opts.clientId}:${opts.clientSecret}`)
+	const authHeader =
+		'Basic ' +
+		Buffer.from(`${opts.clientId}:${opts.clientSecret}`).toString('base64')
 
 	tokenLogWithContext(
 		context,
@@ -231,7 +233,9 @@ export async function refreshTokenWithContext(
 	body.append('client_id', opts.clientId)
 	// client_id and client_secret are also sent in Authorization header (Basic Auth)
 
-	const authHeader = 'Basic ' + btoa(`${opts.clientId}:${opts.clientSecret}`)
+	const authHeader =
+		'Basic ' +
+		Buffer.from(`${opts.clientId}:${opts.clientSecret}`).toString('base64')
 
 	tokenLogWithContext(context, 'info', `Refreshing token at: ${tokenEndpoint}`)
 
