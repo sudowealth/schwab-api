@@ -279,7 +279,7 @@ const BaseQuoteAssetResponseSchema = z.object({
 	realtime: z.boolean().optional().describe('Is quote realtime'),
 	securityStatus: z.string().optional().describe('Security trading status'),
 	ssid: z.number().int().optional().describe('Unique symbol identifier'),
-	symbol: z.string().describe('Ticker symbol'),
+	symbol: z.string().optional().describe('Ticker symbol'),
 	totalVolume: z.number().int().optional().describe('Total volume for the day'),
 
 	// Optional data blocks (presence depends on 'fields' and assetType)
