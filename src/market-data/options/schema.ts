@@ -281,8 +281,14 @@ export type OptionContractDateMapSchema = z.infer<
 // --- Main OptionChain Schema ---
 
 export const OptionChainSchema = z.object({
-	symbol: z.string().describe('Symbol for which the option chain is requested'),
-	status: z.string().describe('Status of the request (e.g., SUCCESS)'),
+	symbol: z
+		.string()
+		.optional()
+		.describe('Symbol for which the option chain is requested'),
+	status: z
+		.string()
+		.optional()
+		.describe('Status of the request (e.g., SUCCESS)'),
 	underlying: UnderlyingSchema.optional().describe(
 		'Details of the underlying instrument',
 	),

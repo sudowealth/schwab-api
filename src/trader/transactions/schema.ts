@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { isoDateTimeSchema } from '../../utils/date-utils'
+import {
+	isoDateTimeSchema,
+	createISODateTimeSchema,
+} from '../../utils/date-utils'
 import { mergeShapes } from '../../utils/schema-utils'
 import { assetType } from '../shared'
 
@@ -280,16 +283,18 @@ export type GetTransactionsPathParams = z.infer<
 
 // Query Parameters Schema for GET /accounts/{accountNumber}/transactions
 export const GetTransactionsQueryParams = z.object({
-	startDate: z
-		.string()
-		.datetime({ offset: true })
-		.describe('Start date for transaction search'),
-	endDate: z
-		.string()
-		.datetime({ offset: true })
-		.describe('End date for transaction search'),
+	startDate: createISODateTimeSchema({
+		daysOffset: -30,
+		description: 'Start date for transaction search',
+	}),
+	endDate: createISODateTimeSchema({
+		daysOffset: 0,
+		description: 'End date for transaction search',
+	}),
 	symbol: z.string().optional().describe('Symbol to filter transactions'),
-	type: TransactionType.optional().describe('Transaction type to filter'),
+	type: TransactionType.optional()
+		.default('TRADE')
+		.describe('Transaction type to filter'),
 })
 export type GetTransactionsQueryParams = z.infer<
 	typeof GetTransactionsQueryParams
