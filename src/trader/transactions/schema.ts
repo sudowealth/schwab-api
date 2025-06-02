@@ -1,8 +1,5 @@
 import { z } from 'zod'
-import {
-	isoDateTimeSchema,
-	createISODateTimeSchema,
-} from '../../utils/date-utils'
+import { isoDateTimeSchema } from '../../utils/date-utils'
 import { mergeShapes } from '../../utils/schema-utils'
 import { assetType } from '../shared'
 
@@ -24,6 +21,29 @@ export const TransactionType = z.enum([
 	'SMA_ADJUSTMENT',
 ])
 export type TransactionType = z.infer<typeof TransactionType>
+
+// Create a flexible date schema for query parameters
+const flexibleDateSchema = (daysOffset: number, description: string) =>
+	z
+		.preprocess((val) => {
+			// Handle empty strings and undefined
+			if (val === '' || val === undefined || val === null) {
+				// Generate default date in ISO-8601 format
+				const date = new Date()
+				date.setDate(date.getDate() + daysOffset)
+				return date.toISOString()
+			}
+			// Handle YYYY-MM-DD format by converting to ISO datetime
+			if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+				return new Date(val + 'T00:00:00.000Z').toISOString()
+			}
+			// Handle existing ISO datetime (ensure proper format)
+			if (typeof val === 'string' && val.includes('T')) {
+				return new Date(val).toISOString()
+			}
+			return val
+		}, z.string().datetime().describe(description))
+		.optional()
 
 const UserDetails = z.object({
 	cdDomainId: z.string(),
@@ -283,14 +303,8 @@ export type GetTransactionsPathParams = z.infer<
 
 // Query Parameters Schema for GET /accounts/{accountNumber}/transactions
 export const GetTransactionsQueryParams = z.object({
-	startDate: createISODateTimeSchema({
-		daysOffset: -30,
-		description: 'Start date for transaction search',
-	}),
-	endDate: createISODateTimeSchema({
-		daysOffset: 0,
-		description: 'End date for transaction search',
-	}),
+	startDate: flexibleDateSchema(-30, 'Start date for transaction search'),
+	endDate: flexibleDateSchema(0, 'End date for transaction search'),
 	symbol: z.string().optional().describe('Symbol to filter transactions'),
 	type: TransactionType.optional()
 		.default('TRADE')
