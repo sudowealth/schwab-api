@@ -459,6 +459,40 @@ export type GetOptionChainResponse = z.infer<typeof GetOptionChainResponse>
 
 // --- Schemas for GET /expirationchain endpoint ---
 
+// Schema for individual expiration items in the expiration chain
+export const OptionExpirationItemSchema = z.object({
+	expirationDate: z
+		.string()
+		.describe('Expiration date in YYYY-MM-DD format (e.g., "2025-06-06")'),
+	daysToExpiration: z
+		.number()
+		.int()
+		.describe('Number of days until expiration'),
+	expirationType: z
+		.string()
+		.describe('Type of expiration (e.g., "W" for weekly, "S" for standard)'),
+	settlementType: z
+		.string()
+		.describe('Settlement type (e.g., "P" for PM settlement)'),
+	optionRoots: z
+		.string()
+		.describe('Option root symbol (typically same as underlying symbol)'),
+	standard: z.boolean().describe('Whether this is a standard expiration'),
+})
+export type OptionExpirationItemSchema = z.infer<
+	typeof OptionExpirationItemSchema
+>
+
+// Schema for the complete expiration chain response
+export const OptionExpirationChainSchema = z.object({
+	expirationList: z
+		.array(OptionExpirationItemSchema)
+		.describe('List of available expiration dates and their details'),
+})
+export type OptionExpirationChainSchema = z.infer<
+	typeof OptionExpirationChainSchema
+>
+
 // Path Parameters Schema for GET /expirationchain (no path params)
 export const GetOptionExpirationChainPathParams = z.object({})
 export type GetOptionExpirationChainPathParams = z.infer<
@@ -485,7 +519,7 @@ export type GetOptionExpirationChainParams = z.infer<
 >
 
 // Response Body Schema for GET /expirationchain
-export const GetOptionExpirationChainResponse = OptionChainSchema
+export const GetOptionExpirationChainResponse = OptionExpirationChainSchema
 export type GetOptionExpirationChainResponse = z.infer<
 	typeof GetOptionExpirationChainResponse
 >
