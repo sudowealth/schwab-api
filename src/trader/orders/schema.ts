@@ -2,6 +2,38 @@ import { z } from 'zod'
 import { mergeShapes } from '../../utils/schema-utils'
 import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
+// Create a flexible date schema for query parameters
+const flexibleDateSchema = (daysOffset: number, description: string) =>
+	z
+		.preprocess((val) => {
+			// Handle empty strings and undefined
+			if (val === '' || val === undefined || val === null) {
+				// Generate default date in full ISO format
+				const date = new Date()
+				date.setDate(date.getDate() + daysOffset)
+				// For start dates, set to beginning of day; for end dates, set to end of day
+				if (daysOffset < 0) {
+					// Start date - beginning of day
+					date.setHours(0, 0, 0, 0)
+				} else {
+					// End date - end of day
+					date.setHours(23, 59, 59, 999)
+				}
+				return date.toISOString()
+			}
+			// Handle YYYY-MM-DD format - convert to full ISO datetime
+			if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+				const date = new Date(val + 'T00:00:00.000Z')
+				return date.toISOString()
+			}
+			// Handle full ISO datetime - ensure proper format
+			if (typeof val === 'string' && val.includes('T')) {
+				return new Date(val).toISOString()
+			}
+			return val
+		}, z.string().describe(description))
+		.optional()
+
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
 const duration = z.enum([
 	'DAY',
@@ -372,16 +404,8 @@ export const GetOrdersQueryParams = z.object({
 		.max(3000)
 		.optional()
 		.describe('The maximum number of orders to return'),
-	fromEnteredTime: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe('Start date to search for orders'),
-	toEnteredTime: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe('End date to search for orders'),
+	fromEnteredTime: flexibleDateSchema(-30, 'Start date to search for orders'),
+	toEnteredTime: flexibleDateSchema(1, 'End date to search for orders'),
 	status: status
 		.optional()
 		.describe('Specifies that only orders of this status should be returned'),
@@ -415,16 +439,8 @@ export const GetOrdersByAccountQueryParams = z.object({
 		.max(3000)
 		.optional()
 		.describe('The maximum number of orders to return'),
-	fromEnteredTime: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe('Start date to search for orders'),
-	toEnteredTime: z
-		.string()
-		.datetime({ offset: true })
-		.optional()
-		.describe('End date to search for orders'),
+	fromEnteredTime: flexibleDateSchema(-60, 'Start date to search for orders'),
+	toEnteredTime: flexibleDateSchema(1, 'End date to search for orders'),
 	status: status
 		.optional()
 		.describe('Specifies that only orders of this status should be returned'),
