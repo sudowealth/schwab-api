@@ -5,6 +5,7 @@
  * expected by EnhancedTokenManager
  */
 
+export * from './cookie-token-store'
 export * from './kv-token-store'
 
 // Future adapters can be added here:

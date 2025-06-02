@@ -136,6 +136,14 @@ export {
 	validateOAuthState,
 	mergeStateWithPKCE,
 	extractPKCEFromState,
+	createStateWithCSRF,
+	verifyStateWithCSRF,
+	extractClientIdFromState,
+	decodeAndVerifyState,
+	BasicOAuthStateSchema,
+	PKCEOAuthStateSchema,
+	type OAuthState,
+	type OAuthStateOptions,
 } from './auth/oauth-state-utils'
 
 /**
@@ -151,6 +159,17 @@ export type {
 	KVNamespace,
 	TokenIdentifiers,
 } from './auth/adapters/kv-token-store'
+
+/**
+ * Cookie-based Token Storage
+ *
+ * Secure token persistence using signed cookies
+ */
+export {
+	CookieTokenStore,
+	createCookieTokenStore,
+	type CookieTokenStoreOptions,
+} from './auth/adapters/cookie-token-store'
 
 /**
  * Account Privacy Utilities
@@ -194,8 +213,13 @@ export {
  */
 export {
 	SchwabErrorMapper,
+	defaultErrorMapper,
 	mapSchwabError,
+	schwabErrorHandler,
 	requiresReauthentication,
+	getRetryInfo,
+	type ErrorMappingResult,
+	type ErrorMapper,
 } from './auth/error-mapping'
 
 /**

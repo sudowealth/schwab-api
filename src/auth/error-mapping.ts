@@ -1,8 +1,8 @@
 import {
 	SchwabAuthError,
+	AuthErrorCode,
 	SchwabApiError,
 	ApiErrorCode,
-	AuthErrorCode,
 } from '../errors'
 
 /**
@@ -10,9 +10,9 @@ import {
  */
 export interface ErrorMappingResult {
 	/**
-	 * HTTP status code to return
+	 * Mapped error code
 	 */
-	httpStatus: number
+	code: AuthErrorCode | ApiErrorCode
 
 	/**
 	 * Human-readable error message
@@ -20,207 +20,252 @@ export interface ErrorMappingResult {
 	message: string
 
 	/**
-	 * Error code for programmatic handling
+	 * HTTP status code to use in response
 	 */
-	code: string
+	httpStatus: number
 
 	/**
 	 * Whether the error is retryable
 	 */
-	retryable: boolean
+	isRetryable: boolean
 
 	/**
-	 * Additional error details
+	 * Whether reauthentication is required
 	 */
-	details?: Record<string, any>
+	requiresReauth: boolean
+
+	/**
+	 * Additional context about the error
+	 */
+	context?: Record<string, any>
 }
 
 /**
- * Interface for error mapping functionality
+ * Interface for custom error mappers
  */
 export interface ErrorMapper {
 	/**
-	 * Map an authentication error to a standard response
+	 * Map an error to a result
 	 */
-	mapAuthError(error: SchwabAuthError): ErrorMappingResult
-
-	/**
-	 * Map an API error to a standard response
-	 */
-	mapApiError(error: SchwabApiError): ErrorMappingResult
-
-	/**
-	 * Get the appropriate HTTP status for any error
-	 */
-	getHttpStatusForError(error: Error): number
-
-	/**
-	 * Create a user-friendly message from an error
-	 */
-	getUserMessage(error: Error): string
+	map(error: unknown): ErrorMappingResult | null
 }
 
 /**
- * Default error mappings for Schwab errors
+ * Enhanced error mapper with extensible mapping support
  */
-const DEFAULT_AUTH_ERROR_MAPPINGS: Record<
-	string,
-	Partial<ErrorMappingResult>
-> = {
-	[AuthErrorCode.INVALID_CODE]: {
-		httpStatus: 400,
-		message: 'Invalid authorization code or PKCE verification failed',
-		retryable: false,
-	},
-	[AuthErrorCode.PKCE_VERIFIER_MISSING]: {
-		httpStatus: 400,
-		message:
-			'PKCE code verifier is missing - authorization state may be corrupted',
-		retryable: false,
-	},
-	[AuthErrorCode.TOKEN_EXPIRED]: {
-		httpStatus: 401,
-		message: 'Authentication token has expired - please re-authenticate',
-		retryable: false,
-	},
-	[AuthErrorCode.UNAUTHORIZED]: {
-		httpStatus: 401,
-		message: 'Invalid credentials or unauthorized access',
-		retryable: false,
-	},
-	[AuthErrorCode.TOKEN_PERSISTENCE_LOAD_FAILED]: {
-		httpStatus: 500,
-		message: 'Failed to retrieve authentication state',
-		retryable: true,
-	},
-	[AuthErrorCode.TOKEN_PERSISTENCE_SAVE_FAILED]: {
-		httpStatus: 500,
-		message: 'Failed to save authentication state',
-		retryable: true,
-	},
-	[AuthErrorCode.TOKEN_VALIDATION_ERROR]: {
-		httpStatus: 500,
-		message: 'Authentication token validation failed',
-		retryable: false,
-	},
-	[AuthErrorCode.TOKEN_ENDPOINT_CONFIG_ERROR]: {
-		httpStatus: 500,
-		message: 'Authentication system configuration error',
-		retryable: false,
-	},
-	[AuthErrorCode.REFRESH_NEEDED]: {
-		httpStatus: 401,
-		message: 'Token refresh required',
-		retryable: true,
-	},
-	[AuthErrorCode.NETWORK]: {
-		httpStatus: 503,
-		message: 'Network error during authentication',
-		retryable: true,
-	},
-	[AuthErrorCode.UNKNOWN]: {
-		httpStatus: 500,
-		message: 'An unknown authentication error occurred',
-		retryable: false,
-	},
-}
-
-const DEFAULT_API_ERROR_MAPPINGS: Record<
-	ApiErrorCode,
-	Partial<ErrorMappingResult>
-> = {
-	[ApiErrorCode.NETWORK]: {
-		httpStatus: 503,
-		message: 'Network connectivity error',
-		retryable: true,
-	},
-	[ApiErrorCode.RATE_LIMIT]: {
-		httpStatus: 429,
-		message: 'Rate limit exceeded - please try again later',
-		retryable: true,
-	},
-	[ApiErrorCode.TIMEOUT]: {
-		httpStatus: 408,
-		message: 'Request timed out',
-		retryable: true,
-	},
-	[ApiErrorCode.UNAUTHORIZED]: {
-		httpStatus: 401,
-		message: 'Authentication required',
-		retryable: false,
-	},
-	[ApiErrorCode.FORBIDDEN]: {
-		httpStatus: 403,
-		message: 'Access denied',
-		retryable: false,
-	},
-	[ApiErrorCode.INVALID_REQUEST]: {
-		httpStatus: 400,
-		message: 'Invalid request parameters',
-		retryable: false,
-	},
-	[ApiErrorCode.NOT_FOUND]: {
-		httpStatus: 404,
-		message: 'Resource not found',
-		retryable: false,
-	},
-	[ApiErrorCode.SERVER_ERROR]: {
-		httpStatus: 500,
-		message: 'Internal server error',
-		retryable: true,
-	},
-	[ApiErrorCode.SERVICE_UNAVAILABLE]: {
-		httpStatus: 503,
-		message: 'Service temporarily unavailable',
-		retryable: true,
-	},
-	[ApiErrorCode.GATEWAY_ERROR]: {
-		httpStatus: 502,
-		message: 'Bad gateway',
-		retryable: true,
-	},
-	[ApiErrorCode.UNKNOWN]: {
-		httpStatus: 500,
-		message: 'An unknown error occurred',
-		retryable: false,
-	},
-}
-
-/**
- * Main error mapper implementation
- */
-export class SchwabErrorMapper implements ErrorMapper {
-	private authMappings: Record<string, Partial<ErrorMappingResult>>
-	private apiMappings: Record<ApiErrorCode, Partial<ErrorMappingResult>>
+export class SchwabErrorMapper {
+	private customMappers: ErrorMapper[] = []
+	private authErrorMappings: Map<AuthErrorCode, Partial<ErrorMappingResult>> =
+		new Map()
+	private apiErrorMappings: Map<ApiErrorCode, Partial<ErrorMappingResult>> =
+		new Map()
 
 	constructor(options?: {
-		customAuthMappings?: Record<string, Partial<ErrorMappingResult>>
+		customMappers?: ErrorMapper[]
+		customAuthMappings?: Record<AuthErrorCode, Partial<ErrorMappingResult>>
 		customApiMappings?: Record<ApiErrorCode, Partial<ErrorMappingResult>>
 	}) {
-		this.authMappings = {
-			...DEFAULT_AUTH_ERROR_MAPPINGS,
-			...options?.customAuthMappings,
+		// Initialize default mappings
+		this.initializeDefaultMappings()
+
+		// Add custom mappers
+		if (options?.customMappers) {
+			this.customMappers.push(...options.customMappers)
 		}
 
-		this.apiMappings = {
-			...DEFAULT_API_ERROR_MAPPINGS,
-			...options?.customApiMappings,
+		// Override auth mappings
+		if (options?.customAuthMappings) {
+			Object.entries(options.customAuthMappings).forEach(([code, mapping]) => {
+				this.authErrorMappings.set(code as AuthErrorCode, mapping)
+			})
+		}
+
+		// Override API mappings
+		if (options?.customApiMappings) {
+			Object.entries(options.customApiMappings).forEach(([code, mapping]) => {
+				this.apiErrorMappings.set(code as ApiErrorCode, mapping)
+			})
 		}
 	}
 
 	/**
-	 * Map an authentication error
+	 * Initialize default error mappings
+	 */
+	private initializeDefaultMappings(): void {
+		// Auth error mappings
+		this.authErrorMappings.set(AuthErrorCode.INVALID_CODE, {
+			message: 'Invalid or expired authorization code',
+			httpStatus: 400,
+			isRetryable: false,
+			requiresReauth: true,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.TOKEN_EXPIRED, {
+			message: 'Refresh token has expired',
+			httpStatus: 401,
+			isRetryable: false,
+			requiresReauth: true,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.UNAUTHORIZED, {
+			message: 'Invalid client credentials',
+			httpStatus: 401,
+			isRetryable: false,
+			requiresReauth: true,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.REFRESH_NEEDED, {
+			message: 'Access token needs refresh',
+			httpStatus: 401,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.NETWORK, {
+			message: 'Network error during authentication',
+			httpStatus: 503,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.TOKEN_PERSISTENCE_LOAD_FAILED, {
+			message: 'Failed to load stored tokens',
+			httpStatus: 500,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.TOKEN_PERSISTENCE_SAVE_FAILED, {
+			message: 'Failed to save tokens',
+			httpStatus: 500,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.TOKEN_VALIDATION_ERROR, {
+			message: 'Token validation failed',
+			httpStatus: 401,
+			isRetryable: false,
+			requiresReauth: true,
+		})
+
+		this.authErrorMappings.set(AuthErrorCode.PKCE_VERIFIER_MISSING, {
+			message: 'PKCE code verifier is missing',
+			httpStatus: 400,
+			isRetryable: false,
+			requiresReauth: true,
+		})
+
+		// API error mappings
+		this.apiErrorMappings.set(ApiErrorCode.RATE_LIMIT, {
+			message: 'Rate limit exceeded',
+			httpStatus: 429,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.UNAUTHORIZED, {
+			message: 'Unauthorized API access',
+			httpStatus: 401,
+			isRetryable: false,
+			requiresReauth: true,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.FORBIDDEN, {
+			message: 'Access forbidden',
+			httpStatus: 403,
+			isRetryable: false,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.NOT_FOUND, {
+			message: 'Resource not found',
+			httpStatus: 404,
+			isRetryable: false,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.SERVER_ERROR, {
+			message: 'Internal server error',
+			httpStatus: 500,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.SERVICE_UNAVAILABLE, {
+			message: 'Service temporarily unavailable',
+			httpStatus: 503,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.GATEWAY_ERROR, {
+			message: 'Gateway error',
+			httpStatus: 502,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.TIMEOUT, {
+			message: 'Request timeout',
+			httpStatus: 408,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+
+		this.apiErrorMappings.set(ApiErrorCode.NETWORK, {
+			message: 'Network error',
+			httpStatus: 0,
+			isRetryable: true,
+			requiresReauth: false,
+		})
+	}
+
+	/**
+	 * Map a Schwab error to an error mapping result
+	 */
+	map(error: unknown): ErrorMappingResult {
+		// Try custom mappers first
+		for (const mapper of this.customMappers) {
+			const result = mapper.map(error)
+			if (result) {
+				return result
+			}
+		}
+
+		// Handle SchwabAuthError
+		if (error instanceof SchwabAuthError) {
+			return this.mapAuthError(error)
+		}
+
+		// Handle SchwabApiError
+		if (error instanceof SchwabApiError) {
+			return this.mapApiError(error)
+		}
+
+		// Default mapping for unknown errors
+		return {
+			code: ApiErrorCode.UNKNOWN,
+			message: error instanceof Error ? error.message : 'Unknown error',
+			httpStatus: 500,
+			isRetryable: false,
+			requiresReauth: false,
+		}
+	}
+
+	/**
+	 * Map an auth error
 	 */
 	mapAuthError(error: SchwabAuthError): ErrorMappingResult {
-		const mapping =
-			this.authMappings[error.code] || this.authMappings[AuthErrorCode.UNKNOWN]
+		const baseMapping = this.authErrorMappings.get(error.code) || {}
 
 		return {
-			httpStatus: mapping?.httpStatus || error.status || 500,
-			message: mapping?.message || error.message,
 			code: error.code,
-			retryable: mapping?.retryable ?? error.isRetryable(),
-			details: {
+			message: baseMapping.message || error.message,
+			httpStatus: baseMapping.httpStatus || error.status || 500,
+			isRetryable: baseMapping.isRetryable ?? error.isRetryable(),
+			requiresReauth: baseMapping.requiresReauth ?? true,
+			context: {
 				originalMessage: error.message,
 				...(error.body ? { body: error.body } : {}),
 			},
@@ -231,257 +276,126 @@ export class SchwabErrorMapper implements ErrorMapper {
 	 * Map an API error
 	 */
 	mapApiError(error: SchwabApiError): ErrorMappingResult {
-		const mapping =
-			this.apiMappings[error.code] || this.apiMappings[ApiErrorCode.UNKNOWN]
-
-		// Extract additional details from the error
-		const details: Record<string, any> = {
-			originalMessage: error.message,
-			...(error.getRequestId() && { requestId: error.getRequestId() }),
-		}
-
-		// Add rate limit information if available
-		if (error.code === ApiErrorCode.RATE_LIMIT && error.metadata?.rateLimit) {
-			details.rateLimit = error.metadata.rateLimit
-		}
-
-		// Add retry information if available
-		const retryDelayMs = error.getRetryDelayMs()
-		if (retryDelayMs !== null) {
-			details.retryAfter = Math.ceil(retryDelayMs / 1000)
-		}
+		const baseMapping = this.apiErrorMappings.get(error.code) || {}
 
 		return {
-			httpStatus: mapping.httpStatus || error.status,
-			message: mapping.message || error.getFormattedDetails(),
 			code: error.code,
-			retryable: mapping.retryable ?? error.isRetryable(),
-			details,
-		}
-	}
-
-	/**
-	 * Get HTTP status for any error type
-	 */
-	getHttpStatusForError(error: Error): number {
-		if (error instanceof SchwabAuthError) {
-			return this.mapAuthError(error).httpStatus
-		}
-
-		if (error instanceof SchwabApiError) {
-			return this.mapApiError(error).httpStatus
-		}
-
-		// Default to 500 for unknown errors
-		return 500
-	}
-
-	/**
-	 * Create a user-friendly message from any error
-	 */
-	getUserMessage(error: Error): string {
-		if (error instanceof SchwabAuthError) {
-			return this.mapAuthError(error).message
-		}
-
-		if (error instanceof SchwabApiError) {
-			return this.mapApiError(error).message
-		}
-
-		// Generic message for unknown errors
-		return 'An unexpected error occurred. Please try again later.'
-	}
-
-	/**
-	 * Get all default mappings (useful for documentation)
-	 */
-	static getDefaultMappings(): {
-		auth: Record<string, Partial<ErrorMappingResult>>
-		api: Record<ApiErrorCode, Partial<ErrorMappingResult>>
-	} {
-		return {
-			auth: DEFAULT_AUTH_ERROR_MAPPINGS,
-			api: DEFAULT_API_ERROR_MAPPINGS,
-		}
-	}
-
-	/**
-	 * Create a standard error response object
-	 */
-	createErrorResponse(error: Error): {
-		error: {
-			code: string
-			message: string
-			details?: Record<string, any>
-		}
-		status: number
-	} {
-		let result: ErrorMappingResult
-
-		if (error instanceof SchwabAuthError) {
-			result = this.mapAuthError(error)
-		} else if (error instanceof SchwabApiError) {
-			result = this.mapApiError(error)
-		} else {
-			// Handle generic errors
-			result = {
-				httpStatus: 500,
-				message: this.getUserMessage(error),
-				code: 'INTERNAL_ERROR',
-				retryable: false,
-				details: {
-					type: error.constructor.name,
-					message: error.message,
-				},
-			}
-		}
-
-		return {
-			error: {
-				code: result.code,
-				message: result.message,
-				...(result.details && { details: result.details }),
+			message: baseMapping.message || error.getFormattedDetails(),
+			httpStatus: baseMapping.httpStatus || error.status,
+			isRetryable: baseMapping.isRetryable ?? error.isRetryable(),
+			requiresReauth: baseMapping.requiresReauth ?? error.status === 401,
+			context: {
+				originalMessage: error.message,
+				requestId: error.getRequestId(),
+				...(error.metadata && { metadata: error.metadata }),
 			},
-			status: result.httpStatus,
 		}
+	}
+
+	/**
+	 * Add a custom error mapper
+	 */
+	addMapper(mapper: ErrorMapper): void {
+		this.customMappers.push(mapper)
+	}
+
+	/**
+	 * Override a specific auth error mapping
+	 */
+	setAuthMapping(
+		code: AuthErrorCode,
+		mapping: Partial<ErrorMappingResult>,
+	): void {
+		this.authErrorMappings.set(code, mapping)
+	}
+
+	/**
+	 * Override a specific API error mapping
+	 */
+	setApiMapping(
+		code: ApiErrorCode,
+		mapping: Partial<ErrorMappingResult>,
+	): void {
+		this.apiErrorMappings.set(code, mapping)
 	}
 }
 
 /**
- * Create a singleton instance with default mappings
+ * Default error mapper instance
  */
 export const defaultErrorMapper = new SchwabErrorMapper()
 
 /**
- * Utility function to map any Schwab error to a standard format
- *
- * @param error The error to map
- * @param options Additional options
- * @returns Mapped error result
+ * Map a Schwab SDK error to appropriate error metadata
+ * This is a convenience function that uses the default mapper
  */
-export function mapSchwabError(
-	error: Error,
-	options?: {
-		includeStack?: boolean
-		sanitize?: boolean
-	},
-): ErrorMappingResult & { stack?: string } {
-	const mapper = defaultErrorMapper
+export function mapSchwabError(error: unknown): ErrorMappingResult {
+	return defaultErrorMapper.map(error)
+}
 
-	let result: ErrorMappingResult
+/**
+ * Create an error handler function for Express/Hono style frameworks
+ */
+export function schwabErrorHandler(options?: {
+	includeStackTrace?: boolean
+	customMapper?: SchwabErrorMapper
+}) {
+	const mapper = options?.customMapper || defaultErrorMapper
 
-	if (error instanceof SchwabAuthError) {
-		result = mapper.mapAuthError(error)
-	} else if (error instanceof SchwabApiError) {
-		result = mapper.mapApiError(error)
-	} else {
-		// Generic error handling
-		result = {
-			httpStatus: 500,
-			message: error.message || 'An unexpected error occurred',
-			code: 'UNKNOWN_ERROR',
-			retryable: false,
+	return (error: unknown, req: any, res: any) => {
+		const mapping = mapper.map(error)
+
+		const response = {
+			error: {
+				code: mapping.code,
+				message: mapping.message,
+				...(mapping.context?.requestId && {
+					requestId: mapping.context.requestId,
+				}),
+			},
+			...(options?.includeStackTrace &&
+				error instanceof Error && {
+					stack: error.stack,
+				}),
 		}
+
+		// Set appropriate headers
+		if (mapping.context?.requestId) {
+			res.setHeader('X-Request-ID', mapping.context.requestId)
+		}
+
+		res.status(mapping.httpStatus).json(response)
+	}
+}
+
+/**
+ * Check if an error requires reauthentication
+ */
+export function requiresReauthentication(error: unknown): boolean {
+	const mapping = defaultErrorMapper.map(error)
+	return mapping.requiresReauth
+}
+
+/**
+ * Get retry information from an error
+ */
+export function getRetryInfo(error: unknown): {
+	isRetryable: boolean
+	retryAfterMs?: number
+} {
+	const mapping = defaultErrorMapper.map(error)
+
+	const result: { isRetryable: boolean; retryAfterMs?: number } = {
+		isRetryable: mapping.isRetryable,
 	}
 
-	// Add stack trace if requested (only in development)
-	if (options?.includeStack && process.env.NODE_ENV !== 'production') {
-		return {
-			...result,
-			stack: error.stack,
+	// Check for retry-after information in API errors
+	if (error instanceof SchwabApiError && error.hasRetryInfo()) {
+		const retryDelay = error.getRetryDelayMs()
+		if (retryDelay !== null) {
+			result.retryAfterMs = retryDelay
 		}
 	}
 
 	return result
-}
-
-/**
- * Express/Connect middleware for error handling
- *
- * @example
- * ```typescript
- * app.use(schwabErrorHandler());
- * ```
- */
-export function schwabErrorHandler(options?: {
-	logger?: (error: Error, req: any) => void
-	includeStack?: boolean
-}) {
-	return (error: Error, req: any, res: any) => {
-		// Log the error if logger provided
-		if (options?.logger) {
-			options.logger(error, req)
-		}
-
-		// Map the error
-		const response = defaultErrorMapper.createErrorResponse(error)
-
-		// Send the response
-		res.status(response.status).json(response)
-	}
-}
-
-/**
- * Helper to determine if an error should trigger a re-authentication flow
- *
- * @param error The error to check
- * @returns True if re-authentication is needed
- */
-export function requiresReauthentication(error: Error): boolean {
-	if (error instanceof SchwabAuthError) {
-		const authCodes = [
-			AuthErrorCode.TOKEN_EXPIRED,
-			AuthErrorCode.UNAUTHORIZED,
-			AuthErrorCode.INVALID_CODE,
-		]
-		return authCodes.includes(error.code)
-	}
-
-	if (error instanceof SchwabApiError) {
-		return error.code === ApiErrorCode.UNAUTHORIZED
-	}
-
-	return false
-}
-
-/**
- * Helper to extract retry information from errors
- *
- * @param error The error to check
- * @returns Retry information if available
- */
-export function getRetryInfo(error: Error): {
-	shouldRetry: boolean
-	delayMs?: number
-	reason?: string
-} | null {
-	if (error instanceof SchwabApiError) {
-		const shouldRetry = error.isRetryable()
-		const delayMs = error.getRetryDelayMs()
-
-		if (!shouldRetry) {
-			return null
-		}
-
-		return {
-			shouldRetry: true,
-			delayMs: delayMs ?? undefined,
-			reason: error.code,
-		}
-	}
-
-	if (error instanceof SchwabAuthError) {
-		const shouldRetry = error.isRetryable()
-
-		if (!shouldRetry) {
-			return null
-		}
-
-		return {
-			shouldRetry: true,
-			reason: error.code,
-		}
-	}
-
-	return null
 }
