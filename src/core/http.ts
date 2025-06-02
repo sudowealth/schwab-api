@@ -1,4 +1,4 @@
-import { type ZodType, type ZodTypeDef } from 'zod'
+import { type ZodType } from 'zod/v4'
 import {
 	SchwabApiError,
 	createSchwabApiError,
@@ -34,11 +34,11 @@ export interface EndpointMetadata<
 > {
 	method: M
 	path: string // Can include path parameters like /path/{id}
-	pathSchema?: ZodType<PType, ZodTypeDef, any> // Schema that outputs PType
-	querySchema?: ZodType<QType, ZodTypeDef, any> // Schema that outputs QType
-	bodySchema?: ZodType<BType, ZodTypeDef, any> // Schema that outputs BType
-	responseSchema: ZodType<RType, ZodTypeDef, any> // Schema that outputs RType
-	errorSchema?: ZodType<ErrorType, ZodTypeDef, any> // Schema for error responses
+	pathSchema?: ZodType<PType> // Schema that outputs PType
+	querySchema?: ZodType<QType> // Schema that outputs QType
+	bodySchema?: ZodType<BType> // Schema that outputs BType
+	responseSchema: ZodType<RType> // Schema that outputs RType
+	errorSchema?: ZodType<ErrorType> // Schema for error responses
 	description?: string
 }
 

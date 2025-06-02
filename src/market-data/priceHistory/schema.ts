@@ -1,10 +1,9 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import {
 	dateStringSchema,
 	epochMillisSchema,
 	createQueryDateSchema,
 } from '../../utils/date-utils'
-import { mergeShapes } from '../../utils/schema-utils'
 
 // Enum for periodType query parameter
 export const PriceHistoryPeriodTypeEnum = z.enum([
@@ -121,11 +120,8 @@ export type GetPriceHistoryQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /pricehistory (merged path + query params)
-export const GetPriceHistoryParams = z.object(
-	mergeShapes(
-		GetPriceHistoryQueryParams.shape,
-		GetPriceHistoryPathParams.shape,
-	),
+export const GetPriceHistoryParams = GetPriceHistoryPathParams.extend(
+	GetPriceHistoryQueryParams.shape,
 )
 export type GetPriceHistoryParams = z.infer<typeof GetPriceHistoryParams>
 

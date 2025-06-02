@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 /**
  * Comprehensive asset type enum combining all possible asset types

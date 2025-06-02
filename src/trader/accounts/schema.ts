@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { mergeShapes } from '../../utils/schema-utils'
 import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
@@ -13,7 +13,7 @@ export const AccountsBaseInstrument = z.object({
 type AccountsBaseInstrument = z.infer<typeof AccountsBaseInstrument>
 
 const AccountCashEquivalent = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.CASH_EQUIVALENT),
+	assetType: z.literal(assetType.enum.CASH_EQUIVALENT),
 	type: z
 		.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN'])
 		.optional(),
@@ -22,25 +22,28 @@ const AccountCashEquivalent = AccountsBaseInstrument.extend({
 type AccountCashEquivalent = z.infer<typeof AccountCashEquivalent>
 
 const AccountEquity = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.EQUITY),
+	assetType: z.literal(assetType.enum.EQUITY),
 })
 type AccountEquity = z.infer<typeof AccountEquity>
 
 const AccountFixedIncome = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.FIXED_INCOME),
-	maturityDate: z.string().datetime().optional(),
+	assetType: z.literal(assetType.enum.FIXED_INCOME),
+	maturityDate: z
+		.string()
+		.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/)
+		.optional(),
 	factor: z.number().optional(),
 	variableRate: z.number().optional(),
 })
 type AccountFixedIncome = z.infer<typeof AccountFixedIncome>
 
 const AccountMutualFund = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.MUTUAL_FUND),
+	assetType: z.literal(assetType.enum.MUTUAL_FUND),
 })
 type AccountMutualFund = z.infer<typeof AccountMutualFund>
 
 const AccountOption = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.OPTION),
+	assetType: z.literal(assetType.enum.OPTION),
 	optionDeliverables: z
 		.array(z.lazy(() => AccountAPIOptionDeliverable))
 		.optional(),
@@ -52,34 +55,37 @@ const AccountOption = AccountsBaseInstrument.extend({
 type AccountOption = z.infer<typeof AccountOption>
 
 const AccountFuture = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.FUTURE),
-	expirationDate: z.string().datetime().optional(),
+	assetType: z.literal(assetType.enum.FUTURE),
+	expirationDate: z
+		.string()
+		.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/)
+		.optional(),
 	activeContract: z.boolean().default(false).optional(),
 })
 type AccountFuture = z.infer<typeof AccountFuture>
 
 const AccountForex = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.FOREX),
+	assetType: z.literal(assetType.enum.FOREX),
 })
 type AccountForex = z.infer<typeof AccountForex>
 
 const AccountIndex = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.INDEX),
+	assetType: z.literal(assetType.enum.INDEX),
 })
 type AccountIndex = z.infer<typeof AccountIndex>
 
 const AccountProduct = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.PRODUCT), // Assuming PRODUCT is in AssetType enum
+	assetType: z.literal(assetType.enum.PRODUCT), // Assuming PRODUCT is in AssetType enum
 })
 type AccountProduct = z.infer<typeof AccountProduct>
 
 const AccountCurrency = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.CURRENCY),
+	assetType: z.literal(assetType.enum.CURRENCY),
 })
 type AccountCurrency = z.infer<typeof AccountCurrency>
 
 const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.COLLECTIVE_INVESTMENT),
+	assetType: z.literal(assetType.enum.COLLECTIVE_INVESTMENT),
 })
 type AccountCollectiveInvestment = z.infer<typeof AccountCollectiveInvestment>
 
@@ -288,8 +294,8 @@ export const GetAccountsQueryParams = z.object({
 export type GetAccountsQueryParams = z.infer<typeof GetAccountsQueryParams>
 
 // Request Params Schema for GET /accounts (merged path + query params)
-export const GetAccountsParams = z.object(
-	mergeShapes(GetAccountsQueryParams.shape, GetAccountsPathParams.shape),
+export const GetAccountsParams = GetAccountsPathParams.extend(
+	GetAccountsQueryParams.shape,
 )
 export type GetAccountsParams = z.infer<typeof GetAccountsParams>
 
@@ -325,11 +331,8 @@ export type GetAccountByNumberQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /accounts/{accountNumber} (merged path + query params)
-export const GetAccountByNumberParams = z.object(
-	mergeShapes(
-		GetAccountByNumberQueryParams.shape,
-		GetAccountByNumberPathParams.shape,
-	),
+export const GetAccountByNumberParams = GetAccountByNumberPathParams.extend(
+	GetAccountByNumberQueryParams.shape,
 )
 export type GetAccountByNumberParams = z.infer<typeof GetAccountByNumberParams>
 

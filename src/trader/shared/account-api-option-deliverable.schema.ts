@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { ApiCurrencyType } from './api-currency-type.schema'
 import { assetType } from './asset-type.schema'
 

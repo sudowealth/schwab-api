@@ -1,5 +1,4 @@
-import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils'
+import { z } from 'zod/v4'
 import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
@@ -389,8 +388,8 @@ export const GetOrdersQueryParams = z.object({
 export type GetOrdersQueryParams = z.infer<typeof GetOrdersQueryParams>
 
 // Request Params Schema for GET /orders (merged path + query params)
-export const GetOrdersParams = z.object(
-	mergeShapes(GetOrdersQueryParams.shape, GetOrdersPathParams.shape),
+export const GetOrdersParams = GetOrdersPathParams.extend(
+	GetOrdersQueryParams.shape,
 )
 export type GetOrdersParams = z.infer<typeof GetOrdersParams>
 
@@ -433,11 +432,8 @@ export type GetOrdersByAccountQueryParams = z.infer<
 	typeof GetOrdersByAccountQueryParams
 >
 
-export const GetOrdersByAccountParams = z.object(
-	mergeShapes(
-		GetOrdersByAccountQueryParams.shape,
-		GetOrdersByAccountPathParams.shape,
-	),
+export const GetOrdersByAccountParams = GetOrdersByAccountPathParams.extend(
+	GetOrdersByAccountQueryParams.shape,
 )
 export type GetOrdersByAccountParams = z.infer<typeof GetOrdersByAccountParams>
 
@@ -452,8 +448,8 @@ export type PlaceOrderPathParams = z.infer<typeof PlaceOrderPathParams>
 export const PlaceOrderRequestBody = OrderRequest
 export type PlaceOrderRequestBody = z.infer<typeof PlaceOrderRequestBody>
 
-export const PlaceOrderParams = z.object(
-	mergeShapes(PlaceOrderPathParams.shape, PlaceOrderRequestBody.shape),
+export const PlaceOrderParams = PlaceOrderPathParams.extend(
+	PlaceOrderRequestBody.shape,
 )
 export type PlaceOrderParams = z.infer<typeof PlaceOrderParams>
 
@@ -474,8 +470,8 @@ export const GetOrderByIdQueryParams = z.object({})
 export type GetOrderByIdQueryParams = z.infer<typeof GetOrderByIdQueryParams>
 
 // Request Params Schema for GET /accounts/{accountNumber}/orders/{orderId} (merged path + query params)
-export const GetOrderByIdParams = z.object(
-	mergeShapes(GetOrderByIdQueryParams.shape, GetOrderByIdPathParams.shape),
+export const GetOrderByIdParams = GetOrderByIdPathParams.extend(
+	GetOrderByIdQueryParams.shape,
 )
 export type GetOrderByIdParams = z.infer<typeof GetOrderByIdParams>
 
@@ -494,8 +490,8 @@ export const CancelOrderQueryParams = z.object({})
 export type CancelOrderQueryParams = z.infer<typeof CancelOrderQueryParams>
 
 // Request Params Schema for DELETE /accounts/{accountNumber}/orders/{orderId} (merged path + query params)
-export const CancelOrderParams = z.object(
-	mergeShapes(CancelOrderQueryParams.shape, CancelOrderPathParams.shape),
+export const CancelOrderParams = CancelOrderPathParams.extend(
+	CancelOrderQueryParams.shape,
 )
 export type CancelOrderParams = z.infer<typeof CancelOrderParams>
 
@@ -509,8 +505,8 @@ export type ReplaceOrderPathParams = z.infer<typeof ReplaceOrderPathParams>
 export const ReplaceOrderRequestBody = OrderRequest
 export type ReplaceOrderRequestBody = z.infer<typeof ReplaceOrderRequestBody>
 
-export const ReplaceOrderParams = z.object(
-	mergeShapes(ReplaceOrderPathParams.shape, ReplaceOrderRequestBody.shape),
+export const ReplaceOrderParams = ReplaceOrderPathParams.extend(
+	ReplaceOrderRequestBody.shape,
 )
 export type ReplaceOrderParams = z.infer<typeof ReplaceOrderParams>
 
