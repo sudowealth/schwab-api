@@ -1,5 +1,6 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 import { dateStringSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'markets' query parameter
@@ -81,8 +82,8 @@ export type GetMarketHoursQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /markets (merged path + query params)
-export const GetMarketHoursParams = GetMarketHoursPathParams.extend(
-	GetMarketHoursQueryParams.shape,
+export const GetMarketHoursParams = z.object(
+	mergeShapes(GetMarketHoursQueryParams.shape, GetMarketHoursPathParams.shape),
 )
 export type GetMarketHoursParams = z.infer<typeof GetMarketHoursParams>
 
@@ -133,10 +134,12 @@ export type GetMarketHoursByMarketIdResponse = z.infer<
 >
 
 // Request Params Schema for GET /markets/{market_id} (merged path + query params)
-export const GetMarketHoursByMarketIdParams =
-	GetMarketHoursByMarketIdPathParams.extend(
+export const GetMarketHoursByMarketIdParams = z.object(
+	mergeShapes(
 		GetMarketHoursByMarketIdQueryParams.shape,
-	)
+		GetMarketHoursByMarketIdPathParams.shape,
+	),
+)
 export type GetMarketHoursByMarketIdParams = z.infer<
 	typeof GetMarketHoursByMarketIdParams
 >

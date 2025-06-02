@@ -1,5 +1,6 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 import { isoDateTimeSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 import { assetType } from '../shared'
 
 export const TransactionType = z.enum([
@@ -314,8 +315,11 @@ export type GetTransactionsQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /accounts/{accountNumber}/transactions (merged path + query params)
-export const GetTransactionsParams = GetTransactionsPathParams.extend(
-	GetTransactionsQueryParams.shape,
+export const GetTransactionsParams = z.object(
+	mergeShapes(
+		GetTransactionsQueryParams.shape,
+		GetTransactionsPathParams.shape,
+	),
 )
 export type GetTransactionsParams = z.infer<typeof GetTransactionsParams>
 
@@ -341,8 +345,11 @@ export type GetTransactionByIdQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /accounts/{accountNumber}/transactions/{transactionId} (merged path + query params)
-export const GetTransactionByIdParams = GetTransactionByIdPathParams.extend(
-	GetTransactionByIdQueryParams.shape,
+export const GetTransactionByIdParams = z.object(
+	mergeShapes(
+		GetTransactionByIdQueryParams.shape,
+		GetTransactionByIdPathParams.shape,
+	),
 )
 export type GetTransactionByIdParams = z.infer<typeof GetTransactionByIdParams>
 

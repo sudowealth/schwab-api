@@ -1,5 +1,6 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 import { InstrumentAssetTypeEnum } from '../shared'
 
 // Enum for the 'fields' query parameter
@@ -290,13 +291,13 @@ const BaseQuoteAssetResponseSchema = z.object({
 })
 
 export const EquityResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.EQUITY),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.EQUITY),
 	// Equity-specific fields can be added here if any are identified beyond the blocks
 })
 export type EquityResponseSchema = z.infer<typeof EquityResponseSchema>
 
 export const OptionResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.OPTION),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.OPTION),
 	// Option-specific fields from screenshot
 	delta: z.number().optional().describe('Delta value'),
 	gamma: z.number().optional().describe('Gamma value'),
@@ -423,8 +424,8 @@ export type ReferenceFutureBlockSchema = z.infer<
 >
 
 export const FutureResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.FUTURE),
-	assetMainType: z.literal(QuotesAssetMainTypeEnum.enum.FUTURE).optional(),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FUTURE),
+	assetMainType: z.literal(QuotesAssetMainTypeEnum.Enum.FUTURE).optional(),
 	quote: QuoteFutureBlockSchema.optional(),
 	reference: ReferenceFutureBlockSchema.optional(),
 	// These are typically not applicable to Futures in the same way as Equity
@@ -509,8 +510,8 @@ export type ReferenceForexBlockSchema = z.infer<
 >
 
 export const ForexResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.FOREX),
-	assetMainType: z.literal(QuotesAssetMainTypeEnum.enum.FOREX).optional(),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FOREX),
+	assetMainType: z.literal(QuotesAssetMainTypeEnum.Enum.FOREX).optional(),
 	quote: QuoteForexBlockSchema.optional(),
 	reference: ReferenceForexBlockSchema.optional(),
 	// These are typically not applicable to Forex
@@ -577,7 +578,7 @@ export type ReferenceMutualFundBlockSchema = z.infer<
 
 // Updated MutualFundResponseSchema (defined AFTER its dependencies)
 export const MutualFundResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.MUTUAL_FUND),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.MUTUAL_FUND),
 	assetSubType: MutualFundAssetSubTypeEnum.optional(),
 	quote: QuoteMutualFundBlockSchema.optional(),
 	fundamental: QuotesFundamentalBlockSchema.optional(),
@@ -589,8 +590,8 @@ export type MutualFundResponseSchema = z.infer<typeof MutualFundResponseSchema>
 
 // (Ensure ETFResponseSchema is defined here, before Index specific blocks if it was removed)
 export const ETFResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.ETF),
-	assetMainType: z.literal(QuotesAssetMainTypeEnum.enum.ETF).optional(),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.ETF),
+	assetMainType: z.literal(QuotesAssetMainTypeEnum.Enum.ETF).optional(),
 	// Similar to Equity, specific assetType. Add ETF-specific fields if any are identified.
 })
 export type ETFResponseSchema = z.infer<typeof ETFResponseSchema>
@@ -646,8 +647,8 @@ export type ReferenceIndexBlockSchema = z.infer<
 
 // Updated IndexResponseSchema (defined AFTER its dependencies)
 export const IndexResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.INDEX),
-	assetMainType: z.literal(QuotesAssetMainTypeEnum.enum.INDEX).optional(),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.INDEX),
+	assetMainType: z.literal(QuotesAssetMainTypeEnum.Enum.INDEX).optional(),
 	quote: QuoteIndexBlockSchema.optional(),
 	reference: ReferenceIndexBlockSchema.optional(),
 	fundamental: z.undefined().optional(),
@@ -742,9 +743,9 @@ export type ReferenceFutureOptionBlockSchema = z.infer<
 
 // FutureOptionResponseSchema (defined AFTER its dependencies)
 export const FutureOptionResponseSchema = BaseQuoteAssetResponseSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.enum.FUTURE_OPTION),
+	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FUTURE_OPTION),
 	assetMainType: z
-		.literal(QuotesAssetMainTypeEnum.enum.FUTURE_OPTION)
+		.literal(QuotesAssetMainTypeEnum.Enum.FUTURE_OPTION)
 		.optional(), // Ensure FUTURE_OPTION is in QuotesAssetMainTypeEnum
 	// ssid, symbol, realtime already in BaseQuoteAssetResponseSchema
 	quote: QuoteFutureOptionBlockSchema.optional(),
@@ -865,8 +866,11 @@ export type GetQuoteBySymbolIdQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /quotes/{symbol_id} (merged path + query params)
-export const GetQuoteBySymbolIdParams = GetQuoteBySymbolIdPathParams.extend(
-	GetQuoteBySymbolIdQueryParams.shape,
+export const GetQuoteBySymbolIdParams = z.object(
+	mergeShapes(
+		GetQuoteBySymbolIdQueryParams.shape,
+		GetQuoteBySymbolIdPathParams.shape,
+	),
 )
 export type GetQuoteBySymbolIdParams = z.infer<typeof GetQuoteBySymbolIdParams>
 
@@ -912,8 +916,8 @@ export const GetQuotesQueryParams = z.object({
 export type GetQuotesQueryParams = z.infer<typeof GetQuotesQueryParams>
 
 // Request Params Schema for GET /quotes (merged path + query params)
-export const GetQuotesParams = GetQuotesPathParams.extend(
-	GetQuotesQueryParams.shape,
+export const GetQuotesParams = z.object(
+	mergeShapes(GetQuotesQueryParams.shape, GetQuotesPathParams.shape),
 )
 export type GetQuotesParams = z.infer<typeof GetQuotesParams>
 

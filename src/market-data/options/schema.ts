@@ -1,4 +1,5 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
+import { mergeShapes } from '../../utils/schema-utils'
 
 // --- Enums ---
 
@@ -447,8 +448,8 @@ export type GetOptionChainQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /chains (merged path + query params)
-export const GetOptionChainParams = GetOptionChainPathParams.extend(
-	GetOptionChainQueryParams.shape,
+export const GetOptionChainParams = z.object(
+	mergeShapes(GetOptionChainQueryParams.shape, GetOptionChainPathParams.shape),
 )
 export type GetOptionChainParams = z.infer<typeof GetOptionChainParams>
 
@@ -507,10 +508,12 @@ export type GetOptionExpirationChainQueryParams = z.infer<
 >
 
 // Request Params Schema for GET /expirationchain (merged path + query params)
-export const GetOptionExpirationChainParams =
-	GetOptionExpirationChainPathParams.extend(
+export const GetOptionExpirationChainParams = z.object(
+	mergeShapes(
 		GetOptionExpirationChainQueryParams.shape,
-	)
+		GetOptionExpirationChainPathParams.shape,
+	),
+)
 export type GetOptionExpirationChainParams = z.infer<
 	typeof GetOptionExpirationChainParams
 >
