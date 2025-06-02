@@ -19,6 +19,7 @@ import { type getPriceHistoryMeta } from '../market-data/priceHistory/endpoints'
 import {
 	type extractQuoteErrors,
 	type hasSymbolError,
+	type extractSingleQuote,
 } from '../market-data/quotes'
 import {
 	type getQuotesMeta,
@@ -220,6 +221,7 @@ interface ProcessedQuotes {
 	// Utility functions
 	extractQuoteErrors: typeof extractQuoteErrors
 	hasSymbolError: typeof hasSymbolError
+	extractSingleQuote: typeof extractSingleQuote
 }
 
 /**

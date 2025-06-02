@@ -875,7 +875,12 @@ export const GetQuoteBySymbolIdParams = z.object(
 export type GetQuoteBySymbolIdParams = z.infer<typeof GetQuoteBySymbolIdParams>
 
 // Response Body Schema for GET /quotes/{symbol_id}
-export const GetQuoteBySymbolIdResponse = QuoteResponseSchema
+// NOTE: The Schwab API returns the same format as the bulk quotes endpoint,
+// wrapping the quote data in an object with the symbol as the key
+export const GetQuoteBySymbolIdResponse = z.record(
+	z.string(),
+	QuoteResponseSchema,
+)
 export type GetQuoteBySymbolIdResponse = z.infer<
 	typeof GetQuoteBySymbolIdResponse
 >

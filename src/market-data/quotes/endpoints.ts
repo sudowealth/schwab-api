@@ -38,10 +38,38 @@ export const getQuotesMeta: EndpointMetadata<
 /**
  * Get a quote for a single symbol.
  *
+ * **Important**: The Schwab API returns the quote data wrapped in an object with the symbol as the key,
+ * similar to the bulk quotes endpoint format. For example:
+ * ```json
+ * {
+ *   "TSLA": {
+ *     "assetMainType": "EQUITY",
+ *     "symbol": "TSLA",
+ *     "quote": { "lastPrice": 342.31, ... },
+ *     "fundamental": { ... },
+ *     "reference": { ... }
+ *   }
+ * }
+ * ```
+ *
+ * To easily extract the quote data, use the `extractSingleQuote` utility function:
+ * ```typescript
+ * const response = await client.marketData.quotes.getQuoteBySymbolId({
+ *   pathParams: { symbol_id: 'TSLA' },
+ *   queryParams: { fields: ['all'] }
+ * });
+ *
+ * const quote = extractSingleQuote(response, 'TSLA');
+ * if (quote) {
+ *   console.log(`${quote.symbol}: $${quote.quote?.lastPrice}`);
+ * }
+ * ```
+ *
  * Note on partial success: While this endpoint typically returns data for a single symbol,
  * that symbol may still contain error information rather than quote data if it's invalid.
  * Use the `hasSymbolError` utility function to check for symbol-level errors.
  *
+ * @see extractSingleQuote
  * @see hasSymbolError
  */
 export const getQuoteBySymbolIdMeta: EndpointMetadata<

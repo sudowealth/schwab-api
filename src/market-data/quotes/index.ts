@@ -92,3 +92,56 @@ export function hasSymbolError(
 	// Check if this entry is an error (lacks assetType but has error-related properties)
 	return data && typeof data === 'object' && !('assetType' in data)
 }
+
+/**
+ * Extracts the quote data for a single symbol from the getQuoteBySymbolId response
+ *
+ * Since the Schwab API returns the quote data wrapped in an object with the symbol as the key
+ * (e.g., { "TSLA": { assetType: "EQUITY", ... } }), this utility function makes it easier
+ * to extract the actual quote data.
+ *
+ * @param responseBody - The response body from getQuoteBySymbolId
+ * @param symbol - The symbol to extract (if not provided, will use the first key in the response)
+ * @returns The quote data for the symbol, or null if not found or has an error
+ *
+ * @example
+ * ```typescript
+ * const response = await client.marketData.quotes.getQuoteBySymbolId({
+ *   pathParams: { symbol_id: 'TSLA' },
+ *   queryParams: { fields: ['all'] }
+ * });
+ *
+ * const quote = extractSingleQuote(response, 'TSLA');
+ * if (quote) {
+ *   console.log(`${quote.symbol}: $${quote.quote?.lastPrice}`);
+ * }
+ * ```
+ */
+export function extractSingleQuote(
+	responseBody: Record<string, any>,
+	symbol?: string,
+) {
+	if (!responseBody || typeof responseBody !== 'object') {
+		return null
+	}
+
+	// If no symbol provided, use the first key
+	const targetSymbol = symbol || Object.keys(responseBody)[0]
+
+	if (!targetSymbol || !(targetSymbol in responseBody)) {
+		return null
+	}
+
+	const data = responseBody[targetSymbol]
+
+	// Check if this is valid quote data (has assetMainType or assetType) and not an error
+	if (
+		data &&
+		typeof data === 'object' &&
+		('assetMainType' in data || 'assetType' in data)
+	) {
+		return data
+	}
+
+	return null
+}
