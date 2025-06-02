@@ -14,8 +14,6 @@ with full type safety and runtime validation using Zod.
 ```bash
 # Development
 npm run build       # Clean and compile TypeScript to dist/
-npm run test        # Run all tests with coverage
-npm run test:watch  # Run tests in watch mode
 
 # Code Quality (run before committing)
 npm run validate    # Run format, lint, and typecheck in parallel
@@ -23,8 +21,6 @@ npm run lint        # Run ESLint
 npm run typecheck   # Run TypeScript type checking
 npm run format      # Format code with Prettier
 
-# Individual test execution
-npm test -- path/to/test.spec.ts
 ```
 
 ## Architecture
@@ -99,5 +95,4 @@ npm test -- path/to/test.spec.ts
 3. Create endpoint metadata in `endpoints.ts`
 4. Export through `index.ts`
 5. Add to parent namespace exports
-6. Write tests following existing patterns
-7. Run `npm run validate` before committing
+6. Run `npm run validate` before committing

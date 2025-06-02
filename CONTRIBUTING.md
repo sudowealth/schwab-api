@@ -69,17 +69,13 @@ git checkout -b fix/issue-description
 
 Make your changes, following the code style of the project.
 
-### 3. Run Tests and Linting
+### 3. Run Validation
 
-Before committing, ensure all tests pass and your code meets linting standards:
+Before committing, ensure your code meets linting standards:
 
 ```bash
 npm run validate  # Runs linting, type checking, and formatting
-npm run test      # Runs tests
 ```
-
-For more detailed information on running tests and writing new ones, see
-[TESTING.md](./TESTING.md).
 
 ## Commit Messages
 
@@ -101,7 +97,6 @@ to automate version management and releases.
 - `feat:` A new feature (minor version bump)
 - `fix:` A bug fix (patch version bump)
 - `docs:` Documentation changes only
-- `test:` Adding or updating tests
 - `chore:` Maintenance tasks, no production code changes
 - `refactor:` Code changes that neither fix bugs nor add features
 - `style:` Changes that don't affect the code's meaning (formatting, etc.)

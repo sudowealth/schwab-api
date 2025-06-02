@@ -26,8 +26,6 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
-    "test": "tsx --test --test-reporter spec --experimental-test-coverage test/*.test.ts",
-    "test:watch": "tsx --test --test-reporter spec --watch test/*.test.ts",
     "format": "prettier . --write",
     "lint": "eslint .",
     "typecheck": "tsc",
