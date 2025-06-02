@@ -126,6 +126,79 @@ export {
 export { safeBase64Encode, safeBase64Decode } from './auth/auth-utils'
 
 /**
+ * OAuth State Management
+ *
+ * Utilities for managing OAuth state parameters
+ */
+export {
+	encodeOAuthState,
+	decodeOAuthState,
+	validateOAuthState,
+	mergeStateWithPKCE,
+	extractPKCEFromState,
+} from './auth/oauth-state-utils'
+
+/**
+ * Token Storage Adapters
+ *
+ * Pre-built storage adapters for various platforms
+ */
+export {
+	KVTokenStore,
+	createKVTokenStore,
+} from './auth/adapters/kv-token-store'
+export type {
+	KVNamespace,
+	TokenIdentifiers,
+} from './auth/adapters/kv-token-store'
+
+/**
+ * Account Privacy Utilities
+ *
+ * Tools for scrubbing sensitive account information
+ */
+export {
+	buildAccountDisplayMap,
+	scrubAccountIdentifiers,
+	createAccountScrubber,
+} from './utils/account-scrubber'
+
+/**
+ * Secure Logging Utilities
+ *
+ * Enhanced logging with automatic secret redaction
+ */
+export {
+	sanitizeKeyForLog,
+	sanitizeError,
+	sanitizeTokenForLog,
+} from './utils/secure-logger'
+
+/**
+ * Cryptographic Utilities
+ *
+ * Tools for signing and verifying data
+ */
+export {
+	createHmacKey,
+	signData,
+	verifySignature,
+	toHex,
+	fromHex,
+} from './utils/crypto-utils'
+
+/**
+ * Error Mapping Utilities
+ *
+ * Tools for mapping Schwab errors to HTTP responses
+ */
+export {
+	SchwabErrorMapper,
+	mapSchwabError,
+	requiresReauthentication,
+} from './auth/error-mapping'
+
+/**
  * Public Middleware Components
  *
  * These exports provide middleware components that can be used to customize
@@ -219,3 +292,8 @@ export {
 
 // Re-export schema types
 export type { AssetType, BaseInstrument } from './schemas'
+
+// Additional utility namespaces
+export * as adapters from './auth/adapters'
+export * as cryptoUtils from './utils/crypto-utils'
+export * as accountUtils from './utils/account-scrubber'

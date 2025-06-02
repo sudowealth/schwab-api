@@ -42,6 +42,7 @@ export enum AuthErrorCode {
 
 	// Configuration errors
 	TOKEN_ENDPOINT_CONFIG_ERROR = 'TOKEN_ENDPOINT_CONFIG_ERROR', // Token endpoint configuration is missing or invalid
+	INVALID_CONFIGURATION = 'INVALID_CONFIGURATION', // General configuration error
 }
 
 // ---- Error Response Metadata ----

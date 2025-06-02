@@ -30,3 +30,33 @@ export {
 	TokenPersistenceEvent,
 	type TokenPersistenceEventHandler,
 } from './enhanced-token-manager'
+
+// OAuth state utilities
+export {
+	encodeOAuthState,
+	decodeOAuthState,
+	validateOAuthState,
+	mergeStateWithPKCE,
+	extractPKCEFromState,
+	createStateWithCSRF,
+	verifyStateWithCSRF,
+	BasicOAuthStateSchema,
+	PKCEOAuthStateSchema,
+	type OAuthState,
+	type OAuthStateOptions,
+} from './oauth-state-utils'
+
+// Error mapping utilities
+export {
+	SchwabErrorMapper,
+	defaultErrorMapper,
+	mapSchwabError,
+	schwabErrorHandler,
+	requiresReauthentication,
+	getRetryInfo,
+	type ErrorMappingResult,
+	type ErrorMapper,
+} from './error-mapping'
+
+// Token storage adapters
+export * as adapters from './adapters'

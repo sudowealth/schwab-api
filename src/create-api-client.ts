@@ -256,11 +256,6 @@ export function createApiClient(
 	options: CreateApiClientOptions & { auth: authNs.AuthFactoryConfig },
 ): Promise<SchwabApiClient>
 
-// Overload: when no auth or undefined auth, returns SchwabApiClient directly (sync path with dummy auth)
-export function createApiClient(
-	options?: CreateApiClientOptions,
-): SchwabApiClient
-
 // Implementation signature
 export function createApiClient(
 	options: CreateApiClientOptions = {},
@@ -283,15 +278,16 @@ export function createApiClient(
 	} else if (options.auth instanceof authNs.EnhancedTokenManager) {
 		authManager = options.auth
 	} else {
-		// Default to a simple EnhancedTokenManager with no tokens
-		authManager = new authNs.EnhancedTokenManager({
-			clientId: 'dummy-client-sync',
-			clientSecret: 'dummy-secret-sync',
-			redirectUri: 'https://example.com/callback-sync',
-		})
-		const loggerToUse = finalConfig.logger || console
-		loggerToUse.warn(
-			'Schwab API Client (sync): No ETM auth instance provided. Using a dummy token manager. API calls will likely fail until a real ETM is configured or OAuth flow completes.',
+		// Throw an error instead of creating a dummy token manager
+		throw new SchwabAuthError(
+			AuthErrorCode.INVALID_CONFIGURATION,
+			'Authentication configuration is required. Please provide either:\n' +
+				'- An EnhancedTokenManager instance\n' +
+				'- A string access token (async operation)\n' +
+				'- An AuthFactoryConfig object (async operation)\n\n' +
+				'Example:\n' +
+				'const authManager = new EnhancedTokenManager({ clientId, clientSecret, redirectUri });\n' +
+				'const client = createApiClient({ auth: authManager });',
 		)
 	}
 
