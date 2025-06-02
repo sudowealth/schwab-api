@@ -59,7 +59,13 @@ export const MarketHoursDataSchema = z.object({
 })
 export type MarketHoursDataSchema = z.infer<typeof MarketHoursDataSchema>
 
-// Request Query Parameters Schema
+// --- GET /markets endpoint schemas ---
+
+// Path Parameters Schema for GET /markets (no path params)
+export const GetMarketHoursPathParams = z.object({})
+export type GetMarketHoursPathParams = z.infer<typeof GetMarketHoursPathParams>
+
+// Query Parameters Schema for GET /markets
 export const GetMarketHoursQueryParams = z.object({
 	markets: z
 		.union([MarketHoursMarketQueryEnum, z.array(MarketHoursMarketQueryEnum)])
@@ -75,8 +81,10 @@ export type GetMarketHoursQueryParams = z.infer<
 	typeof GetMarketHoursQueryParams
 >
 
-// Request Params Schema for GET /markets (only query params)
-export const GetMarketHoursParams = GetMarketHoursQueryParams
+// Request Params Schema for GET /markets (merged path + query params)
+export const GetMarketHoursParams = z.object(
+	mergeShapes(GetMarketHoursQueryParams.shape, GetMarketHoursPathParams.shape),
+)
 export type GetMarketHoursParams = z.infer<typeof GetMarketHoursParams>
 
 // Schema for Response Body of GET /markets

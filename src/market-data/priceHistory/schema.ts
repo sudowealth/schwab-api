@@ -4,6 +4,7 @@ import {
 	epochMillisSchema,
 	createQueryDateSchema,
 } from '../../utils/date-utils'
+import { mergeShapes } from '../../utils/schema-utils'
 
 // Enum for periodType query parameter
 export const PriceHistoryPeriodTypeEnum = z.enum([
@@ -59,7 +60,13 @@ export const PeriodEnum = z
 	)
 export type PeriodEnum = z.infer<typeof PeriodEnum>
 
-// Schema for Request Query Parameters of GET /pricehistory
+// Path Parameters Schema for GET /pricehistory (no path params)
+export const GetPriceHistoryPathParams = z.object({})
+export type GetPriceHistoryPathParams = z.infer<
+	typeof GetPriceHistoryPathParams
+>
+
+// Query Parameters Schema for GET /pricehistory
 export const GetPriceHistoryQueryParams = z.object({
 	symbol: z
 		.string()
@@ -113,8 +120,13 @@ export type GetPriceHistoryQueryParams = z.infer<
 	typeof GetPriceHistoryQueryParams
 >
 
-// Request Params Schema for GET /pricehistory (only query params)
-export const GetPriceHistoryParams = GetPriceHistoryQueryParams
+// Request Params Schema for GET /pricehistory (merged path + query params)
+export const GetPriceHistoryParams = z.object(
+	mergeShapes(
+		GetPriceHistoryQueryParams.shape,
+		GetPriceHistoryPathParams.shape,
+	),
+)
 export type GetPriceHistoryParams = z.infer<typeof GetPriceHistoryParams>
 
 // Schema for a single candle in the PriceHistory response

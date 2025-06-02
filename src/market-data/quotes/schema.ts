@@ -17,6 +17,7 @@ export type QuoteFieldsEnum = z.infer<typeof QuoteFieldsEnum>
 // Enum for assetMainType
 export const QuotesAssetMainTypeEnum = z.enum([
 	'EQUITY',
+	'ETF',
 	'OPTION',
 	'MUTUAL_FUND',
 	'BOND',
@@ -231,6 +232,9 @@ export type QuotesReferenceBlockSchema = z.infer<
 >
 
 // --- Asset-Specific Response Schemas ---
+// NOTE: The individual asset response schemas below are deprecated in favor of the
+// unified QuoteResponseSchema which can handle all asset types without discrimination.
+// These are kept for backward compatibility but QuoteResponseSchema should be used instead.
 
 // Base for common fields across different quote responses
 const BaseQuoteAssetResponseSchema = z.object({
@@ -585,6 +589,7 @@ export type MutualFundResponseSchema = z.infer<typeof MutualFundResponseSchema>
 // (Ensure ETFResponseSchema is defined here, before Index specific blocks if it was removed)
 export const ETFResponseSchema = BaseQuoteAssetResponseSchema.extend({
 	assetType: z.literal(InstrumentAssetTypeEnum.Enum.ETF),
+	assetMainType: z.literal(QuotesAssetMainTypeEnum.Enum.ETF).optional(),
 	// Similar to Equity, specific assetType. Add ETF-specific fields if any are identified.
 })
 export type ETFResponseSchema = z.infer<typeof ETFResponseSchema>
@@ -753,23 +758,51 @@ export type FutureOptionResponseSchema = z.infer<
 	typeof FutureOptionResponseSchema
 >
 
-// --- Update DiscriminatedQuoteResponseSchema ---
-// Replace the placeholder for FUTURE_OPTION with the new FutureOptionResponseSchema.
-export const DiscriminatedQuoteResponseSchema = z.discriminatedUnion(
-	'assetType',
-	[
-		EquityResponseSchema,
-		OptionResponseSchema,
-		ForexResponseSchema,
-		FutureResponseSchema,
-		FutureOptionResponseSchema,
-		IndexResponseSchema,
-		MutualFundResponseSchema,
-	],
-)
-export type DiscriminatedQuoteResponseSchema = z.infer<
-	typeof DiscriminatedQuoteResponseSchema
->
+// --- Unified Quote Response Schema ---
+// Instead of using a discriminated union, use a single flexible schema that works for all asset types
+export const QuoteResponseSchema = BaseQuoteAssetResponseSchema.extend({
+	// Asset-specific fields that might appear in any quote response
+	// Option-specific fields
+	delta: z.number().optional().describe('Delta value'),
+	gamma: z.number().optional().describe('Gamma value'),
+	theta: z.number().optional().describe('Theta value'),
+	vega: z.number().optional().describe('Vega value'),
+	rho: z.number().optional().describe('Rho value'),
+	openInterest: z.number().int().optional().describe('Open interest'),
+	timeValue: z.number().optional().describe('Time value'),
+	underlyingPrice: z
+		.number()
+		.optional()
+		.describe('Price of the underlying security'),
+	strikePrice: z.number().optional().describe('Option strike price'),
+	contractType: z
+		.enum(['CALL', 'PUT'])
+		.optional()
+		.describe('Option contract type (CALL or PUT)'),
+	expirationDate: isoDateTimeSchema
+		.optional()
+		.describe('Option expiration date'),
+	daysToExpiration: z.number().int().optional().describe('Days to expiration'),
+	intrinsicValue: z.number().optional().describe('Intrinsic value'),
+	extrinsicValue: z
+		.number()
+		.optional()
+		.describe('Extrinsic value / Time value'),
+	multiplier: z.number().optional().describe('Option contract multiplier'),
+
+	// Future-specific fields
+	futurePercentChange: z.number().optional().describe('Net Percentage Change'),
+	quotedInSession: z
+		.boolean()
+		.optional()
+		.describe('Quoted during trading session'),
+	tick: z.number().optional().describe('Tick Price'),
+	tickAmount: z.number().optional().describe('Tick Amount'),
+
+	// Any other fields that might appear
+	nAV: z.number().optional().describe('Net Asset Value (for mutual funds)'),
+})
+export type QuoteResponseSchema = z.infer<typeof QuoteResponseSchema>
 
 // --- Schema for Quote Errors ---
 /**
@@ -840,10 +873,16 @@ export const GetQuoteBySymbolIdParams = z.object(
 export type GetQuoteBySymbolIdParams = z.infer<typeof GetQuoteBySymbolIdParams>
 
 // Response Body Schema for GET /quotes/{symbol_id}
-export const GetQuoteBySymbolIdResponse = DiscriminatedQuoteResponseSchema
+export const GetQuoteBySymbolIdResponse = QuoteResponseSchema
 export type GetQuoteBySymbolIdResponse = z.infer<
 	typeof GetQuoteBySymbolIdResponse
 >
+
+// --- GET /quotes endpoint schemas ---
+
+// Path Parameters Schema for GET /quotes (no path params)
+export const GetQuotesPathParams = z.object({})
+export type GetQuotesPathParams = z.infer<typeof GetQuotesPathParams>
 
 // Query Parameters Schema for GET /quotes
 export const GetQuotesQueryParams = z.object({
@@ -869,13 +908,12 @@ export const GetQuotesQueryParams = z.object({
 })
 export type GetQuotesQueryParams = z.infer<typeof GetQuotesQueryParams>
 
-// Request Params Schema for GET /quotes (only query params)
-export const GetQuotesParams = GetQuotesQueryParams
+// Request Params Schema for GET /quotes (merged path + query params)
+export const GetQuotesParams = z.object(
+	mergeShapes(GetQuotesQueryParams.shape, GetQuotesPathParams.shape),
+)
 export type GetQuotesParams = z.infer<typeof GetQuotesParams>
 
 // Response Body Schema for GET /quotes
-export const GetQuotesResponse = z.record(
-	z.string(),
-	DiscriminatedQuoteResponseSchema,
-)
+export const GetQuotesResponse = z.record(z.string(), QuoteResponseSchema)
 export type GetQuotesResponse = z.infer<typeof GetQuotesResponse>

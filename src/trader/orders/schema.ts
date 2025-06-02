@@ -358,6 +358,13 @@ const Order = z.object({
 export const GetOrdersResponseBody = z.array(Order)
 export type GetOrdersResponseBody = z.infer<typeof GetOrdersResponseBody>
 
+// --- GET /orders endpoint schemas ---
+
+// Path Parameters Schema for GET /orders (no path params)
+export const GetOrdersPathParams = z.object({})
+export type GetOrdersPathParams = z.infer<typeof GetOrdersPathParams>
+
+// Query Parameters Schema for GET /orders
 export const GetOrdersQueryParams = z.object({
 	maxResults: z
 		.number()
@@ -381,12 +388,19 @@ export const GetOrdersQueryParams = z.object({
 })
 export type GetOrdersQueryParams = z.infer<typeof GetOrdersQueryParams>
 
-export const GetOrdersParams = GetOrdersQueryParams
+// Request Params Schema for GET /orders (merged path + query params)
+export const GetOrdersParams = z.object(
+	mergeShapes(GetOrdersQueryParams.shape, GetOrdersPathParams.shape),
+)
 export type GetOrdersParams = z.infer<typeof GetOrdersParams>
 
+// Response Body Schema for GET /orders
 export const GetOrdersResponse = z.array(Order)
 export type GetOrdersResponse = z.infer<typeof GetOrdersResponse>
 
+// --- GET /accounts/{accountNumber}/orders endpoint schemas ---
+
+// Path Parameters Schema for GET /accounts/{accountNumber}/orders
 export const GetOrdersByAccountPathParams = z.object({
 	accountNumber: z.string().describe('Encrypted account number'),
 })
@@ -444,24 +458,46 @@ export type PlaceOrderParams = z.infer<typeof PlaceOrderParams>
 export const PlaceOrderResponse = z.object({}).passthrough()
 export type PlaceOrderResponse = z.infer<typeof PlaceOrderResponse>
 
+// --- GET /accounts/{accountNumber}/orders/{orderId} endpoint schemas ---
+
+// Path Parameters Schema for GET /accounts/{accountNumber}/orders/{orderId}
 export const GetOrderByIdPathParams = z.object({
 	accountNumber: z.string().describe('Encrypted account number'),
 	orderId: z.number().int().describe('The ID of the order being retrieved.'),
 })
 export type GetOrderByIdPathParams = z.infer<typeof GetOrderByIdPathParams>
 
-export const GetOrderByIdParams = GetOrderByIdPathParams
+// Query Parameters Schema for GET /accounts/{accountNumber}/orders/{orderId} (no query params)
+export const GetOrderByIdQueryParams = z.object({})
+export type GetOrderByIdQueryParams = z.infer<typeof GetOrderByIdQueryParams>
+
+// Request Params Schema for GET /accounts/{accountNumber}/orders/{orderId} (merged path + query params)
+export const GetOrderByIdParams = z.object(
+	mergeShapes(GetOrderByIdQueryParams.shape, GetOrderByIdPathParams.shape),
+)
 export type GetOrderByIdParams = z.infer<typeof GetOrderByIdParams>
 
+// Response Body Schema for GET /accounts/{accountNumber}/orders/{orderId}
 export const GetOrderByIdResponse = Order
 export type GetOrderByIdResponse = z.infer<typeof GetOrderByIdResponse>
 
+// --- DELETE /accounts/{accountNumber}/orders/{orderId} endpoint schemas ---
+
+// Path Parameters Schema for DELETE /accounts/{accountNumber}/orders/{orderId}
 export const CancelOrderPathParams = GetOrderByIdPathParams
 export type CancelOrderPathParams = z.infer<typeof CancelOrderPathParams>
 
-export const CancelOrderParams = CancelOrderPathParams
+// Query Parameters Schema for DELETE /accounts/{accountNumber}/orders/{orderId} (no query params)
+export const CancelOrderQueryParams = z.object({})
+export type CancelOrderQueryParams = z.infer<typeof CancelOrderQueryParams>
+
+// Request Params Schema for DELETE /accounts/{accountNumber}/orders/{orderId} (merged path + query params)
+export const CancelOrderParams = z.object(
+	mergeShapes(CancelOrderQueryParams.shape, CancelOrderPathParams.shape),
+)
 export type CancelOrderParams = z.infer<typeof CancelOrderParams>
 
+// Response Body Schema for DELETE /accounts/{accountNumber}/orders/{orderId}
 export const CancelOrderResponse = z.object({}).passthrough()
 export type CancelOrderResponse = z.infer<typeof CancelOrderResponse>
 

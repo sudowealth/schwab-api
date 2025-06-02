@@ -18,10 +18,12 @@ export type { AssetType, BaseInstrument } from './base-instrument.schema'
 // Instruments
 export {
 	InstrumentProjectionEnum,
+	GetInstrumentsPathParams,
 	GetInstrumentsQueryParams,
 	GetInstrumentsParams,
 	GetInstrumentsResponse,
 	GetInstrumentByCusipPathParams,
+	GetInstrumentByCusipQueryParams,
 	GetInstrumentByCusipParams,
 	GetInstrumentByCusipResponse,
 } from '../market-data/instruments/schema'
@@ -29,6 +31,7 @@ export {
 // Market Hours
 export {
 	MarketHoursMarketQueryEnum,
+	GetMarketHoursPathParams,
 	GetMarketHoursQueryParams,
 	GetMarketHoursParams,
 	GetMarketHoursResponse,
@@ -50,9 +53,11 @@ export {
 // Options
 export {
 	ExpirationTypeEnum,
+	GetOptionChainPathParams,
 	GetOptionChainQueryParams,
 	GetOptionChainParams,
 	GetOptionChainResponse,
+	GetOptionExpirationChainPathParams,
 	GetOptionExpirationChainQueryParams,
 	GetOptionExpirationChainParams,
 	GetOptionExpirationChainResponse,
@@ -62,6 +67,7 @@ export {
 export {
 	PeriodEnum,
 	FrequencyEnum,
+	GetPriceHistoryPathParams,
 	GetPriceHistoryQueryParams,
 	GetPriceHistoryParams,
 	GetPriceHistoryResponse,
@@ -73,6 +79,7 @@ export {
 	GetQuoteBySymbolIdQueryParams,
 	GetQuoteBySymbolIdParams,
 	GetQuoteBySymbolIdResponse,
+	GetQuotesPathParams,
 	GetQuotesQueryParams,
 	GetQuotesParams,
 	GetQuotesResponse,
@@ -88,15 +95,19 @@ export {
 	GetAccountByNumberQueryParams,
 	GetAccountByNumberParams,
 	GetAccountByNumberResponse,
+	GetAccountsPathParams,
 	GetAccountsQueryParams,
 	GetAccountsParams,
 	GetAccountsResponse,
+	GetAccountNumbersPathParams,
+	GetAccountNumbersQueryParams,
 	GetAccountNumbersParams,
 	GetAccountNumbersResponse,
 } from '../trader/accounts/schema'
 
 // Orders
 export {
+	GetOrdersPathParams,
 	GetOrdersQueryParams,
 	GetOrdersParams,
 	GetOrdersResponse,
@@ -109,9 +120,11 @@ export {
 	PlaceOrderParams,
 	PlaceOrderResponse,
 	GetOrderByIdPathParams,
+	GetOrderByIdQueryParams,
 	GetOrderByIdParams,
 	GetOrderByIdResponse,
 	CancelOrderPathParams,
+	CancelOrderQueryParams,
 	CancelOrderParams,
 	CancelOrderResponse,
 	ReplaceOrderPathParams,
@@ -128,12 +141,15 @@ export {
 	GetTransactionsParams,
 	GetTransactionsResponse,
 	GetTransactionByIdPathParams,
+	GetTransactionByIdQueryParams,
 	GetTransactionByIdParams,
 	GetTransactionByIdResponse,
 } from '../trader/transactions/schema'
 
 // User Preference
 export {
+	GetUserPreferencePathParams,
+	GetUserPreferenceQueryParams,
 	GetUserPreferenceParams,
 	GetUserPreferenceResponse,
 } from '../trader/user-preference/schema'

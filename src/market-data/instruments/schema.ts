@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema'
+import { mergeShapes } from '../../utils/schema-utils'
 
 // Enum for projection parameter
 export const InstrumentProjectionEnum = z.enum([
@@ -223,7 +224,11 @@ const InstrumentSchema = z.discriminatedUnion('assetType', [
 ])
 export type InstrumentSchema = z.infer<typeof InstrumentSchema>
 
-// Request Query Parameters Schema
+// Path Parameters Schema for GET /instruments (no path params)
+export const GetInstrumentsPathParams = z.object({})
+export type GetInstrumentsPathParams = z.infer<typeof GetInstrumentsPathParams>
+
+// Query Parameters Schema for GET /instruments
 export const GetInstrumentsQueryParams = z.object({
 	symbol: z.string().describe('Symbol of a security'),
 	projection: InstrumentProjectionEnum.describe(
@@ -234,8 +239,10 @@ export type GetInstrumentsQueryParams = z.infer<
 	typeof GetInstrumentsQueryParams
 >
 
-// Request Params Schema for GET /instruments (only query params)
-export const GetInstrumentsParams = GetInstrumentsQueryParams
+// Request Params Schema for GET /instruments (merged path + query params)
+export const GetInstrumentsParams = z.object(
+	mergeShapes(GetInstrumentsQueryParams.shape, GetInstrumentsPathParams.shape),
+)
 export type GetInstrumentsParams = z.infer<typeof GetInstrumentsParams>
 
 // Response Schema for /instruments
@@ -244,7 +251,7 @@ export const GetInstrumentsResponse = z.object({
 })
 export type GetInstrumentsResponse = z.infer<typeof GetInstrumentsResponse>
 
-// Request Path Parameters Schema for /instruments/{cusip_id}
+// Path Parameters Schema for GET /instruments/{cusip_id}
 export const GetInstrumentByCusipPathParams = z.object({
 	cusip_id: z.string().describe('CUSIP of a security'),
 })
@@ -252,8 +259,19 @@ export type GetInstrumentByCusipPathParams = z.infer<
 	typeof GetInstrumentByCusipPathParams
 >
 
-// Request Params Schema for GET /instruments/{cusip_id} (only path params)
-export const GetInstrumentByCusipParams = GetInstrumentByCusipPathParams
+// Query Parameters Schema for GET /instruments/{cusip_id} (no query params)
+export const GetInstrumentByCusipQueryParams = z.object({})
+export type GetInstrumentByCusipQueryParams = z.infer<
+	typeof GetInstrumentByCusipQueryParams
+>
+
+// Request Params Schema for GET /instruments/{cusip_id} (merged path + query params)
+export const GetInstrumentByCusipParams = z.object(
+	mergeShapes(
+		GetInstrumentByCusipQueryParams.shape,
+		GetInstrumentByCusipPathParams.shape,
+	),
+)
 export type GetInstrumentByCusipParams = z.infer<
 	typeof GetInstrumentByCusipParams
 >

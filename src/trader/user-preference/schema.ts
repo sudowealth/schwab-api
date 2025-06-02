@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { mergeShapes } from '../../utils/schema-utils'
 
 const UserPreferenceAccount = z.object({
 	accountNumber: z.string(),
@@ -30,8 +31,25 @@ const UserPreference = z.object({
 })
 type UserPreference = z.infer<typeof UserPreference>
 
-// Request Params Schema for GET /userpreference (no params)
-export const GetUserPreferenceParams = z.object({})
+// Path Parameters Schema for GET /userpreference (no path params)
+export const GetUserPreferencePathParams = z.object({})
+export type GetUserPreferencePathParams = z.infer<
+	typeof GetUserPreferencePathParams
+>
+
+// Query Parameters Schema for GET /userpreference (no query params)
+export const GetUserPreferenceQueryParams = z.object({})
+export type GetUserPreferenceQueryParams = z.infer<
+	typeof GetUserPreferenceQueryParams
+>
+
+// Request Params Schema for GET /userpreference (merged path + query params)
+export const GetUserPreferenceParams = z.object(
+	mergeShapes(
+		GetUserPreferenceQueryParams.shape,
+		GetUserPreferencePathParams.shape,
+	),
+)
 export type GetUserPreferenceParams = z.infer<typeof GetUserPreferenceParams>
 
 // Response Body Schema for GET /userpreference

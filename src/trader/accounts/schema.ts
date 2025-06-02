@@ -272,6 +272,10 @@ type SecuritiesAccount = z.infer<typeof SecuritiesAccount>
 
 // --- GET /accounts endpoint schemas ---
 
+// Path Parameters Schema for GET /accounts (no path params)
+export const GetAccountsPathParams = z.object({})
+export type GetAccountsPathParams = z.infer<typeof GetAccountsPathParams>
+
 // Query Parameters Schema for GET /accounts
 export const GetAccountsQueryParams = z.object({
 	fields: z
@@ -283,8 +287,10 @@ export const GetAccountsQueryParams = z.object({
 })
 export type GetAccountsQueryParams = z.infer<typeof GetAccountsQueryParams>
 
-// Request Params Schema for GET /accounts (only query params)
-export const GetAccountsParams = GetAccountsQueryParams
+// Request Params Schema for GET /accounts (merged path + query params)
+export const GetAccountsParams = z.object(
+	mergeShapes(GetAccountsQueryParams.shape, GetAccountsPathParams.shape),
+)
 export type GetAccountsParams = z.infer<typeof GetAccountsParams>
 
 // Response Body Schema for GET /accounts
@@ -337,8 +343,25 @@ export type GetAccountByNumberResponse = z.infer<
 
 // --- GET /accountNumbers endpoint schemas ---
 
-// Request Params Schema for GET /accountNumbers (no params)
-export const GetAccountNumbersParams = z.object({})
+// Path Parameters Schema for GET /accountNumbers (no path params)
+export const GetAccountNumbersPathParams = z.object({})
+export type GetAccountNumbersPathParams = z.infer<
+	typeof GetAccountNumbersPathParams
+>
+
+// Query Parameters Schema for GET /accountNumbers (no query params)
+export const GetAccountNumbersQueryParams = z.object({})
+export type GetAccountNumbersQueryParams = z.infer<
+	typeof GetAccountNumbersQueryParams
+>
+
+// Request Params Schema for GET /accountNumbers (merged path + query params)
+export const GetAccountNumbersParams = z.object(
+	mergeShapes(
+		GetAccountNumbersQueryParams.shape,
+		GetAccountNumbersPathParams.shape,
+	),
+)
 export type GetAccountNumbersParams = z.infer<typeof GetAccountNumbersParams>
 
 // Response Body Schema for GET /accountNumbers

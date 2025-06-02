@@ -319,8 +319,19 @@ export type GetTransactionByIdPathParams = z.infer<
 	typeof GetTransactionByIdPathParams
 >
 
-// Request Params Schema for GET /accounts/{accountNumber}/transactions/{transactionId} (only path params)
-export const GetTransactionByIdParams = GetTransactionByIdPathParams
+// Query Parameters Schema for GET /accounts/{accountNumber}/transactions/{transactionId}
+export const GetTransactionByIdQueryParams = z.object({})
+export type GetTransactionByIdQueryParams = z.infer<
+	typeof GetTransactionByIdQueryParams
+>
+
+// Request Params Schema for GET /accounts/{accountNumber}/transactions/{transactionId} (merged path + query params)
+export const GetTransactionByIdParams = z.object(
+	mergeShapes(
+		GetTransactionByIdQueryParams.shape,
+		GetTransactionByIdPathParams.shape,
+	),
+)
 export type GetTransactionByIdParams = z.infer<typeof GetTransactionByIdParams>
 
 // Response Body Schema for GET /accounts/{accountNumber}/transactions/{transactionId}

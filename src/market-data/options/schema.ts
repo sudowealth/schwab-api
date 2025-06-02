@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { mergeShapes } from '../../utils/schema-utils'
 
 // --- Enums ---
 
@@ -365,6 +366,10 @@ export type OptionEntitlementQueryEnum = z.infer<
 	typeof OptionEntitlementQueryEnum
 >
 
+// Path Parameters Schema for GET /chains (no path params)
+export const GetOptionChainPathParams = z.object({})
+export type GetOptionChainPathParams = z.infer<typeof GetOptionChainPathParams>
+
 // Query Parameters Schema for GET /chains
 export const GetOptionChainQueryParams = z.object({
 	symbol: z.string().describe('Symbol for the option chain'),
@@ -436,8 +441,10 @@ export type GetOptionChainQueryParams = z.infer<
 	typeof GetOptionChainQueryParams
 >
 
-// Request Params Schema for GET /chains (only query params)
-export const GetOptionChainParams = GetOptionChainQueryParams
+// Request Params Schema for GET /chains (merged path + query params)
+export const GetOptionChainParams = z.object(
+	mergeShapes(GetOptionChainQueryParams.shape, GetOptionChainPathParams.shape),
+)
 export type GetOptionChainParams = z.infer<typeof GetOptionChainParams>
 
 // Response Body Schema for GET /chains
@@ -445,6 +452,12 @@ export const GetOptionChainResponse = OptionChainSchema
 export type GetOptionChainResponse = z.infer<typeof GetOptionChainResponse>
 
 // --- Schemas for GET /expirationchain endpoint ---
+
+// Path Parameters Schema for GET /expirationchain (no path params)
+export const GetOptionExpirationChainPathParams = z.object({})
+export type GetOptionExpirationChainPathParams = z.infer<
+	typeof GetOptionExpirationChainPathParams
+>
 
 // Query Parameters Schema for GET /expirationchain
 export const GetOptionExpirationChainQueryParams = z.object({
@@ -454,9 +467,13 @@ export type GetOptionExpirationChainQueryParams = z.infer<
 	typeof GetOptionExpirationChainQueryParams
 >
 
-// Request Params Schema for GET /expirationchain (only query params)
-export const GetOptionExpirationChainParams =
-	GetOptionExpirationChainQueryParams
+// Request Params Schema for GET /expirationchain (merged path + query params)
+export const GetOptionExpirationChainParams = z.object(
+	mergeShapes(
+		GetOptionExpirationChainQueryParams.shape,
+		GetOptionExpirationChainPathParams.shape,
+	),
+)
 export type GetOptionExpirationChainParams = z.infer<
 	typeof GetOptionExpirationChainParams
 >
