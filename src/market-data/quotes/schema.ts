@@ -238,7 +238,9 @@ export type QuotesReferenceBlockSchema = z.infer<
 
 // Base for common fields across different quote responses
 const BaseQuoteAssetResponseSchema = z.object({
-	assetType: InstrumentAssetTypeEnum.describe("Instrument's asset type"),
+	assetType: InstrumentAssetTypeEnum.optional().describe(
+		"Instrument's asset type",
+	),
 	assetMainType: QuotesAssetMainTypeEnum.optional().describe(
 		"Instrument's main asset type",
 	),
