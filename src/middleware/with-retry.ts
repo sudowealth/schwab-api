@@ -59,7 +59,7 @@ export interface RetryOptions {
 /**
  * Default retry options
  */
-export const DEFAULT_RETRY_OPTIONS: RetryOptions = {
+const DEFAULT_RETRY_OPTIONS: RetryOptions = {
 	maxAttempts: DEFAULT_MAX_RETRIES,
 	baseDelayMs: DEFAULT_BASE_MS,
 	advanced: {

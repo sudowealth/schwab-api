@@ -30,7 +30,7 @@ export interface RateLimitOptions {
 /**
  * Default rate limit options
  */
-export const DEFAULT_RATE_LIMIT: RateLimitOptions = {
+const DEFAULT_RATE_LIMIT: RateLimitOptions = {
 	maxRequests: 120,
 	windowMs: 60_000,
 	advanced: {
