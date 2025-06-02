@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { createISODateTimeSchema } from '../../utils/date-utils'
 import { mergeShapes } from '../../utils/schema-utils'
 import { assetType, AccountAPIOptionDeliverable } from '../shared'
 
@@ -359,99 +358,121 @@ const Order = z.object({
 export const GetOrdersResponseBody = z.array(Order)
 export type GetOrdersResponseBody = z.infer<typeof GetOrdersResponseBody>
 
-export const GetOrdersRequestQueryParams = z.object({
+export const GetOrdersQueryParams = z.object({
 	maxResults: z
 		.number()
 		.int()
-		.default(3000)
+		.max(3000)
 		.optional()
-		.describe(
-			'Specifies the maximum number of orders to return. Default is 3000.',
-		),
-	fromEnteredTime: createISODateTimeSchema({
-		daysOffset: -59,
-		description:
-			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ. Date must be within 60 days from today's date.",
-	}),
-	toEnteredTime: createISODateTimeSchema({
-		description:
-			"Specifies that no orders entered after this time should be returned. Valid ISO-8601 format: yyyy-MM-dd'T'HH:mm:ss.SSSZ.",
-	}),
+		.describe('The maximum number of orders to return'),
+	fromEnteredTime: z
+		.string()
+		.datetime({ offset: true })
+		.optional()
+		.describe('Start date to search for orders'),
+	toEnteredTime: z
+		.string()
+		.datetime({ offset: true })
+		.optional()
+		.describe('End date to search for orders'),
 	status: status
 		.optional()
-		.describe(
-			`Specifies that only orders of this status should be returned. Default is all. Available values: ${status.options.join(', ')}`,
-		),
+		.describe('Specifies that only orders of this status should be returned'),
 })
-export type GetOrdersRequestQueryParams = z.infer<
-	typeof GetOrdersRequestQueryParams
+export type GetOrdersQueryParams = z.infer<typeof GetOrdersQueryParams>
+
+export const GetOrdersParams = GetOrdersQueryParams
+export type GetOrdersParams = z.infer<typeof GetOrdersParams>
+
+export const GetOrdersResponse = z.array(Order)
+export type GetOrdersResponse = z.infer<typeof GetOrdersResponse>
+
+export const GetOrdersByAccountPathParams = z.object({
+	accountNumber: z.string().describe('Encrypted account number'),
+})
+export type GetOrdersByAccountPathParams = z.infer<
+	typeof GetOrdersByAccountPathParams
 >
 
-export const GetOrdersByAccountRequestPathParams = z.object({
-	accountNumber: z.string().describe('The encrypted ID of the account'),
-})
-export type GetOrdersByAccountRequestPathParams = z.infer<
-	typeof GetOrdersByAccountRequestPathParams
->
-
-export const GetOrdersByAccountRequestQueryParams = z.object({
+export const GetOrdersByAccountQueryParams = z.object({
 	maxResults: z
 		.number()
 		.int()
-		.default(3000)
+		.max(3000)
 		.optional()
-		.describe('The max number of orders to retrieve. Default is 3000.'),
-	fromEnteredTime: createISODateTimeSchema({
-		daysOffset: -30,
-		description:
-			"Specifies that no orders entered before this time should be returned. Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example fromEnteredTime is '2024-03-29T00:00:00.000Z'. 'toEnteredTime' must also be set.",
-	}),
-	toEnteredTime: createISODateTimeSchema({
-		description:
-			"Specifies that no orders entered after this time should be returned.Valid ISO-8601 formats are : yyyy-MM-dd'T'HH:mm:ss.SSSZ . Example toEnteredTime is '2024-04-28T23:59:59.000Z'. 'fromEnteredTime' must also be set.",
-	}),
+		.describe('The maximum number of orders to return'),
+	fromEnteredTime: z
+		.string()
+		.datetime({ offset: true })
+		.optional()
+		.describe('Start date to search for orders'),
+	toEnteredTime: z
+		.string()
+		.datetime({ offset: true })
+		.optional()
+		.describe('End date to search for orders'),
 	status: status
 		.optional()
-		.describe(
-			`Specifies that only orders of this status should be returned. Available values: ${status.options.join(', ')}`,
-		),
+		.describe('Specifies that only orders of this status should be returned'),
 })
-export type GetOrdersByAccountRequestQueryParams = z.infer<
-	typeof GetOrdersByAccountRequestQueryParams
+export type GetOrdersByAccountQueryParams = z.infer<
+	typeof GetOrdersByAccountQueryParams
 >
+
+export const GetOrdersByAccountParams = z.object(
+	mergeShapes(
+		GetOrdersByAccountQueryParams.shape,
+		GetOrdersByAccountPathParams.shape,
+	),
+)
+export type GetOrdersByAccountParams = z.infer<typeof GetOrdersByAccountParams>
+
+export const GetOrdersByAccountResponse = z.array(Order)
+export type GetOrdersByAccountResponse = z.infer<
+	typeof GetOrdersByAccountResponse
+>
+
+export const PlaceOrderPathParams = GetOrdersByAccountPathParams
+export type PlaceOrderPathParams = z.infer<typeof PlaceOrderPathParams>
 
 export const PlaceOrderRequestBody = OrderRequest
 export type PlaceOrderRequestBody = z.infer<typeof PlaceOrderRequestBody>
 
-export const PlaceOrderResponseBody = z.object({}).passthrough()
-export type PlaceOrderResponseBody = z.infer<typeof PlaceOrderResponseBody>
+export const PlaceOrderParams = PlaceOrderPathParams
+export type PlaceOrderParams = z.infer<typeof PlaceOrderParams>
 
-export const GetOrderByOrderIdRequestPathParams = z.object({
-	accountNumber: z.string().describe('The encrypted ID of the account'),
+export const PlaceOrderResponse = z.object({}).passthrough()
+export type PlaceOrderResponse = z.infer<typeof PlaceOrderResponse>
+
+export const GetOrderByIdPathParams = z.object({
+	accountNumber: z.string().describe('Encrypted account number'),
 	orderId: z.number().int().describe('The ID of the order being retrieved.'),
 })
-export type GetOrderByOrderIdRequestPathParams = z.infer<
-	typeof GetOrderByOrderIdRequestPathParams
->
+export type GetOrderByIdPathParams = z.infer<typeof GetOrderByIdPathParams>
 
-export const GetOrderByOrderIdResponseBody = Order
-export type GetOrderByOrderIdResponseBody = z.infer<
-	typeof GetOrderByOrderIdResponseBody
->
+export const GetOrderByIdParams = GetOrderByIdPathParams
+export type GetOrderByIdParams = z.infer<typeof GetOrderByIdParams>
 
-export const CancelOrderResponseBody = z.object({}).passthrough()
-export type CancelOrderResponseBody = z.infer<typeof CancelOrderResponseBody>
+export const GetOrderByIdResponse = Order
+export type GetOrderByIdResponse = z.infer<typeof GetOrderByIdResponse>
 
-export const ReplaceOrderResponseBody = z.object({}).passthrough()
-export type ReplaceOrderResponseBody = z.infer<typeof ReplaceOrderResponseBody>
+export const CancelOrderPathParams = GetOrderByIdPathParams
+export type CancelOrderPathParams = z.infer<typeof CancelOrderPathParams>
 
-// Request Params Schema for GET /accounts/{accountNumber}/orders (merged path + query params)
-export const GetOrdersByAccountRequestParamsSchema = z.object(
-	mergeShapes(
-		GetOrdersByAccountRequestQueryParams.shape,
-		GetOrdersByAccountRequestPathParams.shape,
-	),
-)
-export type GetOrdersByAccountRequestParamsSchema = z.infer<
-	typeof GetOrdersByAccountRequestParamsSchema
->
+export const CancelOrderParams = CancelOrderPathParams
+export type CancelOrderParams = z.infer<typeof CancelOrderParams>
+
+export const CancelOrderResponse = z.object({}).passthrough()
+export type CancelOrderResponse = z.infer<typeof CancelOrderResponse>
+
+export const ReplaceOrderPathParams = GetOrderByIdPathParams
+export type ReplaceOrderPathParams = z.infer<typeof ReplaceOrderPathParams>
+
+export const ReplaceOrderRequestBody = OrderRequest
+export type ReplaceOrderRequestBody = z.infer<typeof ReplaceOrderRequestBody>
+
+export const ReplaceOrderParams = ReplaceOrderPathParams
+export type ReplaceOrderParams = z.infer<typeof ReplaceOrderParams>
+
+export const ReplaceOrderResponse = z.object({}).passthrough()
+export type ReplaceOrderResponse = z.infer<typeof ReplaceOrderResponse>

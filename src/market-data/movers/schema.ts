@@ -64,46 +64,40 @@ export const ScreenerSchema = z.object({
 })
 export type ScreenerSchema = z.infer<typeof ScreenerSchema>
 
-// Schema for Request Path Parameters of GET /movers/{symbol_id}
-export const GetMoversRequestPathParamsSchema = z.object({
-	symbol_id: MoversSymbolIdEnum.describe(
-		`Index Symbol. Available values: ${MoversSymbolIdEnum.options.join(', ')}`,
-	),
-})
-export type GetMoversRequestPathParamsSchema = z.infer<
-	typeof GetMoversRequestPathParamsSchema
->
-
-// Schema for Request Query Parameters of GET /movers/{symbol_id}
-export const GetMoversRequestQueryParamsSchema = z.object({
-	sort: MoversSortEnum.optional().describe(
-		`Sort by a particular attribute. Available values: ${MoversSortEnum.options.join(', ')}`,
-	),
-	frequency: MoversFrequencyEnum.optional()
-		.default(0)
+// Path Parameters Schema
+export const GetMoversPathParams = z.object({
+	symbol_id: z
+		.string()
 		.describe(
-			`To return movers with the specified directions of up or down. Available values: 0, 1, 5, 10, 30, 60`,
+			'The index symbol to get movers from. Supported index symbols: $DJI, $COMPX, $SPX',
 		),
 })
-export type GetMoversRequestQueryParamsSchema = z.infer<
-	typeof GetMoversRequestQueryParamsSchema
->
+export type GetMoversPathParams = z.infer<typeof GetMoversPathParams>
 
-// Schema for Response Body of GET /movers/{symbol_id}
-export const GetMoversResponseBodySchema = z.object({
+// Query Parameters Schema
+export const GetMoversQueryParams = z.object({
+	sort: MoversDirectionEnum.describe(
+		'Direction of the sort. Available values: up, down',
+	),
+	frequency: z
+		.number()
+		.int()
+		.default(0)
+		.optional()
+		.describe(
+			'Frequency of the data. 0 = real-time, 1 = 1 minute delayed, 5 = 5 minute delayed',
+		),
+})
+export type GetMoversQueryParams = z.infer<typeof GetMoversQueryParams>
+
+// Response Body Schema
+export const GetMoversResponse = z.object({
 	screeners: z.array(ScreenerSchema),
 })
-export type GetMoversResponseBodySchema = z.infer<
-	typeof GetMoversResponseBodySchema
->
+export type GetMoversResponse = z.infer<typeof GetMoversResponse>
 
 // Request Params Schema for GET /movers/{symbol_id} (merged path + query params)
-export const GetMoversRequestParamsSchema = z.object(
-	mergeShapes(
-		GetMoversRequestQueryParamsSchema.shape,
-		GetMoversRequestPathParamsSchema.shape,
-	),
+export const GetMoversParams = z.object(
+	mergeShapes(GetMoversQueryParams.shape, GetMoversPathParams.shape),
 )
-export type GetMoversRequestParamsSchema = z.infer<
-	typeof GetMoversRequestParamsSchema
->
+export type GetMoversParams = z.infer<typeof GetMoversParams>

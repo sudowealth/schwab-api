@@ -59,8 +59,8 @@ export const MarketHoursDataSchema = z.object({
 })
 export type MarketHoursDataSchema = z.infer<typeof MarketHoursDataSchema>
 
-// Schema for Request Query Parameters of GET /markets
-export const GetMarketHoursRequestQueryParamsSchema = z.object({
+// Request Query Parameters Schema
+export const GetMarketHoursQueryParams = z.object({
 	markets: z
 		.union([MarketHoursMarketQueryEnum, z.array(MarketHoursMarketQueryEnum)])
 		.transform((val) => (Array.isArray(val) ? val : [val]))
@@ -71,65 +71,67 @@ export const GetMarketHoursRequestQueryParamsSchema = z.object({
 		.optional()
 		.describe('Date for market hours. Defaults to current day.'),
 })
-export type GetMarketHoursRequestQueryParamsSchema = z.infer<
-	typeof GetMarketHoursRequestQueryParamsSchema
+export type GetMarketHoursQueryParams = z.infer<
+	typeof GetMarketHoursQueryParams
 >
+
+// Request Params Schema for GET /markets (only query params)
+export const GetMarketHoursParams = GetMarketHoursQueryParams
+export type GetMarketHoursParams = z.infer<typeof GetMarketHoursParams>
 
 // Schema for Response Body of GET /markets
 // The response is a nested structure with market type as the top level key,
 // then product code as second level, containing the market hours data
-export const GetMarketHoursResponseBodySchema = z.record(
+export const GetMarketHoursResponse = z.record(
 	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
 	z.record(
 		z.string(), // Second level key (e.g., "EQ") - product code
 		MarketHoursDataSchema, // Market hours data
 	),
 )
-export type GetMarketHoursResponseBodySchema = z.infer<
-	typeof GetMarketHoursResponseBodySchema
->
+export type GetMarketHoursResponse = z.infer<typeof GetMarketHoursResponse>
 
 // Path Parameters Schema for GET /markets/{market_id}
-export const GetMarketHoursByMarketIdRequestPathParamsSchema = z.object({
+export const GetMarketHoursByMarketIdPathParams = z.object({
 	market_id: MarketHoursMarketQueryEnum.describe(
 		'Market ID (equity, option, etc.)',
 	),
 })
-export type GetMarketHoursByMarketIdRequestPathParamsSchema = z.infer<
-	typeof GetMarketHoursByMarketIdRequestPathParamsSchema
+export type GetMarketHoursByMarketIdPathParams = z.infer<
+	typeof GetMarketHoursByMarketIdPathParams
 >
 
 // Query Parameters Schema for GET /markets/{market_id}
-export const GetMarketHoursByMarketIdRequestQueryParamsSchema = z.object({
+export const GetMarketHoursByMarketIdQueryParams = z.object({
 	date: dateStringSchema
 		.optional()
 		.describe('Date for market hours. Defaults to current day.'),
 })
-export type GetMarketHoursByMarketIdRequestQueryParamsSchema = z.infer<
-	typeof GetMarketHoursByMarketIdRequestQueryParamsSchema
+export type GetMarketHoursByMarketIdQueryParams = z.infer<
+	typeof GetMarketHoursByMarketIdQueryParams
 >
 
 // Response Body Schema for GET /markets/{market_id}
 // This endpoint returns a nested structure with market type as the top level key,
 // then product code as second level, containing the market hours data
-export const GetMarketHoursByMarketIdResponseBodySchema = z.record(
+export const GetMarketHoursByMarketIdResponse = z.record(
 	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
 	z.record(
 		z.string(), // Second level key (e.g., "EQ") - product code
 		MarketHoursDataSchema, // Market hours data
 	),
 )
-export type GetMarketHoursByMarketIdResponseBodySchema = z.infer<
-	typeof GetMarketHoursByMarketIdResponseBodySchema
+export type GetMarketHoursByMarketIdResponse = z.infer<
+	typeof GetMarketHoursByMarketIdResponse
 >
 
 // Request Params Schema for GET /markets/{market_id} (merged path + query params)
-export const GetMarketHoursByMarketIdRequestParamsSchema = z.object(
+export const GetMarketHoursByMarketIdParams = z.object(
 	mergeShapes(
-		GetMarketHoursByMarketIdRequestQueryParamsSchema.shape,
-		GetMarketHoursByMarketIdRequestPathParamsSchema.shape,
+		GetMarketHoursByMarketIdQueryParams.shape,
+		GetMarketHoursByMarketIdPathParams.shape,
 	),
 )
-export type GetMarketHoursByMarketIdRequestParamsSchema = z.infer<
-	typeof GetMarketHoursByMarketIdRequestParamsSchema
+export type GetMarketHoursByMarketIdParams = z.infer<
+	typeof GetMarketHoursByMarketIdParams
 >

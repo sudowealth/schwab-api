@@ -270,59 +270,84 @@ const SecuritiesAccount = z.discriminatedUnion('type', [
 ])
 type SecuritiesAccount = z.infer<typeof SecuritiesAccount>
 
-// --- Get Account By Number ---
-export const GetAccountByNumberRequestPathParams = z.object({
-	accountNumber: z.string(),
+// --- GET /accounts endpoint schemas ---
+
+// Query Parameters Schema for GET /accounts
+export const GetAccountsQueryParams = z.object({
+	fields: z
+		.string()
+		.optional()
+		.describe(
+			'A comma-separated string of fields to return for each account. Valid values include: positions',
+		),
 })
-export type GetAccountByNumberRequestPathParams = z.infer<
-	typeof GetAccountByNumberRequestPathParams
->
+export type GetAccountsQueryParams = z.infer<typeof GetAccountsQueryParams>
 
-export const GetAccountByNumberRequestQueryParams = z
-	.object({
-		fields: z.enum(['positions']).optional(),
-	})
-	.optional()
-export type GetAccountByNumberRequestQueryParams = z.infer<
-	typeof GetAccountByNumberRequestQueryParams
->
+// Request Params Schema for GET /accounts (only query params)
+export const GetAccountsParams = GetAccountsQueryParams
+export type GetAccountsParams = z.infer<typeof GetAccountsParams>
 
-export const GetAccountByNumberResponseBody = z.object({
-	securitiesAccount: SecuritiesAccount,
-})
-export type GetAccountByNumberResponseBody = z.infer<
-	typeof GetAccountByNumberResponseBody
->
-
-// --- Get Accounts ---
-export const GetAccountsRequestQueryParams = z.object({
-	fields: z.enum(['positions']).optional(),
-})
-export type GetAccountsRequestQueryParams = z.infer<
-	typeof GetAccountsRequestQueryParams
->
-
-export const GetAccountsResponseBody = z.array(GetAccountByNumberResponseBody) // MCP used AccountWrapper
-export type GetAccountsResponseBody = z.infer<typeof GetAccountsResponseBody>
-
-// --- Get Account Numbers ---
-export const GetAccountNumbersResponseBody = z.array(
+// Response Body Schema for GET /accounts
+export const GetAccountsResponse = z.array(
 	z.object({
-		accountNumber: z.string(),
-		hashValue: z.string(),
+		securitiesAccount: SecuritiesAccount,
 	}),
 )
-export type GetAccountNumbersResponseBody = z.infer<
-	typeof GetAccountNumbersResponseBody
+export type GetAccountsResponse = z.infer<typeof GetAccountsResponse>
+
+// --- GET /accounts/{accountNumber} endpoint schemas ---
+
+// Path Parameters Schema for GET /accounts/{accountNumber}
+export const GetAccountByNumberPathParams = z.object({
+	accountNumber: z.string().describe('Encrypted account number'),
+})
+export type GetAccountByNumberPathParams = z.infer<
+	typeof GetAccountByNumberPathParams
+>
+
+// Query Parameters Schema for GET /accounts/{accountNumber}
+export const GetAccountByNumberQueryParams = z.object({
+	fields: z
+		.string()
+		.optional()
+		.describe(
+			'A comma-separated string of fields to return. Valid values include: positions',
+		),
+})
+export type GetAccountByNumberQueryParams = z.infer<
+	typeof GetAccountByNumberQueryParams
 >
 
 // Request Params Schema for GET /accounts/{accountNumber} (merged path + query params)
-export const GetAccountByNumberRequestParamsSchema = z.object(
+export const GetAccountByNumberParams = z.object(
 	mergeShapes(
-		GetAccountByNumberRequestPathParams.shape,
-		GetAccountByNumberRequestQueryParams.unwrap().shape,
+		GetAccountByNumberQueryParams.shape,
+		GetAccountByNumberPathParams.shape,
 	),
 )
-export type GetAccountByNumberRequestParamsSchema = z.infer<
-	typeof GetAccountByNumberRequestParamsSchema
+export type GetAccountByNumberParams = z.infer<typeof GetAccountByNumberParams>
+
+// Response Body Schema for GET /accounts/{accountNumber}
+export const GetAccountByNumberResponse = z.object({
+	securitiesAccount: SecuritiesAccount,
+})
+export type GetAccountByNumberResponse = z.infer<
+	typeof GetAccountByNumberResponse
+>
+
+// --- GET /accountNumbers endpoint schemas ---
+
+// Request Params Schema for GET /accountNumbers (no params)
+export const GetAccountNumbersParams = z.object({})
+export type GetAccountNumbersParams = z.infer<typeof GetAccountNumbersParams>
+
+// Response Body Schema for GET /accountNumbers
+export const GetAccountNumbersResponse = z.array(
+	z.object({
+		accountNumber: z.string().describe('Encrypted account number'),
+		hashValue: z.string().describe('Hash value for the account'),
+	}),
+)
+export type GetAccountNumbersResponse = z.infer<
+	typeof GetAccountNumbersResponse
 >

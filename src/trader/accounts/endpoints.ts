@@ -2,58 +2,58 @@ import { TRADER } from '../../constants'
 import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
-	GetAccountsRequestQueryParams,
-	GetAccountsResponseBody,
-	GetAccountByNumberRequestPathParams,
-	GetAccountByNumberRequestQueryParams,
-	GetAccountByNumberResponseBody,
-	GetAccountNumbersResponseBody,
+	GetAccountsQueryParams,
+	GetAccountsResponse,
+	GetAccountByNumberPathParams,
+	GetAccountByNumberQueryParams,
+	GetAccountByNumberResponse,
+	GetAccountNumbersResponse,
 } from './schema'
 
 export const getAccountsMeta: EndpointMetadata<
 	never,
-	GetAccountsRequestQueryParams,
+	GetAccountsQueryParams,
 	never,
-	GetAccountsResponseBody,
+	GetAccountsResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNTS,
-	querySchema: GetAccountsRequestQueryParams,
-	responseSchema: GetAccountsResponseBody,
+	querySchema: GetAccountsQueryParams,
+	responseSchema: GetAccountsResponse,
 	errorSchema: ErrorResponseSchema,
-	description: 'Retrieves all accounts associated with the user.',
+	description: 'Get all accounts for the authenticated user.',
 }
 
 export const getAccountByNumberMeta: EndpointMetadata<
-	GetAccountByNumberRequestPathParams,
-	GetAccountByNumberRequestQueryParams,
+	GetAccountByNumberPathParams,
+	GetAccountByNumberQueryParams,
 	never,
-	GetAccountByNumberResponseBody,
+	GetAccountByNumberResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNT,
-	pathSchema: GetAccountByNumberRequestPathParams,
-	querySchema: GetAccountByNumberRequestQueryParams,
-	responseSchema: GetAccountByNumberResponseBody,
+	pathSchema: GetAccountByNumberPathParams,
+	querySchema: GetAccountByNumberQueryParams,
+	responseSchema: GetAccountByNumberResponse,
 	errorSchema: ErrorResponseSchema,
-	description: 'Retrieves a specific account by account number.',
+	description: 'Get a specific account by account number.',
 }
 
 export const getAccountNumbersMeta: EndpointMetadata<
 	never,
 	never,
 	never,
-	GetAccountNumbersResponseBody,
+	GetAccountNumbersResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.ACCOUNTS.GET_ACCOUNT_NUMBERS,
-	responseSchema: GetAccountNumbersResponseBody,
+	responseSchema: GetAccountNumbersResponse,
 	errorSchema: ErrorResponseSchema,
-	description: 'Retrieves all account numbers associated with the user.',
+	description: 'Get account numbers for the authenticated user.',
 }

@@ -18,52 +18,64 @@ export type { AssetType, BaseInstrument } from './base-instrument.schema'
 // Instruments
 export {
 	InstrumentProjectionEnum,
-	GetInstrumentsRequestQueryParamsSchema,
-	InstrumentsResponseSchema,
-	GetInstrumentByCusipRequestPathParamsSchema,
-	GetInstrumentByCusipResponseBodySchema,
+	GetInstrumentsQueryParams,
+	GetInstrumentsParams,
+	GetInstrumentsResponse,
+	GetInstrumentByCusipPathParams,
+	GetInstrumentByCusipParams,
+	GetInstrumentByCusipResponse,
 } from '../market-data/instruments/schema'
 
 // Market Hours
 export {
 	MarketHoursMarketQueryEnum,
-	GetMarketHoursRequestQueryParamsSchema,
-	GetMarketHoursResponseBodySchema,
-	GetMarketHoursByMarketIdRequestPathParamsSchema,
-	GetMarketHoursByMarketIdRequestQueryParamsSchema,
-	GetMarketHoursByMarketIdRequestParamsSchema,
-	GetMarketHoursByMarketIdResponseBodySchema,
+	GetMarketHoursQueryParams,
+	GetMarketHoursParams,
+	GetMarketHoursResponse,
+	GetMarketHoursByMarketIdPathParams,
+	GetMarketHoursByMarketIdQueryParams,
+	GetMarketHoursByMarketIdParams,
+	GetMarketHoursByMarketIdResponse,
 } from '../market-data/marketHours/schema'
 
 // Movers
 export {
 	MoversDirectionEnum,
-	GetMoversRequestPathParamsSchema,
-	GetMoversRequestQueryParamsSchema,
-	GetMoversRequestParamsSchema,
-	GetMoversResponseBodySchema,
+	GetMoversPathParams,
+	GetMoversQueryParams,
+	GetMoversParams,
+	GetMoversResponse,
 } from '../market-data/movers/schema'
 
 // Options
 export {
 	ExpirationTypeEnum,
-	GetOptionChainRequestQueryParamsSchema,
+	GetOptionChainQueryParams,
+	GetOptionChainParams,
+	GetOptionChainResponse,
+	GetOptionExpirationChainQueryParams,
+	GetOptionExpirationChainParams,
+	GetOptionExpirationChainResponse,
 } from '../market-data/options/schema'
 
 // Price History
 export {
 	PeriodEnum,
 	FrequencyEnum,
-	GetPriceHistoryRequestQueryParamsSchema,
+	GetPriceHistoryQueryParams,
+	GetPriceHistoryParams,
+	GetPriceHistoryResponse,
 } from '../market-data/priceHistory/schema'
 
 // Quotes
 export {
-	GetQuoteBySymbolIdRequestPathParamsSchema,
-	GetQuoteBySymbolIdRequestQueryParamsSchema,
-	GetQuoteBySymbolIdRequestParamsSchema,
-	GetQuotesRequestQueryParamsSchema,
-	GetQuotesResponseBodySchema,
+	GetQuoteBySymbolIdPathParams,
+	GetQuoteBySymbolIdQueryParams,
+	GetQuoteBySymbolIdParams,
+	GetQuoteBySymbolIdResponse,
+	GetQuotesQueryParams,
+	GetQuotesParams,
+	GetQuotesResponse,
 } from '../market-data/quotes/schema'
 
 // Shared
@@ -72,43 +84,58 @@ export { InstrumentAssetTypeEnum } from '../market-data/shared/instrument-asset-
 // --- Trader Schemas ---
 // Accounts
 export {
-	GetAccountByNumberRequestPathParams,
-	GetAccountByNumberRequestQueryParams,
-	GetAccountByNumberRequestParamsSchema,
-	GetAccountByNumberResponseBody,
-	GetAccountsRequestQueryParams,
-	GetAccountsResponseBody,
-	GetAccountNumbersResponseBody,
+	GetAccountByNumberPathParams,
+	GetAccountByNumberQueryParams,
+	GetAccountByNumberParams,
+	GetAccountByNumberResponse,
+	GetAccountsQueryParams,
+	GetAccountsParams,
+	GetAccountsResponse,
+	GetAccountNumbersParams,
+	GetAccountNumbersResponse,
 } from '../trader/accounts/schema'
 
 // Orders
 export {
-	GetOrdersResponseBody,
-	GetOrdersRequestQueryParams,
-	GetOrdersByAccountRequestPathParams,
-	GetOrdersByAccountRequestQueryParams,
-	GetOrdersByAccountRequestParamsSchema,
+	GetOrdersQueryParams,
+	GetOrdersParams,
+	GetOrdersResponse,
+	GetOrdersByAccountPathParams,
+	GetOrdersByAccountQueryParams,
+	GetOrdersByAccountParams,
+	GetOrdersByAccountResponse,
+	PlaceOrderPathParams,
 	PlaceOrderRequestBody,
-	PlaceOrderResponseBody,
-	GetOrderByOrderIdRequestPathParams,
-	GetOrderByOrderIdResponseBody,
-	CancelOrderResponseBody,
-	ReplaceOrderResponseBody,
+	PlaceOrderParams,
+	PlaceOrderResponse,
+	GetOrderByIdPathParams,
+	GetOrderByIdParams,
+	GetOrderByIdResponse,
+	CancelOrderPathParams,
+	CancelOrderParams,
+	CancelOrderResponse,
+	ReplaceOrderPathParams,
+	ReplaceOrderRequestBody,
+	ReplaceOrderParams,
+	ReplaceOrderResponse,
 } from '../trader/orders/schema'
 
 // Transactions
 export {
 	TransactionType,
-	GetTransactionsRequestPathParams,
-	GetTransactionsRequestQueryParams,
-	GetTransactionsRequestParamsSchema,
-	GetTransactionsResponseBody,
+	GetTransactionsPathParams,
+	GetTransactionsQueryParams,
+	GetTransactionsParams,
+	GetTransactionsResponse,
+	GetTransactionByIdPathParams,
+	GetTransactionByIdParams,
+	GetTransactionByIdResponse,
 } from '../trader/transactions/schema'
 
-// User Preferences
+// User Preference
 export {
-	GetUserPreferenceRequestParams,
-	GetUserPreferenceResponseBody,
+	GetUserPreferenceParams,
+	GetUserPreferenceResponse,
 } from '../trader/user-preference/schema'
 
 // Shared

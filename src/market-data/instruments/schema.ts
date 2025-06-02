@@ -224,34 +224,42 @@ const InstrumentSchema = z.discriminatedUnion('assetType', [
 export type InstrumentSchema = z.infer<typeof InstrumentSchema>
 
 // Request Query Parameters Schema
-export const GetInstrumentsRequestQueryParamsSchema = z.object({
+export const GetInstrumentsQueryParams = z.object({
 	symbol: z.string().describe('Symbol of a security'),
 	projection: InstrumentProjectionEnum.describe(
 		`Search by: ${InstrumentProjectionEnum.options.join(', ')}`,
 	),
 })
-export type GetInstrumentsRequestQueryParamsSchema = z.infer<
-	typeof GetInstrumentsRequestQueryParamsSchema
+export type GetInstrumentsQueryParams = z.infer<
+	typeof GetInstrumentsQueryParams
 >
+
+// Request Params Schema for GET /instruments (only query params)
+export const GetInstrumentsParams = GetInstrumentsQueryParams
+export type GetInstrumentsParams = z.infer<typeof GetInstrumentsParams>
 
 // Response Schema for /instruments
-export const InstrumentsResponseSchema = z.object({
+export const GetInstrumentsResponse = z.object({
 	instruments: z.array(InstrumentSchema),
 })
-export type InstrumentsResponseSchema = z.infer<
-	typeof InstrumentsResponseSchema
->
+export type GetInstrumentsResponse = z.infer<typeof GetInstrumentsResponse>
 
 // Request Path Parameters Schema for /instruments/{cusip_id}
-export const GetInstrumentByCusipRequestPathParamsSchema = z.object({
+export const GetInstrumentByCusipPathParams = z.object({
 	cusip_id: z.string().describe('CUSIP of a security'),
 })
-export type GetInstrumentByCusipRequestPathParamsSchema = z.infer<
-	typeof GetInstrumentByCusipRequestPathParamsSchema
+export type GetInstrumentByCusipPathParams = z.infer<
+	typeof GetInstrumentByCusipPathParams
+>
+
+// Request Params Schema for GET /instruments/{cusip_id} (only path params)
+export const GetInstrumentByCusipParams = GetInstrumentByCusipPathParams
+export type GetInstrumentByCusipParams = z.infer<
+	typeof GetInstrumentByCusipParams
 >
 
 // Response Body Schema for /instruments/{cusip_id}
-export const GetInstrumentByCusipResponseBodySchema = InstrumentsResponseSchema
-export type GetInstrumentByCusipResponseBodySchema = z.infer<
-	typeof GetInstrumentByCusipResponseBodySchema
+export const GetInstrumentByCusipResponse = GetInstrumentsResponse
+export type GetInstrumentByCusipResponse = z.infer<
+	typeof GetInstrumentByCusipResponse
 >

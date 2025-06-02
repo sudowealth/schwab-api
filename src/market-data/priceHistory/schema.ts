@@ -60,7 +60,7 @@ export const PeriodEnum = z
 export type PeriodEnum = z.infer<typeof PeriodEnum>
 
 // Schema for Request Query Parameters of GET /pricehistory
-export const GetPriceHistoryRequestQueryParamsSchema = z.object({
+export const GetPriceHistoryQueryParams = z.object({
 	symbol: z
 		.string()
 		.describe('The Equity symbol used to look up price history. Example: AAPL'),
@@ -109,9 +109,13 @@ export const GetPriceHistoryRequestQueryParamsSchema = z.object({
 		.optional()
 		.describe('Need previous close price/date'),
 })
-export type GetPriceHistoryRequestQueryParamsSchema = z.infer<
-	typeof GetPriceHistoryRequestQueryParamsSchema
+export type GetPriceHistoryQueryParams = z.infer<
+	typeof GetPriceHistoryQueryParams
 >
+
+// Request Params Schema for GET /pricehistory (only query params)
+export const GetPriceHistoryParams = GetPriceHistoryQueryParams
+export type GetPriceHistoryParams = z.infer<typeof GetPriceHistoryParams>
 
 // Schema for a single candle in the PriceHistory response
 export const PriceHistoryCandleSchema = z.object({
@@ -128,7 +132,7 @@ export const PriceHistoryCandleSchema = z.object({
 export type PriceHistoryCandleSchema = z.infer<typeof PriceHistoryCandleSchema>
 
 // Schema for the Response Body of GET /pricehistory
-export const GetPriceHistoryResponseBodySchema = z.object({
+export const GetPriceHistoryResponse = z.object({
 	candles: z
 		.array(PriceHistoryCandleSchema)
 		.describe('Array of price history candles'),
@@ -147,6 +151,4 @@ export const GetPriceHistoryResponseBodySchema = z.object({
 		.optional()
 		.describe("Previous session's close date (YYYY-MM-DD)"),
 })
-export type GetPriceHistoryResponseBodySchema = z.infer<
-	typeof GetPriceHistoryResponseBodySchema
->
+export type GetPriceHistoryResponse = z.infer<typeof GetPriceHistoryResponse>

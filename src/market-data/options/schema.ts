@@ -365,123 +365,104 @@ export type OptionEntitlementQueryEnum = z.infer<
 	typeof OptionEntitlementQueryEnum
 >
 
-// Schema for Request Query Parameters of GET /chains
-export const GetOptionChainRequestQueryParamsSchema = z.object({
+// Query Parameters Schema for GET /chains
+export const GetOptionChainQueryParams = z.object({
 	symbol: z.string().describe('Symbol for the option chain'),
 	contractType: OptionContractTypeQueryEnum.optional().describe(
-		'Type of contracts to return (CALL, PUT, ALL)',
+		'Type of contracts to retrieve. Available values: CALL, PUT, ALL',
 	),
 	strikeCount: z
 		.number()
 		.int()
 		.optional()
 		.describe(
-			'The number of strikes to return above and below the at-the-money price',
+			'Number of strikes to return above and below the at-the-money price',
 		),
 	includeUnderlyingQuote: z
 		.boolean()
 		.optional()
-		.describe('Include underlying quote in the response'),
+		.describe('Include quote for the underlying asset'),
 	strategy: OptionStrategyEnum.optional().describe(
-		'Option chain strategy. Default is SINGLE.',
+		'Option strategy. Available values: SINGLE, ANALYTICAL, COVERED, VERTICAL, CALENDAR, STRANGLE, STRADDLE, BUTTERFLY, CONDOR, DIAGONAL, COLLAR, ROLL',
 	),
 	interval: z
 		.number()
 		.optional()
-		.describe('Strike interval for spread strategy chains'),
-	strike: z.number().optional().describe('Specific strike price to return'),
+		.describe('Strike interval for spread strategies'),
+	strike: z.number().optional().describe('Specific strike price'),
 	range: OptionRangeQueryEnum.optional().describe(
-		'Range of strikes to return (ITM, NTM, OTM, etc.)',
+		'Range of option strikes. Available values: ITM, NTM, OTM, SAK, SBK, SNK, ALL',
 	),
 	fromDate: z
 		.string()
-		// .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format') // Consider adding if API enforces strict format
 		.optional()
-		.describe('Start date for expiration (YYYY-MM-DD)'),
+		.describe(
+			'Only return options with expiration dates on or after this date',
+		),
 	toDate: z
 		.string()
-		// .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
 		.optional()
-		.describe('End date for expiration (YYYY-MM-DD)'),
+		.describe(
+			'Only return options with expiration dates on or before this date',
+		),
 	volatility: z
 		.number()
 		.optional()
-		.describe('Volatility to use in calculations (ANALYTICAL strategy only)'),
+		.describe('Volatility to use in calculations'),
 	underlyingPrice: z
 		.number()
 		.optional()
-		.describe(
-			'Underlying price to use in calculations (ANALYTICAL strategy only)',
-		),
+		.describe('Underlying price to use in calculations'),
 	interestRate: z
 		.number()
 		.optional()
-		.describe(
-			'Interest rate to use in calculations (ANALYTICAL strategy only)',
-		),
+		.describe('Interest rate to use in calculations'),
 	daysToExpiration: z
 		.number()
 		.int()
 		.optional()
-		.describe(
-			'Days to expiration to use in calculations (ANALYTICAL strategy only)',
-		),
+		.describe('Days to expiration to use in calculations'),
 	expMonth: OptionExpMonthQueryEnum.optional().describe(
-		'Month of expiration to return (JAN, FEB, ..., ALL)',
+		'Return only options expiring in the specified month. Available values: ALL, JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC',
 	),
 	optionType: OptionTypeQueryEnum.optional().describe(
-		'Type of options to return (S, NS, ALL)',
+		'Type of options to retrieve. Available values: S, NS, ALL',
 	),
 	entitlement: OptionEntitlementQueryEnum.optional().describe(
-		'Client entitlement (PN, NP, PP)',
+		'Account entitlement for option data. Available values: PN, NP, PP',
 	),
 })
-export type GetOptionChainRequestQueryParamsSchema = z.infer<
-	typeof GetOptionChainRequestQueryParamsSchema
+export type GetOptionChainQueryParams = z.infer<
+	typeof GetOptionChainQueryParams
 >
+
+// Request Params Schema for GET /chains (only query params)
+export const GetOptionChainParams = GetOptionChainQueryParams
+export type GetOptionChainParams = z.infer<typeof GetOptionChainParams>
+
+// Response Body Schema for GET /chains
+export const GetOptionChainResponse = OptionChainSchema
+export type GetOptionChainResponse = z.infer<typeof GetOptionChainResponse>
 
 // --- Schemas for GET /expirationchain endpoint ---
 
-// Schema for Request Query Parameters of GET /expirationchain
-export const GetOptionExpirationChainRequestQueryParamsSchema = z.object({
+// Query Parameters Schema for GET /expirationchain
+export const GetOptionExpirationChainQueryParams = z.object({
 	symbol: z.string().describe('Symbol for the option expiration chain'),
 })
-export type GetOptionExpirationChainRequestQueryParamsSchema = z.infer<
-	typeof GetOptionExpirationChainRequestQueryParamsSchema
+export type GetOptionExpirationChainQueryParams = z.infer<
+	typeof GetOptionExpirationChainQueryParams
 >
 
-// Schema for an item in the expirationList
-export const ExpirationItemSchema = z.object({
-	daysToExpiration: z
-		.number()
-		.int()
-		.optional()
-		.describe('Number of days until expiration'),
-	expirationDate: z
-		.string()
-		.describe('Expiration date (e.g., YYYY-MM-DD format)'),
-	expirationType: ExpirationTypeEnum.describe('Type of expiration cycle'), // Reusing existing enum
-	standard: z
-		.boolean()
-		.optional()
-		.describe('Indicates if the expiration is standard'),
-	settlementType: SettlementTypeEnum.describe(
-		'Option contract settlement type (AM or PM)',
-	), // Reusing existing enum
-	optionRoots: z
-		.string()
-		.optional()
-		.describe('Comma-separated list of option root symbols or a single root'),
-})
-export type ExpirationItemSchema = z.infer<typeof ExpirationItemSchema>
+// Request Params Schema for GET /expirationchain (only query params)
+export const GetOptionExpirationChainParams =
+	GetOptionExpirationChainQueryParams
+export type GetOptionExpirationChainParams = z.infer<
+	typeof GetOptionExpirationChainParams
+>
 
-// Schema for Response Body of GET /expirationchain
-export const OptionExpirationChainResponseBodySchema = z.object({
-	status: z.string().optional().describe('Status of the request'),
-	expirationList: z
-		.array(ExpirationItemSchema)
-		.describe('List of option expiration series'),
-})
-export type OptionExpirationChainResponseBodySchema = z.infer<
-	typeof OptionExpirationChainResponseBodySchema
+// Response Body Schema for GET /expirationchain
+export const GetOptionExpirationChainResponse = OptionChainSchema
+export type GetOptionExpirationChainResponse = z.infer<
+	typeof GetOptionExpirationChainResponse
 >

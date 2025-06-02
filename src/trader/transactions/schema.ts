@@ -1,9 +1,5 @@
 import { z } from 'zod'
-import {
-	isoDateTimeSchema,
-	DateFormatType,
-	dateTransformer,
-} from '../../utils/date-utils'
+import { isoDateTimeSchema } from '../../utils/date-utils'
 import { mergeShapes } from '../../utils/schema-utils'
 import { assetType } from '../shared'
 
@@ -272,83 +268,63 @@ const Transaction = z.object({
 	transferItems: z.array(TransferItem),
 })
 
-// --- Get Transaction By ID ---
-export const GetTransactionByIdResponseBody = Transaction
-export type GetTransactionByIdResponseBody = z.infer<
-	typeof GetTransactionByIdResponseBody
->
-export const GetTransactionByIdRequestPathParams = z.object({
-	accountNumber: z.string().describe('The encrypted ID of the account'),
-	transactionId: z
-		.number()
-		.int()
-		.describe('The ID of the transaction being retrieved.'),
+// --- GET /accounts/{accountNumber}/transactions endpoint schemas ---
+
+// Path Parameters Schema for GET /accounts/{accountNumber}/transactions
+export const GetTransactionsPathParams = z.object({
+	accountNumber: z.string().describe('Encrypted account number'),
 })
-export type GetTransactionByIdRequestPathParams = z.infer<
-	typeof GetTransactionByIdRequestPathParams
+export type GetTransactionsPathParams = z.infer<
+	typeof GetTransactionsPathParams
 >
 
-// --- Get Transactions ---
-export const GetTransactionsResponseBody = z.array(
-	GetTransactionByIdResponseBody,
-)
-export type GetTransactionsResponseBody = z.infer<
-	typeof GetTransactionsResponseBody
->
-
-export const GetTransactionsRequestPathParams = z.object({
-	accountNumber: z.string().describe('The encrypted ID of the account'),
-})
-
-export const GetTransactionsRequestQueryParams = z.object({
+// Query Parameters Schema for GET /accounts/{accountNumber}/transactions
+export const GetTransactionsQueryParams = z.object({
 	startDate: z
 		.string()
-		.datetime({ offset: true, precision: 3 })
-		.transform(dateTransformer({ outputFormat: DateFormatType.ISO_STRING }))
-		.default(() => {
-			const date = new Date()
-			date.setDate(date.getDate() - 59)
-			return date.toISOString()
-		})
-		.describe(
-			'Specifies that no transactions entered before this time should be returned. Maximum date range is 1 year.',
-		),
+		.datetime({ offset: true })
+		.describe('Start date for transaction search'),
 	endDate: z
 		.string()
-		.datetime({ offset: true, precision: 3 })
-		.transform(dateTransformer({ outputFormat: DateFormatType.ISO_STRING }))
-		.default(() => {
-			const date = new Date()
-			return date.toISOString()
-		})
-		.describe(
-			'Specifies that no transactions entered after this time should be returned. Maximum date range is 1 year.',
-		),
-	types: TransactionType.default(TransactionType.Enum.TRADE).describe(
-		`Specifies that only transactions of this status should be returned. Available values: ${TransactionType.options.join(', ')}`,
-	),
-	symbol: z
-		.string()
-		.optional()
-		.describe(
-			'It filters all the transaction activities based on the symbol specified. NOTE: If there is any special character in the symbol, please send th encoded value.',
-		),
+		.datetime({ offset: true })
+		.describe('End date for transaction search'),
+	symbol: z.string().optional().describe('Symbol to filter transactions'),
+	type: TransactionType.optional().describe('Transaction type to filter'),
 })
-
-export type GetTransactionsRequestPathParams = z.infer<
-	typeof GetTransactionsRequestPathParams
->
-export type GetTransactionsRequestQueryParams = z.infer<
-	typeof GetTransactionsRequestQueryParams
+export type GetTransactionsQueryParams = z.infer<
+	typeof GetTransactionsQueryParams
 >
 
 // Request Params Schema for GET /accounts/{accountNumber}/transactions (merged path + query params)
-export const GetTransactionsRequestParamsSchema = z.object(
+export const GetTransactionsParams = z.object(
 	mergeShapes(
-		GetTransactionsRequestQueryParams.shape,
-		GetTransactionsRequestPathParams.shape,
+		GetTransactionsQueryParams.shape,
+		GetTransactionsPathParams.shape,
 	),
 )
-export type GetTransactionsRequestParamsSchema = z.infer<
-	typeof GetTransactionsRequestParamsSchema
+export type GetTransactionsParams = z.infer<typeof GetTransactionsParams>
+
+// Response Body Schema for GET /accounts/{accountNumber}/transactions
+export const GetTransactionsResponse = z.array(Transaction)
+export type GetTransactionsResponse = z.infer<typeof GetTransactionsResponse>
+
+// --- GET /accounts/{accountNumber}/transactions/{transactionId} endpoint schemas ---
+
+// Path Parameters Schema for GET /accounts/{accountNumber}/transactions/{transactionId}
+export const GetTransactionByIdPathParams = z.object({
+	accountNumber: z.string().describe('Encrypted account number'),
+	transactionId: z.number().int().describe('Transaction ID'),
+})
+export type GetTransactionByIdPathParams = z.infer<
+	typeof GetTransactionByIdPathParams
+>
+
+// Request Params Schema for GET /accounts/{accountNumber}/transactions/{transactionId} (only path params)
+export const GetTransactionByIdParams = GetTransactionByIdPathParams
+export type GetTransactionByIdParams = z.infer<typeof GetTransactionByIdParams>
+
+// Response Body Schema for GET /accounts/{accountNumber}/transactions/{transactionId}
+export const GetTransactionByIdResponse = Transaction
+export type GetTransactionByIdResponse = z.infer<
+	typeof GetTransactionByIdResponse
 >

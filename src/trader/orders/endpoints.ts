@@ -2,113 +2,114 @@ import { TRADER } from '../../constants'
 import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
-	GetOrdersRequestQueryParams,
-	GetOrdersResponseBody,
-	GetOrdersByAccountRequestPathParams,
-	GetOrdersByAccountRequestQueryParams,
+	GetOrdersQueryParams,
+	GetOrdersResponse,
+	GetOrdersByAccountPathParams,
+	GetOrdersByAccountQueryParams,
+	GetOrdersByAccountResponse,
 	PlaceOrderRequestBody,
-	PlaceOrderResponseBody,
-	GetOrderByOrderIdRequestPathParams,
-	GetOrderByOrderIdResponseBody,
-	CancelOrderResponseBody,
-	ReplaceOrderResponseBody,
+	PlaceOrderResponse,
+	GetOrderByIdPathParams,
+	GetOrderByIdResponse,
+	CancelOrderResponse,
+	ReplaceOrderResponse,
 } from './schema'
 
 export const getOrdersMeta: EndpointMetadata<
 	never,
-	GetOrdersRequestQueryParams,
+	GetOrdersQueryParams,
 	never,
-	GetOrdersResponseBody,
+	GetOrdersResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.ORDERS.GET_ORDERS,
-	querySchema: GetOrdersRequestQueryParams,
-	responseSchema: GetOrdersResponseBody,
+	querySchema: GetOrdersQueryParams,
+	responseSchema: GetOrdersResponse,
 	errorSchema: ErrorResponseSchema,
 	description: 'Get all orders for all accounts.',
 }
 
 export const getOrdersByAccountMeta: EndpointMetadata<
-	GetOrdersByAccountRequestPathParams,
-	GetOrdersByAccountRequestQueryParams,
+	GetOrdersByAccountPathParams,
+	GetOrdersByAccountQueryParams,
 	never,
-	GetOrdersResponseBody,
+	GetOrdersByAccountResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.ORDERS.GET_ORDERS_FOR_ACCOUNT,
-	pathSchema: GetOrdersByAccountRequestPathParams,
-	querySchema: GetOrdersByAccountRequestQueryParams,
-	responseSchema: GetOrdersResponseBody,
+	pathSchema: GetOrdersByAccountPathParams,
+	querySchema: GetOrdersByAccountQueryParams,
+	responseSchema: GetOrdersByAccountResponse,
 	errorSchema: ErrorResponseSchema,
 	description: 'Get all orders for a specific account.',
 }
 
 export const placeOrderForAccountMeta: EndpointMetadata<
-	GetOrdersByAccountRequestPathParams,
+	GetOrdersByAccountPathParams,
 	never,
 	PlaceOrderRequestBody,
-	PlaceOrderResponseBody,
+	PlaceOrderResponse,
 	'POST',
 	ErrorResponseSchema
 > = {
 	method: 'POST',
 	path: TRADER.ORDERS.PLACE_ORDER,
-	pathSchema: GetOrdersByAccountRequestPathParams,
+	pathSchema: GetOrdersByAccountPathParams,
 	bodySchema: PlaceOrderRequestBody,
-	responseSchema: PlaceOrderResponseBody,
+	responseSchema: PlaceOrderResponse,
 	errorSchema: ErrorResponseSchema,
 	description: 'Place an order for a specific account.',
 }
 
 export const getOrderByOrderIdMeta: EndpointMetadata<
-	GetOrderByOrderIdRequestPathParams,
+	GetOrderByIdPathParams,
 	never,
 	never,
-	GetOrderByOrderIdResponseBody,
+	GetOrderByIdResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.ORDERS.GET_ORDER,
-	pathSchema: GetOrderByOrderIdRequestPathParams,
-	responseSchema: GetOrderByOrderIdResponseBody,
+	pathSchema: GetOrderByIdPathParams,
+	responseSchema: GetOrderByIdResponse,
 	errorSchema: ErrorResponseSchema,
 	description: 'Get a specific order by its ID, for a specific account.',
 }
 
 export const cancelOrderMeta: EndpointMetadata<
-	GetOrderByOrderIdRequestPathParams,
+	GetOrderByIdPathParams,
 	never,
 	never,
-	CancelOrderResponseBody,
+	CancelOrderResponse,
 	'DELETE',
 	ErrorResponseSchema
 > = {
 	method: 'DELETE',
 	path: TRADER.ORDERS.CANCEL_ORDER,
-	pathSchema: GetOrderByOrderIdRequestPathParams,
-	responseSchema: CancelOrderResponseBody,
+	pathSchema: GetOrderByIdPathParams,
+	responseSchema: CancelOrderResponse,
 	errorSchema: ErrorResponseSchema,
 	description: 'Cancel a specific order for a specific account.',
 }
 
 export const replaceOrderMeta: EndpointMetadata<
-	GetOrderByOrderIdRequestPathParams,
+	GetOrderByIdPathParams,
 	never,
 	PlaceOrderRequestBody,
-	ReplaceOrderResponseBody,
+	ReplaceOrderResponse,
 	'PUT',
 	ErrorResponseSchema
 > = {
 	method: 'PUT',
 	path: TRADER.ORDERS.REPLACE_ORDER,
-	pathSchema: GetOrderByOrderIdRequestPathParams,
+	pathSchema: GetOrderByIdPathParams,
 	bodySchema: PlaceOrderRequestBody,
-	responseSchema: ReplaceOrderResponseBody,
+	responseSchema: ReplaceOrderResponse,
 	errorSchema: ErrorResponseSchema,
 	description:
 		'Replace an existing order for an account. The existing order will be replaced by the new order. Once replaced, the old order will be canceled and a new order will be created.',

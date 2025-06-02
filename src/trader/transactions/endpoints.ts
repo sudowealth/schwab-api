@@ -2,43 +2,42 @@ import { TRADER } from '../../constants'
 import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
-	GetTransactionsRequestPathParams,
-	GetTransactionsRequestQueryParams,
-	GetTransactionsResponseBody,
-	GetTransactionByIdRequestPathParams,
-	GetTransactionByIdResponseBody,
+	GetTransactionsPathParams,
+	GetTransactionsQueryParams,
+	GetTransactionsResponse,
+	GetTransactionByIdPathParams,
+	GetTransactionByIdResponse,
 } from './schema'
 
 export const getTransactionsMeta: EndpointMetadata<
-	GetTransactionsRequestPathParams,
-	GetTransactionsRequestQueryParams,
+	GetTransactionsPathParams,
+	GetTransactionsQueryParams,
 	never,
-	GetTransactionsResponseBody,
+	GetTransactionsResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.TRANSACTIONS.GET_TRANSACTIONS,
-	pathSchema: GetTransactionsRequestPathParams,
-	querySchema: GetTransactionsRequestQueryParams,
-	responseSchema: GetTransactionsResponseBody,
+	pathSchema: GetTransactionsPathParams,
+	querySchema: GetTransactionsQueryParams,
+	responseSchema: GetTransactionsResponse,
 	errorSchema: ErrorResponseSchema,
-	description:
-		'Retrieves transactions for a specific account within a date range.',
+	description: 'Get transactions for a specific account.',
 }
 
 export const getTransactionByIdMeta: EndpointMetadata<
-	GetTransactionByIdRequestPathParams,
+	GetTransactionByIdPathParams,
 	never,
 	never,
-	GetTransactionByIdResponseBody,
+	GetTransactionByIdResponse,
 	'GET',
 	ErrorResponseSchema
 > = {
 	method: 'GET',
 	path: TRADER.TRANSACTIONS.GET_TRANSACTION,
-	pathSchema: GetTransactionByIdRequestPathParams,
-	responseSchema: GetTransactionByIdResponseBody,
+	pathSchema: GetTransactionByIdPathParams,
+	responseSchema: GetTransactionByIdResponse,
 	errorSchema: ErrorResponseSchema,
-	description: 'Retrieves a specific transaction by transaction ID.',
+	description: 'Get a specific transaction by its ID.',
 }

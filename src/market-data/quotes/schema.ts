@@ -808,93 +808,74 @@ export const QuoteErrorSchema = z.object({
 })
 export type QuoteErrorSchema = z.infer<typeof QuoteErrorSchema>
 
-// Schema for Request Query Parameters of GET /quotes
-export const GetQuotesRequestQueryParamsSchema = z.object({
-	symbols: z
-		.string()
+// Path Parameters Schema for GET /quotes/{symbol_id}
+export const GetQuoteBySymbolIdPathParams = z.object({
+	symbol_id: z.string().describe('Symbol to get quote for'),
+})
+export type GetQuoteBySymbolIdPathParams = z.infer<
+	typeof GetQuoteBySymbolIdPathParams
+>
+
+// Query Parameters Schema for GET /quotes/{symbol_id}
+export const GetQuoteBySymbolIdQueryParams = z.object({
+	fields: QuoteFieldsEnum.array()
+		.optional()
 		.describe(
-			'Comma separated list of symbols to look up a quote. Example: MSFT,AAPL,GOOG',
+			'Request for subset of data by passing comma separated list of root nodes. \n' +
+				'For Fundamental Data: fundamental. For Fundamental and Reference combined: fundamental,reference. \n' +
+				'Accepted root nodes for equities: quote, fundamental, extended, reference, regular.',
 		),
-	fields: QuoteFieldsEnum.optional()
-		.default('all')
+})
+export type GetQuoteBySymbolIdQueryParams = z.infer<
+	typeof GetQuoteBySymbolIdQueryParams
+>
+
+// Request Params Schema for GET /quotes/{symbol_id} (merged path + query params)
+export const GetQuoteBySymbolIdParams = z.object(
+	mergeShapes(
+		GetQuoteBySymbolIdQueryParams.shape,
+		GetQuoteBySymbolIdPathParams.shape,
+	),
+)
+export type GetQuoteBySymbolIdParams = z.infer<typeof GetQuoteBySymbolIdParams>
+
+// Response Body Schema for GET /quotes/{symbol_id}
+export const GetQuoteBySymbolIdResponse = DiscriminatedQuoteResponseSchema
+export type GetQuoteBySymbolIdResponse = z.infer<
+	typeof GetQuoteBySymbolIdResponse
+>
+
+// Query Parameters Schema for GET /quotes
+export const GetQuotesQueryParams = z.object({
+	symbols: z
+		.union([z.string(), z.array(z.string())])
+		.transform((val) => (Array.isArray(val) ? val : [val]))
 		.describe(
-			"Request for subset of data. Possible values are quote, fundamental, extended, reference, regular. Send 'all' for full response.",
+			'Symbols to get quotes for. Comma separated string or array of strings.',
+		),
+	fields: QuoteFieldsEnum.array()
+		.optional()
+		.describe(
+			'Request for subset of data by passing comma separated list of root nodes. \n' +
+				'For Fundamental Data: fundamental. For Fundamental and Reference combined: fundamental,reference. \n' +
+				'Accepted root nodes for equities: quote, fundamental, extended, reference, regular.',
 		),
 	indicative: z
 		.boolean()
 		.optional()
-		.default(false)
 		.describe(
-			'Include indicative symbol quotes for all ETF symbols in request.',
+			'Include indicative symbol quotes for all ETF symbols in request',
 		),
 })
-export type GetQuotesRequestQueryParamsSchema = z.infer<
-	typeof GetQuotesRequestQueryParamsSchema
->
+export type GetQuotesQueryParams = z.infer<typeof GetQuotesQueryParams>
 
-/**
- * Schema for the Response Body of GET /quotes
- *
- * This response is unique in that it supports "partial success" scenarios. Even with a
- * successful HTTP 200 status code, the response body can contain a mix of:
- *
- * 1. Valid quote data (per symbol)
- * 2. Symbol-level errors (for invalid or unrecognized symbols)
- *
- * The response is structured as a record (dictionary/object) where:
- * - Keys are the requested symbols
- * - Values are either valid quote data (DiscriminatedQuoteResponseSchema) or
- *   error information (QuoteErrorSchema) for that specific symbol
- *
- * To easily process these symbol-level errors, use the `extractQuoteErrors` utility function.
- *
- * @see extractQuoteErrors
- * @see hasSymbolError
- */
-export const GetQuotesResponseBodySchema = z.record(
+// Request Params Schema for GET /quotes (only query params)
+export const GetQuotesParams = GetQuotesQueryParams
+export type GetQuotesParams = z.infer<typeof GetQuotesParams>
+
+// Response Body Schema for GET /quotes
+export const GetQuotesResponse = z.record(
 	z.string(),
-	z.union([DiscriminatedQuoteResponseSchema, QuoteErrorSchema]),
+	DiscriminatedQuoteResponseSchema,
 )
-export type GetQuotesResponseBodySchema = z.infer<
-	typeof GetQuotesResponseBodySchema
->
-
-// --- Schemas for GET /{symbol_id}/quotes ---
-
-// Path Parameters Schema for GET /{symbol_id}/quotes
-export const GetQuoteBySymbolIdRequestPathParamsSchema = z.object({
-	symbol_id: z.string().describe('Symbol of instrument to get a quote for'),
-})
-export type GetQuoteBySymbolIdRequestPathParamsSchema = z.infer<
-	typeof GetQuoteBySymbolIdRequestPathParamsSchema
->
-
-// Query Parameters Schema for GET /{symbol_id}/quotes
-export const GetQuoteBySymbolIdRequestQueryParamsSchema = z.object({
-	fields: QuoteFieldsEnum.optional()
-		.default('all')
-		.describe(
-			"Request for subset of data. Possible values are quote, fundamental, extended, reference, regular. Send 'all' for full response.",
-		),
-})
-export type GetQuoteBySymbolIdRequestQueryParamsSchema = z.infer<
-	typeof GetQuoteBySymbolIdRequestQueryParamsSchema
->
-
-// Response Body Schema for GET /{symbol_id}/quotes
-// The response structure is the same as GET /quotes, but typically for a single symbol in the record.
-export const GetQuoteBySymbolIdResponseBodySchema = GetQuotesResponseBodySchema
-export type GetQuoteBySymbolIdResponseBodySchema = z.infer<
-	typeof GetQuoteBySymbolIdResponseBodySchema
->
-
-// Request Params Schema for GET /{symbol_id}/quotes (merged path + query params)
-export const GetQuoteBySymbolIdRequestParamsSchema = z.object(
-	mergeShapes(
-		GetQuoteBySymbolIdRequestQueryParamsSchema.shape,
-		GetQuoteBySymbolIdRequestPathParamsSchema.shape,
-	),
-)
-export type GetQuoteBySymbolIdRequestParamsSchema = z.infer<
-	typeof GetQuoteBySymbolIdRequestParamsSchema
->
+export type GetQuotesResponse = z.infer<typeof GetQuotesResponse>

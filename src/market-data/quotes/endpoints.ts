@@ -2,10 +2,11 @@ import { MARKET_DATA } from '../../constants'
 import { type EndpointMetadata } from '../../core/http'
 import { ErrorResponseSchema } from '../../errors'
 import {
-	GetQuotesRequestQueryParamsSchema,
-	GetQuotesResponseBodySchema,
-	GetQuoteBySymbolIdRequestPathParamsSchema,
-	GetQuoteBySymbolIdRequestQueryParamsSchema,
+	GetQuotesQueryParams,
+	GetQuotesResponse,
+	GetQuoteBySymbolIdPathParams,
+	GetQuoteBySymbolIdQueryParams,
+	GetQuoteBySymbolIdResponse,
 } from './schema'
 
 /**
@@ -20,19 +21,18 @@ import {
  */
 export const getQuotesMeta: EndpointMetadata<
 	never, // No Path Params
-	GetQuotesRequestQueryParamsSchema, // Query Params
+	GetQuotesQueryParams, // Query Params
 	never, // No Request Body
-	GetQuotesResponseBodySchema, // Response Body
+	GetQuotesResponse, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
 > = {
 	method: 'GET',
-	path: MARKET_DATA.QUOTES.GET_QUOTES, // Using constant instead of hardcoded path
-	querySchema: GetQuotesRequestQueryParamsSchema,
-	responseSchema: GetQuotesResponseBodySchema,
-	errorSchema: ErrorResponseSchema, // Using standard error schema
-	description:
-		'Get Quotes by list of symbols with support for partial success (some symbols may return errors).',
+	path: MARKET_DATA.QUOTES.GET_QUOTES,
+	querySchema: GetQuotesQueryParams,
+	responseSchema: GetQuotesResponse,
+	errorSchema: ErrorResponseSchema,
+	description: 'Get quotes for one or more symbols.',
 }
 
 /**
@@ -45,18 +45,18 @@ export const getQuotesMeta: EndpointMetadata<
  * @see hasSymbolError
  */
 export const getQuoteBySymbolIdMeta: EndpointMetadata<
-	GetQuoteBySymbolIdRequestPathParamsSchema, // Path Params
-	GetQuoteBySymbolIdRequestQueryParamsSchema, // Query Params
+	GetQuoteBySymbolIdPathParams, // Path Params
+	GetQuoteBySymbolIdQueryParams, // Query Params
 	never, // No Request Body
-	GetQuotesResponseBodySchema, // Response Body
+	GetQuoteBySymbolIdResponse, // Response Body
 	'GET', // HTTP Method
 	ErrorResponseSchema // Error type
 > = {
 	method: 'GET',
-	path: MARKET_DATA.QUOTES.GET_QUOTE, // Using constant instead of hardcoded path
-	pathSchema: GetQuoteBySymbolIdRequestPathParamsSchema,
-	querySchema: GetQuoteBySymbolIdRequestQueryParamsSchema,
-	responseSchema: GetQuotesResponseBodySchema,
-	errorSchema: ErrorResponseSchema, // Using standard error schema
-	description: 'Get Quote for a single symbol ID.',
+	path: MARKET_DATA.QUOTES.GET_QUOTE,
+	pathSchema: GetQuoteBySymbolIdPathParams,
+	querySchema: GetQuoteBySymbolIdQueryParams,
+	responseSchema: GetQuoteBySymbolIdResponse,
+	errorSchema: ErrorResponseSchema,
+	description: 'Get quote for a single symbol.',
 }
