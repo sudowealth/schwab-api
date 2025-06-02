@@ -28,16 +28,25 @@ const flexibleDateSchema = (daysOffset: number, description: string) =>
 		.preprocess((val) => {
 			// Handle empty strings and undefined
 			if (val === '' || val === undefined || val === null) {
-				// Generate default date in ISO format
+				// Generate default date in full ISO format
 				const date = new Date()
 				date.setDate(date.getDate() + daysOffset)
+				// For start dates, set to beginning of day; for end dates, set to end of day
+				if (daysOffset < 0) {
+					// Start date - beginning of day
+					date.setHours(0, 0, 0, 0)
+				} else {
+					// End date - end of day
+					date.setHours(23, 59, 59, 999)
+				}
 				return date.toISOString()
 			}
-			// Handle YYYY-MM-DD format - convert to ISO datetime
+			// Handle YYYY-MM-DD format - convert to full ISO datetime
 			if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-				return new Date(val + 'T00:00:00.000Z').toISOString()
+				const date = new Date(val + 'T00:00:00.000Z')
+				return date.toISOString()
 			}
-			// Handle full ISO datetime - return as-is
+			// Handle full ISO datetime - ensure proper format
 			if (typeof val === 'string' && val.includes('T')) {
 				return new Date(val).toISOString()
 			}
@@ -306,9 +315,7 @@ export const GetTransactionsQueryParams = z.object({
 	startDate: flexibleDateSchema(-30, 'Start date for transaction search'),
 	endDate: flexibleDateSchema(0, 'End date for transaction search'),
 	symbol: z.string().optional().describe('Symbol to filter transactions'),
-	types: TransactionType.optional()
-		.default('TRADE')
-		.describe('Transaction type to filter'),
+	types: TransactionType.describe('Transaction type to filter'),
 })
 export type GetTransactionsQueryParams = z.infer<
 	typeof GetTransactionsQueryParams
