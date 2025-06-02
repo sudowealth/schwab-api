@@ -452,7 +452,9 @@ export type PlaceOrderPathParams = z.infer<typeof PlaceOrderPathParams>
 export const PlaceOrderRequestBody = OrderRequest
 export type PlaceOrderRequestBody = z.infer<typeof PlaceOrderRequestBody>
 
-export const PlaceOrderParams = PlaceOrderPathParams
+export const PlaceOrderParams = z.object(
+	mergeShapes(PlaceOrderPathParams.shape, PlaceOrderRequestBody.shape),
+)
 export type PlaceOrderParams = z.infer<typeof PlaceOrderParams>
 
 export const PlaceOrderResponse = z.object({}).passthrough()
@@ -507,7 +509,9 @@ export type ReplaceOrderPathParams = z.infer<typeof ReplaceOrderPathParams>
 export const ReplaceOrderRequestBody = OrderRequest
 export type ReplaceOrderRequestBody = z.infer<typeof ReplaceOrderRequestBody>
 
-export const ReplaceOrderParams = ReplaceOrderPathParams
+export const ReplaceOrderParams = z.object(
+	mergeShapes(ReplaceOrderPathParams.shape, ReplaceOrderRequestBody.shape),
+)
 export type ReplaceOrderParams = z.infer<typeof ReplaceOrderParams>
 
 export const ReplaceOrderResponse = z.object({}).passthrough()
