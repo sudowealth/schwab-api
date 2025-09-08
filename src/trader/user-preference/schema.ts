@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils'
+import { mergeShapes } from '../../utils/schema-utils.js'
 
 const UserPreferenceAccount = z.object({
 	accountNumber: z.string(),
@@ -29,7 +29,7 @@ const UserPreference = z.object({
 	streamerInfo: z.array(StreamerInfo),
 	offers: z.array(Offer),
 })
-type UserPreference = z.infer<typeof UserPreference>
+export type UserPreference = z.infer<typeof UserPreference>
 
 // Path Parameters Schema for GET /userpreference (no path params)
 export const GetUserPreferencePathParams = z.object({})

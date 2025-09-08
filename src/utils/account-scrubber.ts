@@ -1,5 +1,5 @@
-import { type SchwabApiClient } from '../create-api-client'
-import { createLogger } from './secure-logger'
+import { type SchwabApiClient } from '../create-api-client.js'
+import { createLogger } from './secure-logger.js'
 
 const logger = createLogger('AccountScrubber')
 
@@ -33,18 +33,17 @@ export interface AccountScrubberOptions {
  * Type for unknown data after scrubbing
  * Removes accountNumber and hashValue fields, adds accountDisplay
  */
-type UnknownScrubbed<T> =
-	T extends Array<infer U>
-		? UnknownScrubbed<U>[]
-		: T extends object
-			? {
-					[K in keyof T as K extends 'accountNumber' | 'hashValue'
-						? never
-						: K]: UnknownScrubbed<T[K]>
-				} & {
-					accountDisplay?: string
-				}
-			: T
+type UnknownScrubbed<T> = T extends Array<infer U>
+	? UnknownScrubbed<U>[]
+	: T extends object
+		? {
+				[K in keyof T as K extends 'accountNumber' | 'hashValue'
+					? never
+					: K]: UnknownScrubbed<T[K]>
+			} & {
+				accountDisplay?: string
+			}
+		: T
 
 /**
  * Default fields to scrub from responses
@@ -79,7 +78,9 @@ export async function buildAccountDisplayMap(
 		if (userPref.accounts && Array.isArray(userPref.accounts)) {
 			for (const acc of userPref.accounts) {
 				if (acc.accountNumber) {
-					const displayName = `${acc.nickName || 'Account'} ${acc.displayAcctId || ''}`
+					const displayName = `${acc.nickName || 'Account'} ${
+						acc.displayAcctId || ''
+					}`
 					prefMap.set(acc.accountNumber, displayName.trim())
 				}
 			}

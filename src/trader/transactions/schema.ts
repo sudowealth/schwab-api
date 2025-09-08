@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { isoDateTimeSchema } from '../../utils/date-utils'
-import { mergeShapes } from '../../utils/schema-utils'
-import { assetType } from '../shared'
+import { isoDateTimeSchema } from '../../utils/date-utils.js'
+import { mergeShapes } from '../../utils/schema-utils.js'
+import { assetType } from '../shared/index.js'
 
 export const TransactionType = z.enum([
 	'TRADE',

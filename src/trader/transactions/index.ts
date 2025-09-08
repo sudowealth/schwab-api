@@ -1,11 +1,11 @@
-export * from './endpoints'
-export * from './schema'
+export * from './endpoints.js'
+export * from './schema.js'
 
-import { type EndpointFunction } from '../../core/endpoint-types'
+import { type EndpointFunction } from '../../core/endpoint-types.js'
 import {
 	type getTransactionByIdMeta,
 	type getTransactionsMeta,
-} from './endpoints'
+} from './endpoints.js'
 
 export type GetTransactionsFunction = EndpointFunction<
 	typeof getTransactionsMeta

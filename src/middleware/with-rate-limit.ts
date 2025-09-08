@@ -1,5 +1,5 @@
-import { type Middleware } from './compose'
-import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
+import { type Middleware } from './compose.js'
+import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata.js'
 
 export interface RateLimitOptions {
 	/**

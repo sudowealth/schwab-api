@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema'
-import { mergeShapes } from '../../utils/schema-utils'
+import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema.js'
+import { mergeShapes } from '../../utils/schema-utils.js'
 
 // Enum for projection parameter
 export const InstrumentProjectionEnum = z.enum([
@@ -40,7 +40,7 @@ const InstrumentInfoSchema = BaseInstrumentSchema.pick({
 }).extend({
 	assetType: InstrumentAssetTypeEnum,
 })
-type InstrumentInfoSchema = z.infer<typeof InstrumentInfoSchema>
+export type InstrumentInfoSchema = z.infer<typeof InstrumentInfoSchema>
 
 // Schema for Fundamental Data
 const FundamentalDataSchema = z.object({

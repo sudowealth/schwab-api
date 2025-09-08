@@ -1,13 +1,13 @@
-import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
-import { createLogger } from '../utils/secure-logger'
-import { type Middleware } from './compose'
-import { type RateLimitOptions, withRateLimit } from './with-rate-limit'
-import { type RetryOptions, withRetry } from './with-retry'
+import { type EnhancedTokenManager } from '../auth/enhanced-token-manager.js'
+import { createLogger } from '../utils/secure-logger.js'
+import { type Middleware } from './compose.js'
+import { type RateLimitOptions, withRateLimit } from './with-rate-limit.js'
+import { type RetryOptions, withRetry } from './with-retry.js'
 import {
 	type TokenAuthOptions,
 	DEFAULT_TOKEN_AUTH_OPTIONS,
 	withTokenAuth,
-} from './with-token-auth'
+} from './with-token-auth.js'
 
 const logger = createLogger('Pipeline')
 

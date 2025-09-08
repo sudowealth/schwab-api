@@ -1,13 +1,13 @@
-import { MARKET_DATA } from '../../constants'
-import { type EndpointMetadata } from '../../core/http'
-import { ErrorResponseSchema } from '../../errors'
+import { MARKET_DATA } from '../../constants.js'
+import { type EndpointMetadata } from '../../core/http.js'
+import { ErrorResponseSchema } from '../../errors.js'
 import {
 	GetMarketHoursQueryParams,
 	GetMarketHoursResponse,
 	GetMarketHoursByMarketIdPathParams,
 	GetMarketHoursByMarketIdQueryParams,
 	GetMarketHoursByMarketIdResponse,
-} from './schema'
+} from './schema.js'
 
 export const getMarketHoursMeta: EndpointMetadata<
 	never, // No Path Params

@@ -1,9 +1,9 @@
-import { MEDIA_TYPES, OAUTH_GRANT_TYPES } from '../constants'
-import { type RequestContext } from '../core/http'
-import { handleApiError, createSchwabApiError } from '../errors'
-import { sanitizeAuthCode } from './auth-utils'
-import { type SchwabTokenResponse } from './types'
-import { getTokenUrlWithContext } from './urls'
+import { MEDIA_TYPES, OAUTH_GRANT_TYPES } from '../constants.js'
+import { type RequestContext } from '../core/http.js'
+import { handleApiError, createSchwabApiError } from '../errors.js'
+import { sanitizeAuthCode } from './auth-utils.js'
+import { type SchwabTokenResponse } from './types.js'
+import { getTokenUrlWithContext } from './urls.js'
 
 export interface ExchangeCodeForTokenOptions {
 	clientId: string
@@ -108,8 +108,8 @@ export async function exchangeCodeForTokenWithContext(
 		}
 
 		// Debug log the actual request details
-		tokenLogWithContext(context, 'info', `Token exchange request headers:`, {
-			Authorization: `Basic ***`, // Don't log the actual credentials
+		tokenLogWithContext(context, 'info', 'Token exchange request headers:', {
+			Authorization: 'Basic ***', // Don't log the actual credentials
 			'Content-Type': MEDIA_TYPES.FORM,
 			Accept: 'application/json',
 		})
@@ -164,7 +164,7 @@ export async function exchangeCodeForTokenWithContext(
 			throw createSchwabApiError(
 				response.status || 400,
 				{ parseError: 'Invalid JSON response' },
-				`Token exchange failed: Invalid JSON response`,
+				'Token exchange failed: Invalid JSON response',
 			)
 		}
 
@@ -246,7 +246,7 @@ export async function refreshTokenWithContext(
 	})
 
 	// Import the token refresh tracer dynamically to avoid circular dependencies
-	const { TokenRefreshTracer } = await import('./token-refresh-tracer')
+	const { TokenRefreshTracer } = await import('./token-refresh-tracer.js')
 	const tracer = TokenRefreshTracer.getInstance()
 	const refreshId = tracer.startRefreshTrace()
 
@@ -356,7 +356,7 @@ export async function refreshTokenWithContext(
 			throw createSchwabApiError(
 				response.status || 400,
 				{ parseError: 'Invalid JSON response' },
-				`Token refresh failed: Invalid JSON response`,
+				'Token refresh failed: Invalid JSON response',
 			)
 		}
 
@@ -368,7 +368,7 @@ export async function refreshTokenWithContext(
 				throw createSchwabApiError(
 					401,
 					data,
-					`Refresh token authentication failed - the token may have expired or been revoked. A new authentication flow is required.`,
+					'Refresh token authentication failed - the token may have expired or been revoked. A new authentication flow is required.',
 				)
 			} else if (data.error === 'unsupported_token_type') {
 				throw createSchwabApiError(
@@ -380,7 +380,7 @@ export async function refreshTokenWithContext(
 				throw createSchwabApiError(
 					401,
 					data,
-					`Token refresh failed: Invalid or expired refresh token. A new authentication flow is required.`,
+					'Token refresh failed: Invalid or expired refresh token. A new authentication flow is required.',
 				)
 			} else {
 				// Use createSchwabApiError for consistent error creation

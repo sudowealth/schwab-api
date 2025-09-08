@@ -1,6 +1,6 @@
 import { z, type ZodSchema } from 'zod'
-import { createLogger } from '../utils/secure-logger'
-import { safeBase64Encode, safeBase64Decode } from './auth-utils'
+import { createLogger } from '../utils/secure-logger.js'
+import { safeBase64Encode, safeBase64Decode } from './auth-utils.js'
 
 const logger = createLogger('OAuthState')
 
@@ -209,7 +209,7 @@ export function createStateWithCSRF<T extends Record<string, any>>(
 export function verifyStateWithCSRF(
 	state: unknown,
 	expectedCSRF?: string,
-	maxAgeMs: number = 600000, // 10 minutes
+	maxAgeMs = 600000, // 10 minutes
 ): boolean {
 	if (!state || typeof state !== 'object') {
 		return false

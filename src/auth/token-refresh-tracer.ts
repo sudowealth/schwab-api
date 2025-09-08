@@ -1,5 +1,5 @@
-import { createLogger } from '../utils/secure-logger'
-import { type TokenData } from './types'
+import { createLogger } from '../utils/secure-logger.js'
+import { type TokenData } from './types.js'
 
 const logger = createLogger('TokenRefreshTracer')
 
@@ -181,14 +181,14 @@ export class TokenRefreshTracer {
 		headers: Record<string, string>,
 		body?: any,
 	): void {
-		refreshId = refreshId || this.activeRefreshId
-		if (!refreshId) return
+		const id = refreshId ?? this.activeRefreshId
+		if (!id) return
 
 		// Sanitize headers to remove sensitive information
 		const sanitizedHeaders = this.sanitizeHeaders(headers)
 
 		// Sanitize body for token requests
-		let sanitizedBody: any = undefined
+		let sanitizedBody: any
 		if (body) {
 			if (typeof body === 'string' && body.includes('refresh_token')) {
 				// For URL encoded form data
@@ -217,7 +217,7 @@ export class TokenRefreshTracer {
 		}
 
 		this.recordEvent({
-			refreshId,
+			refreshId: id,
 			timestamp: new Date().toISOString(),
 			eventType: TokenRefreshEventType.REFRESH_HTTP_REQUEST,
 			details: {
@@ -239,8 +239,8 @@ export class TokenRefreshTracer {
 		headers: Record<string, string>,
 		body: any,
 	): void {
-		refreshId = refreshId || this.activeRefreshId
-		if (!refreshId) return
+		const id = refreshId ?? this.activeRefreshId
+		if (!id) return
 
 		// Sanitize the response body to avoid logging sensitive data
 		let sanitizedBody: any
@@ -292,7 +292,7 @@ export class TokenRefreshTracer {
 		}
 
 		this.recordEvent({
-			refreshId,
+			refreshId: id,
 			timestamp: new Date().toISOString(),
 			eventType: TokenRefreshEventType.REFRESH_HTTP_RESPONSE,
 			details: {
@@ -312,8 +312,8 @@ export class TokenRefreshTracer {
 		refreshId: string | null,
 		tokenData: Partial<TokenData>,
 	): void {
-		refreshId = refreshId || this.activeRefreshId
-		if (!refreshId) return
+		const id = refreshId ?? this.activeRefreshId
+		if (!id) return
 
 		// Sanitize token data to avoid logging sensitive information
 		const sanitizedTokenData = {
@@ -332,7 +332,7 @@ export class TokenRefreshTracer {
 		}
 
 		this.recordEvent({
-			refreshId,
+			refreshId: id,
 			timestamp: new Date().toISOString(),
 			eventType: TokenRefreshEventType.REFRESH_SUCCEEDED,
 			details: {
@@ -343,7 +343,7 @@ export class TokenRefreshTracer {
 		})
 
 		// If this is the active refresh, clear it
-		if (refreshId === this.activeRefreshId) {
+		if (id === this.activeRefreshId) {
 			this.activeRefreshId = null
 		}
 	}
@@ -355,8 +355,8 @@ export class TokenRefreshTracer {
 		refreshId: string | null,
 		error: Error | unknown,
 	): void {
-		refreshId = refreshId || this.activeRefreshId
-		if (!refreshId) return
+		const id = refreshId ?? this.activeRefreshId
+		if (!id) return
 
 		// Create a structured error object
 		const errorObj =
@@ -374,7 +374,7 @@ export class TokenRefreshTracer {
 					}
 
 		this.recordEvent({
-			refreshId,
+			refreshId: id,
 			timestamp: new Date().toISOString(),
 			eventType: TokenRefreshEventType.REFRESH_FAILED,
 			details: {
@@ -385,7 +385,7 @@ export class TokenRefreshTracer {
 		})
 
 		// If this is the active refresh, clear it
-		if (refreshId === this.activeRefreshId) {
+		if (id === this.activeRefreshId) {
 			this.activeRefreshId = null
 		}
 	}

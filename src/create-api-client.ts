@@ -1,23 +1,23 @@
-import * as authNs from './auth'
+import * as authNs from './auth/index.js'
 import {
 	type AuthDiagnosticsOptions,
 	type AuthDiagnosticsResult,
-} from './auth/auth-diagnostics'
-import { type EnhancedTokenManager } from './auth/enhanced-token-manager'
+} from './auth/auth-diagnostics.js'
+import { type EnhancedTokenManager } from './auth/enhanced-token-manager.js'
 import {
 	type SchwabApiConfig,
 	getSchwabApiConfigDefaults,
 	// resolveBaseUrl, // Not directly used in the provided snippet modification
-} from './core/config'
-import { type ProcessNamespaceResult } from './core/endpoint-types'
+} from './core/config.js'
+import { type ProcessNamespaceResult } from './core/endpoint-types.js'
 import {
 	createRequestContext,
 	type RequestContext,
 	createEndpoint as coreHttpCreateEndpoint, // Aliased import
 	type EndpointMetadata,
 	type HttpMethod,
-} from './core/http'
-import * as errorsNs from './errors'
+} from './core/http.js'
+import * as errorsNs from './errors.js'
 import {
 	SchwabError,
 	SchwabApiError,
@@ -35,15 +35,15 @@ import {
 	AuthErrorCode,
 	ErrorResponseSchema,
 	parseErrorResponse,
-} from './errors'
-import * as marketDataNs from './market-data'
-import { compose } from './middleware/compose'
+} from './errors.js'
+import * as marketDataNs from './market-data/index.js'
+import { compose } from './middleware/compose.js'
 import {
 	type MiddlewarePipelineOptions,
 	buildMiddlewarePipeline,
-} from './middleware/pipeline'
-import * as schemasNs from './schemas'
-import * as traderNs from './trader'
+} from './middleware/pipeline.js'
+import * as schemasNs from './schemas/index.js'
+import * as traderNs from './trader/index.js'
 
 /**
  * Options for creating a Schwab API client
@@ -196,7 +196,7 @@ function processNamespace<T extends Record<string, any>>(
 	} = {}
 
 	for (const key in ns) {
-		if (Object.prototype.hasOwnProperty.call(ns, key)) {
+		if (Object.hasOwn(ns, key)) {
 			const value = ns[key]
 			if (typeof value === 'object' && value !== null) {
 				// Check if it's likely an EndpointMetadata object exported from an endpoints module
@@ -299,18 +299,10 @@ export function createApiClient(
 		chain(req),
 	)
 
-	const clientBoundCreateEndpoint = function <
-		P,
-		Q,
-		B,
-		R,
-		M extends HttpMethod,
-		E,
-	>(
+	const clientBoundCreateEndpoint = <P, Q, B, R, M extends HttpMethod, E>(
 		meta: EndpointMetadata<P, Q, B, R, M, E>,
-	): ReturnType<typeof coreHttpCreateEndpoint<P, Q, B, R, M, E>> {
-		return coreHttpCreateEndpoint(apiClientContext, meta)
-	}
+	): ReturnType<typeof coreHttpCreateEndpoint<P, Q, B, R, M, E>> =>
+		coreHttpCreateEndpoint(apiClientContext, meta)
 
 	const processedMarketData = processNamespace(
 		marketDataNs,

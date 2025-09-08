@@ -1,8 +1,8 @@
-import { type EnhancedTokenManager } from '../auth/enhanced-token-manager'
-import { handleApiError } from '../errors'
-import { createLogger } from '../utils/secure-logger'
-import { type Middleware } from './compose'
-import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
+import { type EnhancedTokenManager } from '../auth/enhanced-token-manager.js'
+import { handleApiError } from '../errors.js'
+import { createLogger } from '../utils/secure-logger.js'
+import { type Middleware } from './compose.js'
+import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata.js'
 
 const logger = createLogger('TokenAuth')
 

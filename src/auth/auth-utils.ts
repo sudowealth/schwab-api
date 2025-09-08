@@ -1,4 +1,4 @@
-import { createLogger } from '../utils/secure-logger'
+import { createLogger } from '../utils/secure-logger.js'
 
 const logger = createLogger('AuthUtils')
 
@@ -35,7 +35,7 @@ export const REFRESH_TOKEN_WARNING_THRESHOLD_MS = 518_400_000 // 6 days
  * @param debug Optional flag to enable debug logging
  * @returns The sanitized authorization code
  */
-export function sanitizeAuthCode(code: string, debug: boolean = false): string {
+export function sanitizeAuthCode(code: string, debug = false): string {
 	// First trim any whitespace
 	const trimmedCode = code.trim()
 

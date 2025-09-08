@@ -3,8 +3,8 @@ import {
 	dateStringSchema,
 	epochMillisSchema,
 	createQueryDateSchema,
-} from '../../utils/date-utils'
-import { mergeShapes } from '../../utils/schema-utils'
+} from '../../utils/date-utils.js'
+import { mergeShapes } from '../../utils/schema-utils.js'
 
 // Enum for periodType query parameter
 export const PriceHistoryPeriodTypeEnum = z.enum([

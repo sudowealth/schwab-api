@@ -1,8 +1,8 @@
-export * from './schema'
-export * from './endpoints'
+export * from './schema.js'
+export * from './endpoints.js'
 
-import { type EndpointFunction } from '../../core/endpoint-types'
-import { type getUserPreferenceMeta } from './endpoints'
+import { type EndpointFunction } from '../../core/endpoint-types.js'
+import { type getUserPreferenceMeta } from './endpoints.js'
 
 export type GetUserPreferenceFunction = EndpointFunction<
 	typeof getUserPreferenceMeta

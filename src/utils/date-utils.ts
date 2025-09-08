@@ -80,7 +80,7 @@ function parseSchwabDate(
 	}
 
 	// Handle invalid dates
-	if (isNaN(date.getTime())) {
+	if (Number.isNaN(date.getTime())) {
 		throw new Error(`Invalid date: ${value}`)
 	}
 
@@ -94,31 +94,15 @@ function parseSchwabDate(
 			return date
 		case DateFormatType.ISO_STRING:
 			return mergedOptions.includeOffset ? date.toISOString() : date.toJSON()
-		case DateFormatType.DATE_STRING:
+		case DateFormatType.DATE_STRING: {
 			const parts = date.toISOString().split('T')
 			return parts[0] ?? null
+		}
 		case DateFormatType.EPOCH_MS:
 			return date.getTime()
 		default:
 			return date as Date | string | number
 	}
-}
-
-/**
- * Zod transformer for date fields
- * Can be used in schemas to automatically transform date fields
- *
- * @example
- * const schema = z.object({
- *   timestamp: z.number().transform(dateTransformer())
- * })
- *
- * @param options - Options for date transformation
- * @returns A zod transformer function
- */
-export function dateTransformer(options: DateParserOptions = DEFAULT_OPTIONS) {
-	return (value: SchwabDate | null | undefined) =>
-		parseSchwabDate(value, options)
 }
 
 /**
@@ -181,35 +165,5 @@ export function createQueryDateSchema() {
 			}
 			// For number type, ensure it's an epoch milliseconds value
 			return val
-		})
-}
-
-/**
- * Creates a Zod schema for ISO-8601 datetime query parameters that:
- * - Validates ISO-8601 format with timezone offset
- * - Sets default to current time or specified days offset
- * - Handles transformations if needed
- *
- * @param options Configuration options
- * @param options.daysOffset Number of days to offset from current date (negative for past)
- * @param options.description Field description
- * @returns A Zod schema for ISO-8601 datetime fields
- */
-export function createISODateTimeSchema(options: {
-	daysOffset?: number
-	description?: string
-}) {
-	const { daysOffset = 0, description } = options
-
-	return z
-		.string()
-		.datetime({ offset: true, precision: 3 })
-		.describe(description || '')
-		.default(() => {
-			const date = new Date()
-			if (daysOffset !== 0) {
-				date.setDate(date.getDate() + daysOffset)
-			}
-			return date.toISOString()
 		})
 }

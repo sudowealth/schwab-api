@@ -1,4 +1,4 @@
-import { createLogger } from '../utils/secure-logger'
+import { createLogger } from '../utils/secure-logger.js'
 
 const logger = createLogger('MiddlewareMetadata')
 

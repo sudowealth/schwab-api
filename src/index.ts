@@ -1,7 +1,7 @@
 // Public surface of the schwab-api package
 
 // Import specific error types for re-export
-import { type SchwabApiLogger } from './core/config'
+import { type SchwabApiLogger } from './core/config.js'
 import {
 	SchwabApiError,
 	isSchwabApiError,
@@ -9,7 +9,7 @@ import {
 	SchwabError,
 	isSchwabError,
 	AuthErrorCode,
-} from './errors'
+} from './errors.js'
 
 // Import the SchwabApiLogger type for re-export
 
@@ -23,11 +23,11 @@ import {
  * @internal
  * @private
  */
-export * as auth from './auth'
-export * as marketData from './market-data'
-export * as trader from './trader'
-export * as schemas from './schemas'
-export * as errors from './errors'
+export * as auth from './auth/index.js'
+export * as marketData from './market-data/index.js'
+export * as trader from './trader/index.js'
+export * as schemas from './schemas/index.js'
+export * as errors from './errors.js'
 
 /**
  * PUBLIC API
@@ -42,7 +42,7 @@ export {
 	SchwabApiError,
 	isSchwabApiError,
 	SchwabAuthError,
-	SchwabApiLogger,
+	type SchwabApiLogger,
 }
 
 /**
@@ -60,7 +60,7 @@ export {
 	createApiClient,
 	type SchwabApiClient,
 	type CreateApiClientOptions,
-} from './create-api-client'
+} from './create-api-client.js'
 
 /**
  * Configuration Constants
@@ -68,7 +68,7 @@ export {
  * These exports provide configuration constants for the Schwab API.
  * Use ENVIRONMENTS and Environment type to specify the API environment.
  */
-export { ENVIRONMENTS, type Environment } from './constants'
+export { ENVIRONMENTS, type Environment } from './constants.js'
 
 /**
  * Authentication Modules
@@ -79,15 +79,15 @@ export { ENVIRONMENTS, type Environment } from './constants'
  *
  * For most applications, use createSchwabAuth for a unified approach.
  */
-export type { TokenData } from './auth/types'
+export type { TokenData } from './auth/types.js'
 
-// Explicitly export createSchwabAuth, AuthStrategy, AND FullAuthClient from './auth'
+// Explicitly export createSchwabAuth, AuthStrategy, AND FullAuthClient from './auth/index.js'
 export {
 	createSchwabAuth,
 	AuthStrategy,
 	type FullAuthClient,
 	type AuthFactoryConfig,
-} from './auth'
+} from './auth/index.js'
 
 /**
  * Token Management Utilities
@@ -99,10 +99,9 @@ export {
 export {
 	// Core interfaces
 	type ITokenLifecycleManager,
-
 	// Helper functions
 	isTokenLifecycleManager,
-} from './auth/token-lifecycle-manager'
+} from './auth/token-lifecycle-manager.js'
 
 /**
  * Enhanced Token Management
@@ -116,14 +115,14 @@ export {
 	TokenErrorCode,
 	TokenPersistenceEvent,
 	type TokenPersistenceEventHandler,
-} from './auth/enhanced-token-manager'
+} from './auth/enhanced-token-manager.js'
 
 /**
  * Authentication Utilities
  *
  * Utility functions for authentication and encoding operations
  */
-export { safeBase64Encode, safeBase64Decode } from './auth/auth-utils'
+export { safeBase64Encode, safeBase64Decode } from './auth/auth-utils.js'
 
 /**
  * OAuth State Management
@@ -144,7 +143,7 @@ export {
 	PKCEOAuthStateSchema,
 	type OAuthState,
 	type OAuthStateOptions,
-} from './auth/oauth-state-utils'
+} from './auth/oauth-state-utils.js'
 
 /**
  * Token Storage Adapters
@@ -154,11 +153,11 @@ export {
 export {
 	KVTokenStore,
 	createKVTokenStore,
-} from './auth/adapters/kv-token-store'
+} from './auth/adapters/kv-token-store.js'
 export type {
 	KVNamespace,
 	TokenIdentifiers,
-} from './auth/adapters/kv-token-store'
+} from './auth/adapters/kv-token-store.js'
 
 /**
  * Cookie-based Token Storage
@@ -169,7 +168,7 @@ export {
 	CookieTokenStore,
 	createCookieTokenStore,
 	type CookieTokenStoreOptions,
-} from './auth/adapters/cookie-token-store'
+} from './auth/adapters/cookie-token-store.js'
 
 /**
  * Account Privacy Utilities
@@ -180,7 +179,7 @@ export {
 	buildAccountDisplayMap,
 	scrubAccountIdentifiers,
 	createAccountScrubber,
-} from './utils/account-scrubber'
+} from './utils/account-scrubber.js'
 
 /**
  * Secure Logging Utilities
@@ -191,7 +190,7 @@ export {
 	sanitizeKeyForLog,
 	sanitizeError,
 	sanitizeTokenForLog,
-} from './utils/secure-logger'
+} from './utils/secure-logger.js'
 
 /**
  * Cryptographic Utilities
@@ -204,7 +203,7 @@ export {
 	verifySignature,
 	toHex,
 	fromHex,
-} from './utils/crypto-utils'
+} from './utils/crypto-utils.js'
 
 /**
  * Error Mapping Utilities
@@ -220,7 +219,7 @@ export {
 	getRetryInfo,
 	type ErrorMappingResult,
 	type ErrorMapper,
-} from './auth/error-mapping'
+} from './auth/error-mapping.js'
 
 /**
  * Public Middleware Components
@@ -230,18 +229,18 @@ export {
  * like authentication, rate limiting and retries.
  */
 // Middleware type and compose function
-export { type Middleware, compose } from './middleware/compose'
+export { type Middleware, compose } from './middleware/compose.js'
 
 // Middleware functions
 export {
 	withTokenAuth,
 	type TokenAuthOptions,
-} from './middleware/with-token-auth'
+} from './middleware/with-token-auth.js'
 export {
 	withRateLimit,
 	type RateLimitOptions,
-} from './middleware/with-rate-limit'
-export { withRetry, type RetryOptions } from './middleware/with-retry'
+} from './middleware/with-rate-limit.js'
+export { withRetry, type RetryOptions } from './middleware/with-retry.js'
 
 /**
  * Public Schema Exports
@@ -255,7 +254,6 @@ export {
 	// Base Schemas
 	AssetTypeEnum,
 	BaseInstrumentSchema,
-
 	// Market Data Schemas
 	GetInstrumentsParams,
 	GetInstrumentsPathParams,
@@ -304,7 +302,6 @@ export {
 	MarketHoursMarketQueryEnum,
 	MoversDirectionEnum,
 	PeriodEnum,
-
 	// Trader Schemas
 	CancelOrderParams,
 	CancelOrderPathParams,
@@ -358,12 +355,12 @@ export {
 	AccountAPIOptionDeliverable,
 	ApiCurrencyType,
 	assetType,
-} from './schemas'
+} from './schemas/index.js'
 
 // Re-export schema types
-export type { AssetType, BaseInstrument } from './schemas'
+export type { AssetType, BaseInstrument } from './schemas/index.js'
 
 // Additional utility namespaces
-export * as adapters from './auth/adapters'
-export * as cryptoUtils from './utils/crypto-utils'
-export * as accountUtils from './utils/account-scrubber'
+export * as adapters from './auth/adapters/index.js'
+export * as cryptoUtils from './utils/crypto-utils.js'
+export * as accountUtils from './utils/account-scrubber.js'

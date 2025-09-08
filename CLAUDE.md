@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
+This file provides guidance to coding agents when working with code in this
+repository.
 
 ## Overview
 
@@ -16,10 +16,10 @@ with full type safety and runtime validation using Zod.
 npm run build       # Clean and compile TypeScript to dist/
 
 # Code Quality (run before committing)
-npm run validate    # Run format, lint, and typecheck in parallel
-npm run lint        # Run ESLint
-npm run typecheck   # Run TypeScript type checking
-npm run format      # Format code with Prettier
+npm run validate    # Format, lint, and typecheck
+npm run lint        # Lint with Biome
+npm run typecheck   # TypeScript type checking
+npm run format      # Format with Biome
 
 ```
 
@@ -63,7 +63,6 @@ npm run format      # Format code with Prettier
    ```
 
 3. **Middleware Pipeline**: Middleware executes in order:
-
    - Pre-request → Auth → Rate Limit → Retry → Request → Post-request
 
 4. **Error Handling**: Use typed errors from `src/errors.ts`:
@@ -73,11 +72,11 @@ npm run format      # Format code with Prettier
 
 ## Authentication Flow
 
-1. Create auth client:
-   `createSchwabAuthClient({ clientId, clientSecret, redirectUri })`
+1. Create auth manager:
+   `createSchwabAuth({ oauthConfig: { clientId, clientSecret, redirectUri } })`
 2. Generate auth URL: `auth.getAuthorizationUrl().authUrl`
 3. Exchange code: `auth.exchangeCode(authorizationCode)`
-4. Configure API: `configureSchwabApi({ auth: { currentToken, refreshToken } })`
+4. Create API client: `createApiClient({ auth })`
 
 ## Important Notes
 

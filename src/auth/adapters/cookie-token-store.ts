@@ -2,9 +2,9 @@ import {
 	createHmacKey,
 	signData,
 	verifySignature,
-} from '../../utils/crypto-utils'
-import { createLogger } from '../../utils/secure-logger'
-import { type TokenData } from '../types'
+} from '../../utils/crypto-utils.js'
+import { createLogger } from '../../utils/secure-logger.js'
+import { type TokenData } from '../types.js'
 
 const logger = createLogger('CookieTokenStore')
 

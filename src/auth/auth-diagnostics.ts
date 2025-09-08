@@ -1,8 +1,8 @@
 import {
 	type ITokenLifecycleManager,
 	forceRefreshTokens,
-} from './token-lifecycle-manager'
-import { type TokenData } from './types'
+} from './token-lifecycle-manager.js'
+import { type TokenData } from './types.js'
 
 /**
  * Options for the auth diagnostics function

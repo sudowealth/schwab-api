@@ -4,13 +4,13 @@ import {
 	createSchwabApiError,
 	handleApiError,
 	extractErrorMetadata,
-} from '../errors'
+} from '../errors.js'
 import {
 	type SchwabApiConfig,
 	type SchwabApiLogger,
 	getSchwabApiConfigDefaults,
 	resolveBaseUrl,
-} from './config'
+} from './config.js'
 
 // Global fetch handler that will be used as a fallback
 const globalFetch = fetch
@@ -517,7 +517,7 @@ function buildUrlWithContext(
 	}
 
 	// Check for unsubstituted placeholders after substitution
-	const unsubstitutedCurlyPlaceholderRegex = /\{[^\}]+\}/g
+	const unsubstitutedCurlyPlaceholderRegex = /\{[^}]+\}/g
 	const unsubstitutedColonPlaceholderRegex = /:[a-zA-Z0-9_]+(?=\/|\.|_|$)/g
 
 	const curlyMatches = finalEndpointPath.match(
@@ -555,7 +555,9 @@ function buildUrlWithContext(
 		Object.entries(queryParams).forEach(([key, value]) => {
 			if (value !== undefined) {
 				if (Array.isArray(value)) {
-					value.forEach((v) => url.searchParams.append(key, String(v)))
+					value.forEach((v) => {
+						url.searchParams.append(key, String(v))
+					})
 				} else {
 					url.searchParams.set(key, String(value))
 				}

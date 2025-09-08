@@ -1,9 +1,9 @@
-import { SchwabAuthError, AuthErrorCode } from '../errors'
+import { SchwabAuthError, AuthErrorCode } from '../errors.js'
 import {
 	type TokenData,
 	type ITokenLifecycleManager,
 	type RefreshOptions,
-} from './types'
+} from './types.js'
 
 /**
  * Function to determine if an object implements ITokenLifecycleManager

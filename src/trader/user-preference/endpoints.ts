@@ -1,7 +1,7 @@
-import { TRADER } from '../../constants'
-import { type EndpointMetadata } from '../../core/http'
-import { ErrorResponseSchema } from '../../errors'
-import { GetUserPreferenceResponse } from './schema'
+import { TRADER } from '../../constants.js'
+import { type EndpointMetadata } from '../../core/http.js'
+import { ErrorResponseSchema } from '../../errors.js'
+import { GetUserPreferenceResponse } from './schema.js'
 
 export const getUserPreferenceMeta: EndpointMetadata<
 	never,

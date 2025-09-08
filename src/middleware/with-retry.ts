@@ -6,10 +6,10 @@ import {
 	isAuthError,
 	extractErrorMetadata,
 	isCommunicationError,
-} from '../errors'
-import { createLogger } from '../utils/secure-logger'
-import { type Middleware } from './compose'
-import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata'
+} from '../errors.js'
+import { createLogger } from '../utils/secure-logger.js'
+import { type Middleware } from './compose.js'
+import { getMetadata, cloneRequestWithMetadata } from './middleware-metadata.js'
 
 const logger = createLogger('Retry')
 
@@ -279,7 +279,7 @@ export function withRetry(options?: Partial<RetryOptions>): Middleware {
 			}
 
 			// Use exponential backoff with jitter as fallback
-			let calculatedDelay = baseDelayMs * Math.pow(2, attempts - 2) // -2 because we've already incremented attempts
+			let calculatedDelay = baseDelayMs * 2 ** (attempts - 2) // -2 because we've already incremented attempts
 			const jitter = calculatedDelay * JITTER_FACTOR * (Math.random() - 0.5) * 2 // -10% to +10%
 			calculatedDelay = Math.max(0, calculatedDelay + jitter)
 

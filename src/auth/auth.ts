@@ -1,5 +1,5 @@
-import { EnhancedTokenManager } from './enhanced-token-manager'
-import { type AuthClientOptions, type FullAuthClient } from './types'
+import { EnhancedTokenManager } from './enhanced-token-manager.js'
+import { type AuthClientOptions, type FullAuthClient } from './types.js'
 
 /**
  * Authentication strategy for the auth factory

@@ -3,7 +3,7 @@ import {
 	AuthErrorCode,
 	SchwabApiError,
 	ApiErrorCode,
-} from '../errors'
+} from '../errors.js'
 
 /**
  * Result of error mapping operation
@@ -342,7 +342,7 @@ export function schwabErrorHandler(options?: {
 }) {
 	const mapper = options?.customMapper || defaultErrorMapper
 
-	return (error: unknown, req: any, res: any) => {
+	return (error: unknown, _req: any, res: any) => {
 		const mapping = mapper.map(error)
 
 		const response = {

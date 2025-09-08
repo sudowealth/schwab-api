@@ -1,12 +1,12 @@
-export * from './schema'
-export * from './endpoints'
+export * from './schema.js'
+export * from './endpoints.js'
 
-import { type EndpointFunction } from '../../core/endpoint-types'
+import { type EndpointFunction } from '../../core/endpoint-types.js'
 import {
 	type getAccountsMeta,
 	type getAccountNumbersMeta,
 	type getAccountByNumberMeta,
-} from './endpoints'
+} from './endpoints.js'
 
 export type GetAccountsFunction = EndpointFunction<typeof getAccountsMeta>
 export declare const getAccounts: GetAccountsFunction

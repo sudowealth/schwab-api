@@ -2,7 +2,7 @@
  * Centralized token validation utilities
  */
 
-import { type TokenData } from './types'
+import { type TokenData } from './types.js'
 
 /**
  * Token validation result with detailed information
@@ -61,7 +61,7 @@ export function validateTokenData(tokenData: TokenData): boolean {
  */
 export function validateTokenDetailed(
 	tokenData: TokenData,
-	refreshThresholdMs: number = 300_000,
+	refreshThresholdMs = 300_000,
 ): TokenValidationResult {
 	const now = Date.now()
 	const issues: string[] = []
@@ -130,7 +130,7 @@ export function validateTokenDetailed(
  */
 export function isTokenExpiring(
 	expiresAt?: number,
-	thresholdMs: number = 300_000,
+	thresholdMs = 300_000,
 ): boolean {
 	if (!expiresAt) return true
 	return expiresAt <= Date.now() + thresholdMs
@@ -141,7 +141,7 @@ export function isTokenExpiring(
  */
 export function ensureCompleteTokenData(
 	tokenData: Partial<TokenData>,
-	defaultExpiresInSeconds: number = 3600,
+	defaultExpiresInSeconds = 3600,
 ): Required<TokenData> {
 	return {
 		accessToken: tokenData.accessToken || '',

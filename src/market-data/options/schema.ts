@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils'
+import { mergeShapes } from '../../utils/schema-utils.js'
 
 // --- Enums ---
 

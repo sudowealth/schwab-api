@@ -3,10 +3,10 @@
  */
 
 // Date utilities
-export * from './date-utils'
+export * from './date-utils.js'
 
 // Schema utilities
-export * from './schema-utils'
+export * from './schema-utils.js'
 
 // Secure logging
 export {
@@ -19,7 +19,7 @@ export {
 	sanitizeKeyForLog,
 	sanitizeError,
 	sanitizeTokenForLog,
-} from './secure-logger'
+} from './secure-logger.js'
 
 // Account scrubbing utilities
 export {
@@ -29,7 +29,7 @@ export {
 	AccountScrubber,
 	type AccountDisplayMap,
 	type AccountScrubberOptions,
-} from './account-scrubber'
+} from './account-scrubber.js'
 
 // Crypto utilities
 export {
@@ -47,4 +47,4 @@ export {
 	verifyTimedSignature,
 	type SigningOptions,
 	type KeyValidationOptions,
-} from './crypto-utils'
+} from './crypto-utils.js'

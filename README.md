@@ -53,38 +53,35 @@ npm install @sudowealth/schwab-api
 >    and `SCHWAB_CLIENT_SECRET`).
 
 The quickest way to get started is by using `createSchwabAuth` along with
-`createApiClient`. This example demonstrates using a static access token. For
-more robust authentication, such as OAuth 2.0 Code Flow, refer to the "Usage
-Examples" section.
+`createApiClient`. The examples below use the OAuth 2.0 Code Flow.
 
 ### Basic Setup
 
 ```typescript
-import {
-	createSchwabAuthClient,
-	configureSchwabApi,
-} from '@sudowealth/schwab-api'
+import { createSchwabAuth, createApiClient } from '@sudowealth/schwab-api'
 
-// Create unified auth client
-const auth = createSchwabAuthClient({
-	clientId: process.env.SCHWAB_ID,
-	clientSecret: process.env.SCHWAB_SECRET,
-	redirectUri: 'https://example.com/callback',
+// Create the auth manager (Enhanced OAuth client)
+const auth = createSchwabAuth({
+	oauthConfig: {
+		clientId: process.env.SCHWAB_CLIENT_ID!,
+		clientSecret: process.env.SCHWAB_CLIENT_SECRET!,
+		redirectUri: 'https://example.com/callback',
+		// Optional: provide persistence callbacks
+		// save: async (tokens) => { ... },
+		// load: async () => { ... },
+	},
 })
 
 // Generate login URL
 console.log('Visit:', auth.getAuthorizationUrl().authUrl)
 
-// Exchange auth code for tokens
+// Exchange auth code for tokens (when user returns)
 const tokens = await auth.exchangeCode('<authorization-code>')
 
-// Create API client
-const schwab = await configureSchwabApi({
-	tokens: {
-		current: () => tokens,
-		refresh: () => auth.refresh(tokens.refresh_token),
-	},
-})
+// Optionally persist tokens here...
+
+// Create API client using the auth manager
+const schwab = createApiClient({ auth })
 ```
 
 ### Market Data
@@ -92,42 +89,51 @@ const schwab = await configureSchwabApi({
 ```typescript
 // Get real-time quotes
 const quotes = await schwab.marketData.quotes.getQuotes({
-	symbols: 'AAPL,MSFT,GOOGL',
-	fields: 'quote,fundamental',
+	queryParams: {
+		symbols: 'AAPL,MSFT,GOOGL',
+		fields: 'quote,fundamental',
+	},
 })
 
 // Get price history
 const history = await schwab.marketData.priceHistory.getPriceHistory({
-	symbol: 'AAPL',
-	periodType: 'day',
-	period: 10,
-	frequencyType: 'minute',
-	frequency: 1,
+	queryParams: {
+		symbol: 'AAPL',
+		periodType: 'day',
+		period: 10,
+		frequencyType: 'minute',
+		frequency: 1,
+	},
 })
 
 // Get options chain
 const options = await schwab.marketData.options.getOptionChain({
-	symbol: 'AAPL',
-	contractType: 'CALL',
-	strikeCount: 10,
+	queryParams: {
+		symbol: 'AAPL',
+		contractType: 'CALL',
+		strikeCount: 10,
+	},
 })
 
 // Get market hours
 const hours = await schwab.marketData.marketHours.getMarketHours({
-	markets: 'equity,option',
+	queryParams: {
+		markets: ['equity', 'option'],
+	},
 })
 
 // Get movers
 const movers = await schwab.marketData.movers.getMovers({
-	index: '$SPX.X',
-	direction: 'up',
-	change: 'percent',
+	pathParams: { symbol_id: '$SPX' },
+	queryParams: { sort: 'up', frequency: 0 },
 })
 
 // Search instruments
 const instruments = await schwab.marketData.instruments.getInstruments({
-	symbol: 'AAPL',
-	projection: 'symbol-search',
+	queryParams: {
+		symbol: 'AAPL',
+		projection: 'symbol-search',
+	},
 })
 ```
 
@@ -138,42 +144,46 @@ const instruments = await schwab.marketData.instruments.getInstruments({
 const accounts = await schwab.trader.accounts.getAccounts()
 
 // Get account details
-const account = await schwab.trader.accounts.getAccount({
-	accountId: 'your-account-hash',
-	fields: 'positions',
+const account = await schwab.trader.accounts.getAccountByNumber({
+	pathParams: { accountNumber: 'your-account-hash' },
+	queryParams: { fields: 'positions' },
 })
 
 // Get orders
-const orders = await schwab.trader.orders.getOrders({
-	accountId: 'your-account-hash',
-	maxResults: 50,
+const orders = await schwab.trader.orders.getOrdersByAccount({
+	pathParams: { accountNumber: 'your-account-hash' },
+	queryParams: { maxResults: 50 },
 })
 
 // Place an order
-const orderResponse = await schwab.trader.orders.placeOrder({
-	accountId: 'your-account-hash',
-	orderType: 'MARKET',
-	session: 'NORMAL',
-	duration: 'DAY',
-	orderStrategyType: 'SINGLE',
-	orderLegCollection: [
-		{
-			instruction: 'BUY',
-			quantity: 10,
-			instrument: {
-				symbol: 'AAPL',
-				assetType: 'EQUITY',
+const orderResponse = await schwab.trader.orders.placeOrderForAccount({
+	pathParams: { accountNumber: 'your-account-hash' },
+	body: {
+		orderType: 'MARKET',
+		session: 'NORMAL',
+		duration: 'DAY',
+		orderStrategyType: 'SINGLE',
+		orderLegCollection: [
+			{
+				instruction: 'BUY',
+				quantity: 10,
+				instrument: {
+					symbol: 'AAPL',
+					assetType: 'EQUITY',
+				},
 			},
-		},
-	],
+		],
+	},
 })
 
 // Get transactions
 const transactions = await schwab.trader.transactions.getTransactions({
-	accountId: 'your-account-hash',
-	type: 'TRADE',
-	startDate: '2024-01-01',
-	endDate: '2024-12-31',
+	pathParams: { accountNumber: 'your-account-hash' },
+	queryParams: {
+		types: 'TRADE',
+		startDate: '2024-01-01',
+		endDate: '2024-12-31',
+	},
 })
 
 // Get user preferences
@@ -183,21 +193,23 @@ const preferences = await schwab.trader.userPreference.getUserPreference()
 ### Advanced Configuration with Middleware
 
 ```typescript
-import {
-	configureSchwabApi,
-	withRateLimit,
-	withRetry,
-} from '@sudowealth/schwab-api'
+import { createSchwabAuth, createApiClient } from '@sudowealth/schwab-api'
 
-const schwab = await configureSchwabApi({
-	tokens: {
-		current: () => tokens,
-		refresh: () => auth.refresh(tokens.refresh_token),
+const auth = createSchwabAuth({
+	oauthConfig: {
+		clientId: process.env.SCHWAB_CLIENT_ID!,
+		clientSecret: process.env.SCHWAB_CLIENT_SECRET!,
+		redirectUri: 'https://example.com/callback',
 	},
-	middlewares: [
-		withRateLimit(120, 60000), // 120 requests per minute
-		withRetry({ max: 3, baseMs: 1000 }), // Retry with exponential backoff
-	],
+})
+
+// Customize middleware via options
+const schwab = createApiClient({
+	auth,
+	middleware: {
+		rateLimit: { maxRequests: 120, windowMs: 60_000 },
+		retry: { maxAttempts: 3, baseDelayMs: 1000 },
+	},
 })
 ```
 
@@ -244,7 +256,6 @@ try {
 The API client is organized into logical namespaces:
 
 - **`marketData`**: Real-time and historical market data
-
   - `quotes`: Real-time quotes and fundamentals
   - `priceHistory`: Historical price data and charts
   - `options`: Options chains and pricing

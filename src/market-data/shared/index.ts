@@ -1,1 +1,1 @@
-export * from './instrument-asset-type.schema'
+export * from './instrument-asset-type.schema.js'

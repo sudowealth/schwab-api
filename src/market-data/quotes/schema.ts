@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils'
-import { mergeShapes } from '../../utils/schema-utils'
-import { InstrumentAssetTypeEnum } from '../shared'
+import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils.js'
+import { mergeShapes } from '../../utils/schema-utils.js'
+import { InstrumentAssetTypeEnum } from '../shared/index.js'
 
 // Enum for the 'fields' query parameter
 export const QuoteFieldsEnum = z.enum([

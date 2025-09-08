@@ -6,13 +6,16 @@
  */
 
 // Utilities
-export { mergeShapes } from '../utils/schema-utils'
+export { mergeShapes } from '../utils/schema-utils.js'
 
 // --- Base Schemas ---
-export { AssetTypeEnum, BaseInstrumentSchema } from './base-instrument.schema'
+export {
+	AssetTypeEnum,
+	BaseInstrumentSchema,
+} from './base-instrument.schema.js'
 
 // Re-export types for TypeScript usage
-export type { AssetType, BaseInstrument } from './base-instrument.schema'
+export type { AssetType, BaseInstrument } from './base-instrument.schema.js'
 
 // --- Market Data Schemas ---
 // Instruments
@@ -26,7 +29,7 @@ export {
 	GetInstrumentByCusipQueryParams,
 	GetInstrumentByCusipParams,
 	GetInstrumentByCusipResponse,
-} from '../market-data/instruments/schema'
+} from '../market-data/instruments/schema.js'
 
 // Market Hours
 export {
@@ -39,7 +42,7 @@ export {
 	GetMarketHoursByMarketIdQueryParams,
 	GetMarketHoursByMarketIdParams,
 	GetMarketHoursByMarketIdResponse,
-} from '../market-data/marketHours/schema'
+} from '../market-data/marketHours/schema.js'
 
 // Movers
 export {
@@ -48,7 +51,7 @@ export {
 	GetMoversQueryParams,
 	GetMoversParams,
 	GetMoversResponse,
-} from '../market-data/movers/schema'
+} from '../market-data/movers/schema.js'
 
 // Options
 export {
@@ -61,7 +64,7 @@ export {
 	GetOptionExpirationChainQueryParams,
 	GetOptionExpirationChainParams,
 	GetOptionExpirationChainResponse,
-} from '../market-data/options/schema'
+} from '../market-data/options/schema.js'
 
 // Price History
 export {
@@ -71,7 +74,7 @@ export {
 	GetPriceHistoryQueryParams,
 	GetPriceHistoryParams,
 	GetPriceHistoryResponse,
-} from '../market-data/priceHistory/schema'
+} from '../market-data/priceHistory/schema.js'
 
 // Quotes
 export {
@@ -83,10 +86,10 @@ export {
 	GetQuotesQueryParams,
 	GetQuotesParams,
 	GetQuotesResponse,
-} from '../market-data/quotes/schema'
+} from '../market-data/quotes/schema.js'
 
 // Shared
-export { InstrumentAssetTypeEnum } from '../market-data/shared/instrument-asset-type.schema'
+export { InstrumentAssetTypeEnum } from '../market-data/shared/instrument-asset-type.schema.js'
 
 // --- Trader Schemas ---
 // Accounts
@@ -103,7 +106,7 @@ export {
 	GetAccountNumbersQueryParams,
 	GetAccountNumbersParams,
 	GetAccountNumbersResponse,
-} from '../trader/accounts/schema'
+} from '../trader/accounts/schema.js'
 
 // Orders
 export {
@@ -131,7 +134,7 @@ export {
 	ReplaceOrderRequestBody,
 	ReplaceOrderParams,
 	ReplaceOrderResponse,
-} from '../trader/orders/schema'
+} from '../trader/orders/schema.js'
 
 // Transactions
 export {
@@ -144,7 +147,7 @@ export {
 	GetTransactionByIdQueryParams,
 	GetTransactionByIdParams,
 	GetTransactionByIdResponse,
-} from '../trader/transactions/schema'
+} from '../trader/transactions/schema.js'
 
 // User Preference
 export {
@@ -152,11 +155,11 @@ export {
 	GetUserPreferenceQueryParams,
 	GetUserPreferenceParams,
 	GetUserPreferenceResponse,
-} from '../trader/user-preference/schema'
+} from '../trader/user-preference/schema.js'
 
 // Shared
-export { AccountAPIOptionDeliverable } from '../trader/shared/account-api-option-deliverable.schema'
+export { AccountAPIOptionDeliverable } from '../trader/shared/account-api-option-deliverable.schema.js'
 
-export { ApiCurrencyType } from '../trader/shared/api-currency-type.schema'
+export { ApiCurrencyType } from '../trader/shared/api-currency-type.schema.js'
 
-export { assetType } from '../trader/shared/asset-type.schema'
+export { assetType } from '../trader/shared/asset-type.schema.js'

@@ -1,11 +1,11 @@
-export * from './schema'
-export * from './endpoints'
+export * from './schema.js'
+export * from './endpoints.js'
 
-import { type EndpointFunction } from '../../core/endpoint-types'
+import { type EndpointFunction } from '../../core/endpoint-types.js'
 import {
 	type getMarketHoursByMarketIdMeta,
 	type getMarketHoursMeta,
-} from './endpoints'
+} from './endpoints.js'
 
 export type GetMarketHoursFunction = EndpointFunction<typeof getMarketHoursMeta>
 export declare const getMarketHours: GetMarketHoursFunction

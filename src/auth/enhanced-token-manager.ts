@@ -1,32 +1,32 @@
 import pkceChallenge from 'pkce-challenge'
-import { API_URLS, API_VERSIONS } from '../constants'
-import { SchwabAuthError, AuthErrorCode } from '../errors'
-import { createLogger } from '../utils/secure-logger'
+import { API_URLS, API_VERSIONS } from '../constants.js'
+import { SchwabAuthError, AuthErrorCode } from '../errors.js'
+import { createLogger } from '../utils/secure-logger.js'
 import {
 	getAuthDiagnostics,
 	type AuthDiagnosticsOptions,
 	type AuthDiagnosticsResult,
-} from './auth-diagnostics'
+} from './auth-diagnostics.js'
 import {
 	sanitizeAuthCode,
 	safeBase64Encode,
 	safeBase64Decode,
 	DEFAULT_REFRESH_THRESHOLD_MS,
-} from './auth-utils'
-import { TokenRefreshTracer } from './token-refresh-tracer'
+} from './auth-utils.js'
+import { TokenRefreshTracer } from './token-refresh-tracer.js'
 import {
 	validateTokenData,
 	validateTokenDetailed,
 	ensureCompleteTokenData,
 	type TokenValidationResult,
-} from './token-validation'
+} from './token-validation.js'
 import {
 	type TokenData,
 	type RefreshOptions,
 	type AuthClientOptions,
 	type FullAuthClient,
 	type SchwabTokenResponse,
-} from './types'
+} from './types.js'
 
 // Define additional error codes for enhanced token manager
 export enum TokenErrorCode {
@@ -152,7 +152,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	private tracer: TokenRefreshTracer
 	private refreshCallbacks: Array<(t: TokenData) => void> = []
 	private reconnectionHandlers: Array<() => Promise<void>> = []
-	private isReconnecting: boolean = false
+	private isReconnecting = false
 	private refreshLock: Promise<TokenData> | null = null
 
 	// Logger instance for secure logging
@@ -1253,7 +1253,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		})
 
 		// Create basic auth header
-		let headers: Record<string, string> = {
+		const headers: Record<string, string> = {
 			'Content-Type': 'application/x-www-form-urlencoded',
 		}
 
@@ -1307,7 +1307,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 					redactedFormDataLog.append(key, codePreview)
 
 					// Add code-specific diagnostics
-					this.logger.debug(`[EnhancedTokenManager] Auth code diagnostics:`)
+					this.logger.debug('[EnhancedTokenManager] Auth code diagnostics:')
 					this.logger.debug(`  - Length: ${value.length}`)
 					this.logger.debug(`  - Preview: ${codePreview}`)
 					this.logger.debug(
@@ -1325,10 +1325,10 @@ export class EnhancedTokenManager implements FullAuthClient {
 				redactedHeaders.Authorization = 'Basic [REDACTED]'
 
 			this.logger.debug(
-				`[EnhancedTokenManager] Performing direct token exchange.`,
+				'[EnhancedTokenManager] Performing direct token exchange.',
 			)
 			this.logger.debug(`  Endpoint: ${tokenEndpoint}`)
-			this.logger.debug(`  Method: POST`)
+			this.logger.debug('  Method: POST')
 			this.logger.debug(`  Headers: ${JSON.stringify(redactedHeaders)}`)
 			this.logger.debug(`  Body: ${redactedFormDataLog.toString()}`)
 		}
@@ -1389,7 +1389,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 					if (this.config.debug) {
 						this.logger.debug(
-							`[EnhancedTokenManager.performDirectTokenExchange] Updated code with minimal URL-decoding while preserving structure`,
+							'[EnhancedTokenManager.performDirectTokenExchange] Updated code with minimal URL-decoding while preserving structure',
 						)
 					}
 				}
@@ -1415,7 +1415,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 		// Additional debug logging before making the request
 		if (this.config.debug) {
 			this.logger.debug(
-				`[EnhancedTokenManager.performDirectTokenExchange] Making token request...`,
+				'[EnhancedTokenManager.performDirectTokenExchange] Making token request...',
 			)
 			this.logger.debug(
 				`[EnhancedTokenManager.performDirectTokenExchange] Request body length: ${formData.toString().length}`,
@@ -1457,7 +1457,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 			return await response.json()
 		} else {
 			// Handle error response with improved error capture
-			let errorBodyContent: string = 'Could not read error response body.'
+			let errorBodyContent = 'Could not read error response body.'
 			let parsedErrorJson: any
 			try {
 				const errorResponseClone = response.clone() // Clone before reading
@@ -1603,7 +1603,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 	 */
 	private async doRefreshWithRetry(
 		refreshToken: string,
-		_force: boolean = false,
+		_force = false,
 	): Promise<TokenData> {
 		let lastError: unknown
 		let attempt = 0
@@ -1752,7 +1752,7 @@ export class EnhancedTokenManager implements FullAuthClient {
 
 		if (useExponentialBackoff) {
 			// Exponential backoff: initialDelay * 2^attempt
-			const delay = initialRetryDelayMs * Math.pow(2, attempt)
+			const delay = initialRetryDelayMs * 2 ** attempt
 			// Cap at maxRetryDelayMs
 			return Math.min(delay, maxRetryDelayMs)
 		} else {

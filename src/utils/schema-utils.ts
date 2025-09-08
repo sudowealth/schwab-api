@@ -12,5 +12,9 @@ export function mergeShapes<
 export function mergeShapes<T extends z.ZodRawShape[]>(
 	...shapes: T
 ): z.ZodRawShape {
-	return shapes.reduce((acc, shape) => ({ ...acc, ...shape }), {})
+	const merged: z.ZodRawShape = {}
+	for (const shape of shapes) {
+		Object.assign(merged, shape)
+	}
+	return merged
 }

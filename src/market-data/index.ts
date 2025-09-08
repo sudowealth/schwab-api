@@ -13,10 +13,10 @@
  * ```
  */
 
-export * as instruments from './instruments'
-export * as marketHours from './marketHours'
-export * as movers from './movers'
-export * as options from './options'
-export * as priceHistory from './priceHistory'
-export * as quotes from './quotes'
-export * as shared from './shared'
+export * as instruments from './instruments/index.js'
+export * as marketHours from './marketHours/index.js'
+export * as movers from './movers/index.js'
+export * as options from './options/index.js'
+export * as priceHistory from './priceHistory/index.js'
+export * as quotes from './quotes/index.js'
+export * as shared from './shared/index.js'

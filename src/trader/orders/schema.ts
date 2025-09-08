@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils'
-import { assetType, AccountAPIOptionDeliverable } from '../shared'
+import { mergeShapes } from '../../utils/schema-utils.js'
+import { assetType, AccountAPIOptionDeliverable } from '../shared/index.js'
 
 // Create a flexible date schema for query parameters
 const flexibleDateSchema = (daysOffset: number, description: string) =>

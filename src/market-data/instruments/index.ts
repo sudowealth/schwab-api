@@ -1,11 +1,11 @@
-export * from './schema'
-export * from './endpoints'
+export * from './schema.js'
+export * from './endpoints.js'
 
-import { type EndpointFunction } from '../../core/endpoint-types'
+import { type EndpointFunction } from '../../core/endpoint-types.js'
 import {
 	type getInstrumentByCusipMeta,
 	type getInstrumentsMeta,
-} from './endpoints'
+} from './endpoints.js'
 
 export type GetInstrumentsFunction = EndpointFunction<typeof getInstrumentsMeta>
 export declare const getInstruments: GetInstrumentsFunction

@@ -1,3 +1,3 @@
-export * from './asset-type.schema'
-export * from './api-currency-type.schema'
-export * from './account-api-option-deliverable.schema'
+export * from './asset-type.schema.js'
+export * from './api-currency-type.schema.js'
+export * from './account-api-option-deliverable.schema.js'

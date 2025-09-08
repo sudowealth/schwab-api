@@ -5,31 +5,31 @@
 import {
 	type getInstrumentsMeta,
 	type getInstrumentByCusipMeta,
-} from '../market-data/instruments/endpoints'
+} from '../market-data/instruments/endpoints.js'
 import {
 	type getMarketHoursMeta,
 	type getMarketHoursByMarketIdMeta,
-} from '../market-data/marketHours/endpoints'
-import { type getMoversMeta } from '../market-data/movers/endpoints'
+} from '../market-data/marketHours/endpoints.js'
+import { type getMoversMeta } from '../market-data/movers/endpoints.js'
 import {
 	type getOptionChainMeta,
 	type getOptionExpirationChainMeta,
-} from '../market-data/options/endpoints'
-import { type getPriceHistoryMeta } from '../market-data/priceHistory/endpoints'
+} from '../market-data/options/endpoints.js'
+import { type getPriceHistoryMeta } from '../market-data/priceHistory/endpoints.js'
 import {
 	type extractQuoteErrors,
 	type hasSymbolError,
 	type extractSingleQuote,
-} from '../market-data/quotes'
+} from '../market-data/quotes/index.js'
 import {
 	type getQuotesMeta,
 	type getQuoteBySymbolIdMeta,
-} from '../market-data/quotes/endpoints'
+} from '../market-data/quotes/endpoints.js'
 import {
 	type getAccountsMeta,
 	type getAccountByNumberMeta,
 	type getAccountNumbersMeta,
-} from '../trader/accounts/endpoints'
+} from '../trader/accounts/endpoints.js'
 import {
 	type cancelOrderMeta,
 	type getOrderByOrderIdMeta,
@@ -37,13 +37,16 @@ import {
 	type getOrdersMeta,
 	type placeOrderForAccountMeta,
 	type replaceOrderMeta,
-} from '../trader/orders/endpoints'
+} from '../trader/orders/endpoints.js'
 import {
 	type getTransactionsMeta,
 	type getTransactionByIdMeta,
-} from '../trader/transactions/endpoints'
-import { type getUserPreferenceMeta } from '../trader/user-preference/endpoints'
-import { type EndpointMetadata, type SchwabFetchRequestOptions } from './http'
+} from '../trader/transactions/endpoints.js'
+import { type getUserPreferenceMeta } from '../trader/user-preference/endpoints.js'
+import {
+	type EndpointMetadata,
+	type SchwabFetchRequestOptions,
+} from './http.js'
 
 /**
  * Extracts parameter types from an EndpointMetadata object

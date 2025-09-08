@@ -1,4 +1,4 @@
-import { createLogger } from './secure-logger'
+import { createLogger } from './secure-logger.js'
 
 const logger = createLogger('CryptoUtils')
 
@@ -297,8 +297,8 @@ export function fromHex(hex: string): ArrayBuffer {
 		// Browser environment
 		const bytes = new Uint8Array(cleanHex.length / 2)
 		for (let i = 0; i < cleanHex.length; i += 2) {
-			const byte = parseInt(cleanHex.substr(i, 2), 16)
-			if (isNaN(byte)) {
+			const byte = Number.parseInt(cleanHex.substr(i, 2), 16)
+			if (Number.isNaN(byte)) {
 				throw new Error(`Invalid hex string at position ${i}`)
 			}
 			bytes[i / 2] = byte
@@ -378,7 +378,7 @@ export function constantTimeCompare(a: string, b: string): boolean {
  */
 export function generateSecureRandomString(
 	length: number,
-	charset: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+	charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
 ): string {
 	const values = new Uint32Array(length)
 	crypto.getRandomValues(values)
@@ -420,7 +420,7 @@ export async function hashData(
 export async function createTimedSignature(
 	key: CryptoKey,
 	data: string,
-	expiresIn: number = 300, // 5 minutes default
+	expiresIn = 300, // 5 minutes default
 ): Promise<{ signature: string; expires: number }> {
 	const expires = Math.floor(Date.now() / 1000) + expiresIn
 	const dataWithTimestamp = `${data}.${expires}`

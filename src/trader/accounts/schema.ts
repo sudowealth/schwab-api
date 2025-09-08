@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils'
-import { assetType, AccountAPIOptionDeliverable } from '../shared'
+import { mergeShapes } from '../../utils/schema-utils.js'
+import { assetType, AccountAPIOptionDeliverable } from '../shared/index.js'
 
 export const AccountsBaseInstrument = z.object({
 	assetType: assetType,
@@ -10,7 +10,7 @@ export const AccountsBaseInstrument = z.object({
 	instrumentId: z.number().int().optional(),
 	netChange: z.number().optional(),
 })
-type AccountsBaseInstrument = z.infer<typeof AccountsBaseInstrument>
+export type AccountsBaseInstrument = z.infer<typeof AccountsBaseInstrument>
 
 const AccountCashEquivalent = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.CASH_EQUIVALENT),
@@ -19,12 +19,12 @@ const AccountCashEquivalent = AccountsBaseInstrument.extend({
 		.optional(),
 	underlyingSymbol: z.string().optional(),
 })
-type AccountCashEquivalent = z.infer<typeof AccountCashEquivalent>
+export type AccountCashEquivalent = z.infer<typeof AccountCashEquivalent>
 
 const AccountEquity = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.EQUITY),
 })
-type AccountEquity = z.infer<typeof AccountEquity>
+export type AccountEquity = z.infer<typeof AccountEquity>
 
 const AccountFixedIncome = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.FIXED_INCOME),
@@ -32,12 +32,12 @@ const AccountFixedIncome = AccountsBaseInstrument.extend({
 	factor: z.number().optional(),
 	variableRate: z.number().optional(),
 })
-type AccountFixedIncome = z.infer<typeof AccountFixedIncome>
+export type AccountFixedIncome = z.infer<typeof AccountFixedIncome>
 
 const AccountMutualFund = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.MUTUAL_FUND),
 })
-type AccountMutualFund = z.infer<typeof AccountMutualFund>
+export type AccountMutualFund = z.infer<typeof AccountMutualFund>
 
 const AccountOption = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.OPTION),
@@ -49,39 +49,41 @@ const AccountOption = AccountsBaseInstrument.extend({
 	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']).optional(),
 	underlyingSymbol: z.string().optional(), // Added as it's common for options
 })
-type AccountOption = z.infer<typeof AccountOption>
+export type AccountOption = z.infer<typeof AccountOption>
 
 const AccountFuture = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.FUTURE),
 	expirationDate: z.string().datetime().optional(),
 	activeContract: z.boolean().default(false).optional(),
 })
-type AccountFuture = z.infer<typeof AccountFuture>
+export type AccountFuture = z.infer<typeof AccountFuture>
 
 const AccountForex = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.FOREX),
 })
-type AccountForex = z.infer<typeof AccountForex>
+export type AccountForex = z.infer<typeof AccountForex>
 
 const AccountIndex = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.INDEX),
 })
-type AccountIndex = z.infer<typeof AccountIndex>
+export type AccountIndex = z.infer<typeof AccountIndex>
 
 const AccountProduct = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.PRODUCT), // Assuming PRODUCT is in AssetType enum
 })
-type AccountProduct = z.infer<typeof AccountProduct>
+export type AccountProduct = z.infer<typeof AccountProduct>
 
 const AccountCurrency = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.CURRENCY),
 })
-type AccountCurrency = z.infer<typeof AccountCurrency>
+export type AccountCurrency = z.infer<typeof AccountCurrency>
 
 const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
 	assetType: z.literal(assetType.Enum.COLLECTIVE_INVESTMENT),
 })
-type AccountCollectiveInvestment = z.infer<typeof AccountCollectiveInvestment>
+export type AccountCollectiveInvestment = z.infer<
+	typeof AccountCollectiveInvestment
+>
 
 const AccountsInstrument = z.discriminatedUnion('assetType', [
 	AccountCashEquivalent,
@@ -96,7 +98,7 @@ const AccountsInstrument = z.discriminatedUnion('assetType', [
 	AccountCurrency,
 	AccountCollectiveInvestment,
 ])
-type AccountsInstrument = z.infer<typeof AccountsInstrument>
+export type AccountsInstrument = z.infer<typeof AccountsInstrument>
 
 // --- Position Schema ---
 const Position = z.object({
@@ -121,7 +123,7 @@ const Position = z.object({
 	previousSessionShortQuantity: z.number().optional(),
 	currentDayCost: z.number().optional(),
 })
-type Position = z.infer<typeof Position>
+export type Position = z.infer<typeof Position>
 
 // --- Account Balance Schemas ---
 const MarginInitialBalance = z.object({
@@ -159,7 +161,7 @@ const MarginInitialBalance = z.object({
 	shortBalance: z.number().optional(),
 	accountValue: z.number().optional(),
 })
-type MarginInitialBalance = z.infer<typeof MarginInitialBalance>
+export type MarginInitialBalance = z.infer<typeof MarginInitialBalance>
 
 const MarginBalance = z.object({
 	availableFunds: z.number().optional(),
@@ -182,7 +184,7 @@ const MarginBalance = z.object({
 	stockBuyingPower: z.number().optional(),
 	optionBuyingPower: z.number().optional(),
 })
-type MarginBalance = z.infer<typeof MarginBalance>
+export type MarginBalance = z.infer<typeof MarginBalance>
 
 const CashInitialBalance = z.object({
 	accruedInterest: z.number().optional(),
@@ -204,7 +206,7 @@ const CashInitialBalance = z.object({
 	pendingDeposits: z.number().optional(),
 	accountValue: z.number().optional(),
 })
-type CashInitialBalance = z.infer<typeof CashInitialBalance>
+export type CashInitialBalance = z.infer<typeof CashInitialBalance>
 
 const CashBalance = z.object({
 	cashAvailableForTrading: z.number().optional(),
@@ -228,7 +230,7 @@ const CashBalance = z.object({
 	bondValue: z.number().optional(),
 	shortOptionMarketValue: z.number().optional(),
 })
-type CashBalance = z.infer<typeof CashBalance>
+export type CashBalance = z.infer<typeof CashBalance>
 
 // --- Account Core Schemas ---
 const SecuritiesAccountBase = z.object({
@@ -240,7 +242,7 @@ const SecuritiesAccountBase = z.object({
 	pfcbFlag: z.boolean().default(false).optional(),
 	positions: z.array(Position).default([]).optional(),
 })
-type SecuritiesAccountBase = z.infer<typeof SecuritiesAccountBase>
+export type SecuritiesAccountBase = z.infer<typeof SecuritiesAccountBase>
 
 const MarginAccount = SecuritiesAccountBase.extend({
 	type: z.literal('MARGIN'),
@@ -248,7 +250,7 @@ const MarginAccount = SecuritiesAccountBase.extend({
 	currentBalances: MarginBalance.optional(),
 	projectedBalances: MarginBalance.optional(), // MCP used MarginBalance here
 })
-type MarginAccount = z.infer<typeof MarginAccount>
+export type MarginAccount = z.infer<typeof MarginAccount>
 
 const CashAccount = SecuritiesAccountBase.extend({
 	type: z.literal('CASH'),
@@ -262,13 +264,13 @@ const CashAccount = SecuritiesAccountBase.extend({
 		})
 		.optional(),
 })
-type CashAccount = z.infer<typeof CashAccount>
+export type CashAccount = z.infer<typeof CashAccount>
 
 const SecuritiesAccount = z.discriminatedUnion('type', [
 	MarginAccount,
 	CashAccount,
 ])
-type SecuritiesAccount = z.infer<typeof SecuritiesAccount>
+export type SecuritiesAccount = z.infer<typeof SecuritiesAccount>
 
 // --- GET /accounts endpoint schemas ---
 

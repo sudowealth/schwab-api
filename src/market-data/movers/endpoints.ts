@@ -1,11 +1,11 @@
-import { MARKET_DATA } from '../../constants'
-import { type EndpointMetadata } from '../../core/http'
-import { ErrorResponseSchema } from '../../errors'
+import { MARKET_DATA } from '../../constants.js'
+import { type EndpointMetadata } from '../../core/http.js'
+import { ErrorResponseSchema } from '../../errors.js'
 import {
 	GetMoversPathParams,
 	GetMoversQueryParams,
 	GetMoversResponse,
-} from './schema'
+} from './schema.js'
 
 export const getMoversMeta: EndpointMetadata<
 	GetMoversPathParams, // Path Params

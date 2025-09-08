@@ -3,8 +3,8 @@ import {
 	type API_VERSIONS,
 	TIMEOUTS,
 	type ENVIRONMENTS,
-} from '../constants'
-import { createLogger } from '../utils/secure-logger'
+} from '../constants.js'
+import { createLogger } from '../utils/secure-logger.js'
 
 type ApiVersion = keyof typeof API_VERSIONS
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none'

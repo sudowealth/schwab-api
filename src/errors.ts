@@ -556,7 +556,7 @@ export class SchwabServerError extends RetryableApiError {
 	reason: ServerErrorReason
 
 	constructor(
-		status: number = 500,
+		status = 500,
 		body?: unknown,
 		message?: string,
 		parsedError?: ErrorResponseSchema,
@@ -938,7 +938,7 @@ export function extractErrorMetadata(
 			metadata.requestMethod = request.method
 		} catch {
 			// If URL parsing fails, try to get path directly
-			const urlMatch = request.url.match(/^https?:\/\/[^\/]+(\/[^?]*)/)
+			const urlMatch = request.url.match(/^https?:\/\/[^/]+(\/[^?]*)/)
 			if (urlMatch) {
 				metadata.endpointPath = urlMatch[1]
 			}
@@ -950,14 +950,14 @@ export function extractErrorMetadata(
 	const retryAfter = response.headers.get('retry-after')
 	if (retryAfter) {
 		// Check if it's a number (seconds)
-		const seconds = parseInt(retryAfter, 10)
-		if (!isNaN(seconds)) {
+		const seconds = Number.parseInt(retryAfter, 10)
+		if (!Number.isNaN(seconds)) {
 			metadata.retryAfterSeconds = seconds
 		} else {
 			// Try to parse as HTTP date
 			try {
 				const date = new Date(retryAfter)
-				if (!isNaN(date.getTime())) {
+				if (!Number.isNaN(date.getTime())) {
 					metadata.retryAfterDate = date
 				}
 			} catch {
@@ -975,22 +975,22 @@ export function extractErrorMetadata(
 		metadata.rateLimit = {}
 
 		if (rateLimit) {
-			const limit = parseInt(rateLimit, 10)
-			if (!isNaN(limit)) {
+			const limit = Number.parseInt(rateLimit, 10)
+			if (!Number.isNaN(limit)) {
 				metadata.rateLimit.limit = limit
 			}
 		}
 
 		if (rateLimitRemaining) {
-			const remaining = parseInt(rateLimitRemaining, 10)
-			if (!isNaN(remaining)) {
+			const remaining = Number.parseInt(rateLimitRemaining, 10)
+			if (!Number.isNaN(remaining)) {
 				metadata.rateLimit.remaining = remaining
 			}
 		}
 
 		if (rateLimitReset) {
-			const reset = parseInt(rateLimitReset, 10)
-			if (!isNaN(reset)) {
+			const reset = Number.parseInt(rateLimitReset, 10)
+			if (!Number.isNaN(reset)) {
 				metadata.rateLimit.reset = reset
 			}
 		}
@@ -1200,7 +1200,7 @@ export function handleApiError(error: unknown, context?: string): never {
 		const status = (error as any).status || 500
 
 		// Check if the error has a response body we can parse
-		let errorBody = undefined
+		let errorBody
 		if ('body' in error) {
 			errorBody = (error as any).body
 		} else if ('data' in error) {
@@ -1208,7 +1208,7 @@ export function handleApiError(error: unknown, context?: string): never {
 		}
 
 		// Extract metadata if available
-		let metadata: ErrorResponseMetadata | undefined = undefined
+		let metadata: ErrorResponseMetadata | undefined
 		if ('headers' in error && (error as any).headers) {
 			metadata = {
 				headers: (error as any).headers,

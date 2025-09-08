@@ -1,7 +1,7 @@
-export * from './endpoints'
-export * from './schema'
+export * from './endpoints.js'
+export * from './schema.js'
 
-import { type EndpointFunction } from '../../core/endpoint-types'
+import { type EndpointFunction } from '../../core/endpoint-types.js'
 import {
 	type cancelOrderMeta,
 	type getOrderByOrderIdMeta,
@@ -9,7 +9,7 @@ import {
 	type getOrdersMeta,
 	type placeOrderForAccountMeta,
 	type replaceOrderMeta,
-} from './endpoints'
+} from './endpoints.js'
 
 export type GetOrdersFunction = EndpointFunction<typeof getOrdersMeta>
 export declare const getOrders: GetOrdersFunction

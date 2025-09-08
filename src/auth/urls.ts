@@ -1,6 +1,6 @@
-import { OAUTH_ENDPOINTS } from '../constants'
-import { resolveBaseUrl } from '../core/config'
-import { type RequestContext } from '../core/http'
+import { OAUTH_ENDPOINTS } from '../constants.js'
+import { resolveBaseUrl } from '../core/config.js'
+import { type RequestContext } from '../core/http.js'
 
 /**
  * Get the OAuth base URL based on the current configuration using the provided context

@@ -1,6 +1,6 @@
-import { TRADER } from '../../constants'
-import { type EndpointMetadata } from '../../core/http'
-import { ErrorResponseSchema } from '../../errors'
+import { TRADER } from '../../constants.js'
+import { type EndpointMetadata } from '../../core/http.js'
+import { ErrorResponseSchema } from '../../errors.js'
 import {
 	GetOrdersQueryParams,
 	GetOrdersResponse,
@@ -13,7 +13,7 @@ import {
 	GetOrderByIdResponse,
 	CancelOrderResponse,
 	ReplaceOrderResponse,
-} from './schema'
+} from './schema.js'
 
 export const getOrdersMeta: EndpointMetadata<
 	never,

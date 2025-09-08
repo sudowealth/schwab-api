@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { dateStringSchema } from '../../utils/date-utils'
-import { mergeShapes } from '../../utils/schema-utils'
-import { InstrumentAssetTypeEnum } from '../shared'
+import { dateStringSchema } from '../../utils/date-utils.js'
+import { mergeShapes } from '../../utils/schema-utils.js'
+import { InstrumentAssetTypeEnum } from '../shared/index.js'
 
 // Enum for the 'markets' query parameter
 export const MarketHoursMarketQueryEnum = z.enum([

@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { ApiCurrencyType } from './api-currency-type.schema'
-import { assetType } from './asset-type.schema'
+import { ApiCurrencyType } from './api-currency-type.schema.js'
+import { assetType } from './asset-type.schema.js'
 
 export const AccountAPIOptionDeliverable = z.object({
 	symbol: z.string(),

@@ -1,8 +1,8 @@
-export * from './urls'
-export * from './token'
-export * from './types'
-export * from './auth-utils'
-export * from './token-validation'
+export * from './urls.js'
+export * from './token.js'
+export * from './types.js'
+export * from './auth-utils.js'
+export * from './token-validation.js'
 
 // Primary auth interfaces and factory
 export {
@@ -10,26 +10,23 @@ export {
 	AuthStrategy,
 	type AuthFactoryConfig,
 	type FullAuthClient,
-} from './auth'
+} from './auth.js'
 
 // Export diagnostic utilities for debugging
-export * from './auth-diagnostics'
+export * from './auth-diagnostics.js'
 
 // EnhancedTokenManager and related components
 export {
 	// Main token manager class
 	EnhancedTokenManager,
-
 	// Options and configuration
 	type EnhancedTokenManagerOptions,
-
 	// Error codes
 	TokenErrorCode,
-
 	// Event types
 	TokenPersistenceEvent,
 	type TokenPersistenceEventHandler,
-} from './enhanced-token-manager'
+} from './enhanced-token-manager.js'
 
 // OAuth state utilities
 export {
@@ -44,7 +41,7 @@ export {
 	PKCEOAuthStateSchema,
 	type OAuthState,
 	type OAuthStateOptions,
-} from './oauth-state-utils'
+} from './oauth-state-utils.js'
 
 // Error mapping utilities
 export {
@@ -56,7 +53,7 @@ export {
 	getRetryInfo,
 	type ErrorMappingResult,
 	type ErrorMapper,
-} from './error-mapping'
+} from './error-mapping.js'
 
 // Token storage adapters
-export * as adapters from './adapters'
+export * as adapters from './adapters/index.js'

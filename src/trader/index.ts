@@ -13,8 +13,8 @@
  * ```
  */
 
-export * as accounts from './accounts'
-export * as orders from './orders'
-export * as transactions from './transactions'
-export * as userPreference from './user-preference'
-export * as shared from './shared'
+export * as accounts from './accounts/index.js'
+export * as orders from './orders/index.js'
+export * as transactions from './transactions/index.js'
+export * as userPreference from './user-preference/index.js'
+export * as shared from './shared/index.js'
