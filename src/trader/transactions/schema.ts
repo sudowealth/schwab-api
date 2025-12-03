@@ -55,57 +55,57 @@ const flexibleDateSchema = (daysOffset: number, description: string) =>
 		.optional()
 
 const UserDetails = z.object({
-	cdDomainId: z.string(),
-	login: z.string(),
+	cdDomainId: z.string().optional(), // May not be present
+	login: z.string().optional(), // May not be present
 	type: z.enum([
 		'ADVISOR_USER',
 		'BROKER_USER',
 		'CLIENT_USER',
 		'SYSTEM_USER',
 		'UNKNOWN',
-	]),
-	userId: z.number().int(), // ($int64)
-	systemUserName: z.string(),
-	firstName: z.string(),
-	lastName: z.string(),
-	brokerRepCode: z.string(),
+	]).optional(),
+	userId: z.number().int().optional(), // ($int64) May not be present
+	systemUserName: z.string().optional(), // May not be present
+	firstName: z.string().optional(), // May not be present
+	lastName: z.string().optional(), // May not be present
+	brokerRepCode: z.string().optional(), // May not be present
 })
 
 // Recreate TransactionBaseInstrument
 const TransactionBaseInstrument = z.object({
 	assetType: assetType,
-	cusip: z.string(), // Removed optional
-	symbol: z.string(), // Removed optional
-	description: z.string(), // Description often optional
-	instrumentId: z.number().int().optional(), // Removed optional, kept int ($int64)
+	cusip: z.string().optional(), // May not be present
+	symbol: z.string().optional(), // May not be present
+	description: z.string().optional(), // May not be present
+	instrumentId: z.number().int().optional(),
 	netChange: z.number().optional(),
 })
 
 // Define Transaction Instrument Types
 const TransactionCashEquivalent = TransactionBaseInstrument.extend({
 	assetType: z.literal('CASH_EQUIVALENT'),
-	symbol: z.string(), // Required per spec
-	description: z.string(), // Required per spec
-	type: z.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN']),
+	symbol: z.string().optional(), // May not be present
+	description: z.string().optional(), // May not be present
+	type: z.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN']).optional(),
 })
 
 const CollectiveInvestment = TransactionBaseInstrument.extend({
 	assetType: z.literal('COLLECTIVE_INVESTMENT'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
+	cusip: z.string().optional(), // May not be present
+	symbol: z.string().optional(), // May not be present
 	instrumentId: z.any(), // [...] definition unclear
 	type: z.any(), // [...] definition unclear
 })
 
 const Currency = TransactionBaseInstrument.extend({
 	assetType: z.literal('CURRENCY'),
-	symbol: z.string(), // Required per spec
+	symbol: z.string().optional(), // May not be present
 })
 
 const TransactionEquity = TransactionBaseInstrument.extend({
 	assetType: z.literal('EQUITY'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
+	cusip: z.string().optional(), // May not be present
+	symbol: z.string().optional(), // May not be present
 	type: z.enum([
 		'COMMON_STOCK',
 		'PREFERRED_STOCK',
@@ -120,13 +120,13 @@ const TransactionEquity = TransactionBaseInstrument.extend({
 		'LIMITED_PARTNERSHIP',
 		'WHEN_ISSUED',
 		'UNKNOWN',
-	]),
+	]).optional(),
 })
 
 const TransactionFixedIncome = TransactionBaseInstrument.extend({
 	assetType: z.literal('FIXED_INCOME'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
+	cusip: z.string().optional(), // May not be present
+	symbol: z.string().optional(), // May not be present
 	type: z.enum([
 		'BOND_UNIT',
 		'CERTIFICATE_OF_DEPOSIT',
@@ -147,47 +147,47 @@ const TransactionFixedIncome = TransactionBaseInstrument.extend({
 		'WHEN_AS_AND_IF_ISSUED_BOND',
 		'ASSET_BACKED_SECURITY',
 		'UNKNOWN',
-	]),
-	maturityDate: isoDateTimeSchema,
-	factor: z.number(), // Not marked required
-	multiplier: z.number(), // Not marked required
-	variableRate: z.number(), // Not marked required
+	]).optional(),
+	maturityDate: z.string().optional(), // Relaxed - may not be present
+	factor: z.number().optional(),
+	multiplier: z.number().optional(),
+	variableRate: z.number().optional(),
 })
 
 const Forex = TransactionBaseInstrument.extend({
 	assetType: z.literal('FOREX'),
-	symbol: z.string(), // Required per spec
-	type: z.enum(['STANDARD', 'NBBO', 'UNKNOWN']),
-	baseCurrency: z.lazy(() => Currency), // Assuming Currency is defined
-	counterCurrency: z.lazy(() => Currency),
+	symbol: z.string().optional(), // May not be present
+	type: z.enum(['STANDARD', 'NBBO', 'UNKNOWN']).optional(),
+	baseCurrency: z.lazy(() => Currency).optional(),
+	counterCurrency: z.lazy(() => Currency).optional(),
 })
 
 // Define Future and Index based on interpretation (ignoring incorrect oneOf)
 const Future = TransactionBaseInstrument.extend({
 	assetType: z.literal('FUTURE'), // Assuming FUTURE based on name
-	symbol: z.string(), // Required per spec
+	symbol: z.string().optional(), // May not be present
 	activeContract: z.boolean().default(false),
-	type: z.enum(['STANDARD', 'UNKNOWN']),
-	expirationDate: isoDateTimeSchema,
-	lastTradingDate: isoDateTimeSchema, // Assuming optional
-	firstNoticeDate: isoDateTimeSchema, // Assuming optional
-	multiplier: z.number(),
+	type: z.enum(['STANDARD', 'UNKNOWN']).optional(),
+	expirationDate: z.string().optional(), // Relaxed
+	lastTradingDate: z.string().optional(),
+	firstNoticeDate: z.string().optional(),
+	multiplier: z.number().optional(),
 })
 
 const Index = TransactionBaseInstrument.extend({
 	assetType: z.literal('INDEX'), // Assuming INDEX based on name
-	symbol: z.string(), // Required per spec
+	symbol: z.string().optional(), // May not be present
 	activeContract: z.boolean().default(false),
-	type: z.string(), // Enum Array [ 3 ] unclear
+	type: z.string().optional(),
 })
 
 const TransactionMutualFund = TransactionBaseInstrument.extend({
 	assetType: z.literal('MUTUAL_FUND'),
-	cusip: z.string(), // Required per spec
-	symbol: z.string(), // Required per spec
-	fundFamilyName: z.string(), // Not marked required
-	fundFamilySymbol: z.string(), // Not marked required
-	fundGroup: z.string(), // Not marked required
+	cusip: z.string().optional(), // May not be present
+	symbol: z.string().optional(), // May not be present
+	fundFamilyName: z.string().optional(),
+	fundFamilySymbol: z.string().optional(),
+	fundGroup: z.string().optional(),
 	type: z.enum([
 		'NOT_APPLICABLE',
 		'OPEN_END_NON_TAXABLE',
@@ -195,10 +195,10 @@ const TransactionMutualFund = TransactionBaseInstrument.extend({
 		'NO_LOAD_NON_TAXABLE',
 		'NO_LOAD_TAXABLE',
 		'UNKNOWN',
-	]),
-	exchangeCutoffTime: isoDateTimeSchema, // Not marked required
-	purchaseCutoffTime: isoDateTimeSchema, // Not marked required
-	redemptionCutoffTime: isoDateTimeSchema, // Not marked required
+	]).optional(),
+	exchangeCutoffTime: z.string().optional(), // Relaxed
+	purchaseCutoffTime: z.string().optional(), // Relaxed
+	redemptionCutoffTime: z.string().optional(), // Relaxed
 })
 
 const TransactionAPIOptionDeliverable = z.object({
@@ -212,26 +212,26 @@ const TransactionAPIOptionDeliverable = z.object({
 
 const TransactionOption = TransactionBaseInstrument.extend({
 	assetType: z.literal('OPTION'), // Corrected to z.literal for discriminated union
-	cusip: z.string(),
-	symbol: z.string(),
-	description: z.string(),
+	cusip: z.string().optional(), // May not be present
+	symbol: z.string().optional(), // May not be present
+	description: z.string().optional(), // May not be present
 	instrumentId: z.number().int().optional(),
 	netChange: z.number().optional(),
-	expirationDate: isoDateTimeSchema,
-	optionDeliverables: z.array(TransactionAPIOptionDeliverable),
-	optionPremiumMultiplier: z.number().int(),
-	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']),
-	strikePrice: z.number(),
-	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']),
-	underlyingSymbol: z.string(),
-	underlyingCusip: z.string(),
-	deliverable: z.any(), // Changed to z.any() for now
+	expirationDate: z.string().optional(), // Relaxed
+	optionDeliverables: z.array(TransactionAPIOptionDeliverable).optional(),
+	optionPremiumMultiplier: z.number().int().optional(),
+	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']).optional(),
+	strikePrice: z.number().optional(),
+	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']).optional(),
+	underlyingSymbol: z.string().optional(),
+	underlyingCusip: z.string().optional(),
+	deliverable: z.any().optional(),
 })
 
 const Product = TransactionBaseInstrument.extend({
 	assetType: z.literal('PRODUCT'),
-	symbol: z.string(), // Required per spec
-	type: z.enum(['TBD', 'UNKNOWN']),
+	symbol: z.string().optional(), // May not be present
+	type: z.enum(['TBD', 'UNKNOWN']).optional(),
 })
 
 // Replace placeholder with the correct discriminated union
@@ -250,10 +250,10 @@ const TransactionInstrument = z.discriminatedUnion('assetType', [
 ])
 
 const TransferItem = z.object({
-	instrument: TransactionInstrument, // References the placeholder TransactionInstrument
-	amount: z.number(),
-	cost: z.number(),
-	price: z.number(),
+	instrument: TransactionInstrument.optional(), // May not be present
+	amount: z.number().optional(), // May not be present
+	cost: z.number().optional(), // May not be present
+	price: z.number().optional(), // May not be present
 	feeType: z.enum([
 		'COMMISSION',
 		'SEC_FEE',
@@ -271,24 +271,24 @@ const TransferItem = z.object({
 		'TAF_FEE',
 		'INDEX_OPTION_FEE',
 		'UNKNOWN',
-	]),
-	positionEffect: z.enum(['OPENING', 'CLOSING', 'AUTOMATIC', 'UNKNOWN']),
+	]).optional(), // May not be present
+	positionEffect: z.enum(['OPENING', 'CLOSING', 'AUTOMATIC', 'UNKNOWN']).optional(), // May not be present
 })
 
 // Define Transaction after its dependencies UserDetails and TransferItem
 const Transaction = z.object({
 	activityId: z.number().int(),
-	time: isoDateTimeSchema,
-	user: UserDetails,
-	description: z.string(),
+	time: z.string(), // Relaxed - Schwab datetime format varies
+	user: UserDetails.optional(), // May not be present for system transactions
+	description: z.string().optional(), // May not be present
 	accountNumber: z.string(),
 	type: TransactionType,
-	status: z.enum(['VALID', 'INVALID', 'PENDING', 'UNKNOWN']),
-	subAccount: z.enum(['CASH', 'MARGIN', 'SHORT', 'DIV', 'INCOME', 'UNKNOWN']),
-	tradeDate: isoDateTimeSchema,
-	settlementDate: isoDateTimeSchema,
-	positionId: z.number().int(),
-	orderId: z.number().int(),
+	status: z.enum(['VALID', 'INVALID', 'PENDING', 'UNKNOWN']).optional(), // May not be present
+	subAccount: z.enum(['CASH', 'MARGIN', 'SHORT', 'DIV', 'INCOME', 'UNKNOWN']).optional(), // May not be present
+	tradeDate: z.string().optional(), // Relaxed - May not be present for non-trade transactions
+	settlementDate: z.string().optional(), // Relaxed - May not be present
+	positionId: z.number().int().optional(), // May not be present
+	orderId: z.number().int().optional(), // May not be present for non-trade transactions
 	netAmount: z.number(),
 	activityType: z.enum([
 		'ACTIVITY_CORRECTION',
@@ -296,8 +296,8 @@ const Transaction = z.object({
 		'ORDER_ACTION',
 		'TRANSFER',
 		'UNKNOWN',
-	]),
-	transferItems: z.array(TransferItem),
+	]).optional(), // May not be present
+	transferItems: z.array(TransferItem).optional(), // May be empty/absent
 })
 
 // --- GET /accounts/{accountNumber}/transactions endpoint schemas ---

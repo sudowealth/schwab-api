@@ -205,9 +205,9 @@ const status = z.enum([
 
 const AccountsBaseInstrument = z.object({
 	assetType: assetType,
-	cusip: z.string(),
+	cusip: z.string().optional(), // May not be present
 	symbol: z.string(),
-	description: z.string(),
+	description: z.string().optional(), // May not be present
 	instrumentId: z.number().int().optional(), // Assuming int based on spec ($int64)
 	netChange: z.number().optional(),
 })
@@ -304,11 +304,11 @@ const OrderLegCollection = z.object({
 	legId: z.number().int(),
 	instrument: z.lazy(() => AccountsInstrument), // Use lazy for potential circular dependency
 	instruction: instruction,
-	positionEffect: positionEffect,
+	positionEffect: positionEffect.optional(), // May not be present
 	quantity: z.number(),
-	quantityType: quantityType,
-	divCapGains: divCapGains,
-	toSymbol: z.string(),
+	quantityType: quantityType.optional(), // May not be present
+	divCapGains: divCapGains.optional(), // May not be present
+	toSymbol: z.string().optional(), // May not be present
 })
 
 const OrderRequest = z.object({
@@ -352,39 +352,39 @@ const Order = z.object({
 	session: session,
 	duration: duration,
 	orderType: orderType,
-	cancelTime: z.string().datetime(),
-	complexOrderStrategyType: complexOrderStrategyType,
+	cancelTime: z.string().datetime().optional(), // Not all orders have cancel times
+	complexOrderStrategyType: complexOrderStrategyType.optional(),
 	quantity: z.number(),
 	filledQuantity: z.number(),
 	remainingQuantity: z.number(),
-	requestedDestination: requestedDestination,
-	destinationLinkName: z.string(),
-	releaseTime: z.string().datetime(),
-	stopPrice: z.number(),
-	stopPriceLinkBasis: stopPriceLinkBasis,
-	stopPriceLinkType: stopPriceLinkType,
-	stopPriceOffset: z.number(),
-	stopType: stopType,
-	priceLinkBasis: priceLinkBasis,
-	priceLinkType: priceLinkType,
-	price: z.number(),
-	taxLotMethod: taxLotMethod,
+	requestedDestination: requestedDestination.optional(), // May not be present
+	destinationLinkName: z.string().optional(), // May not be present
+	releaseTime: z.string().datetime().optional(), // May not be present
+	stopPrice: z.number().optional(), // Only for stop orders
+	stopPriceLinkBasis: stopPriceLinkBasis.optional(), // Only for stop orders
+	stopPriceLinkType: stopPriceLinkType.optional(), // Only for stop orders
+	stopPriceOffset: z.number().optional(), // Only for stop orders
+	stopType: stopType.optional(), // Only for stop orders
+	priceLinkBasis: priceLinkBasis.optional(), // May not be present
+	priceLinkType: priceLinkType.optional(), // May not be present
+	price: z.number().optional(), // Market orders don't have price
+	taxLotMethod: taxLotMethod.optional(), // May not be present
 	orderLegCollection: z.array(OrderLegCollection),
-	activationPrice: z.number(),
-	specialInstruction: specialInstruction,
+	activationPrice: z.number().optional(), // May not be present
+	specialInstruction: specialInstruction.optional(), // May not be present
 	orderStrategyType: orderStrategyType,
 	orderId: z.number().int(),
 	cancelable: z.boolean().default(false),
 	editable: z.boolean().default(false),
 	status: status,
-	enteredTime: z.string().datetime(),
-	closeTime: z.string().datetime(),
-	tag: z.string(),
+	enteredTime: z.string(), // Relaxed - Schwab datetime format varies
+	closeTime: z.string().optional(), // Relaxed - May not be present for open orders
+	tag: z.string().optional(), // May not be present
 	accountNumber: z.number().int(),
-	orderActivityCollection: z.array(OrderActivity),
-	replacingOrderCollection: z.array(z.object({})), // Placeholder for unknown structure
-	childOrderStrategies: z.array(z.object({})), // Placeholder for unknown structure
-	statusDescription: z.string(),
+	orderActivityCollection: z.array(OrderActivity).optional(), // May be empty/absent
+	replacingOrderCollection: z.array(z.object({})).optional(), // Placeholder for unknown structure
+	childOrderStrategies: z.array(z.object({})).optional(), // Placeholder for unknown structure
+	statusDescription: z.string().optional(), // May not be present
 })
 
 export const GetOrdersResponseBody = z.array(Order)
