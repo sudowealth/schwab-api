@@ -2,24 +2,27 @@ import { z } from 'zod'
 import { mergeShapes } from '../../utils/schema-utils.js'
 import { assetType, AccountAPIOptionDeliverable } from '../shared/index.js'
 
+// Helper to generate default date for query parameters
+const generateDefaultDate = (daysOffset: number): string => {
+	const date = new Date()
+	date.setDate(date.getDate() + daysOffset)
+	// For start dates, set to beginning of day; for end dates, set to end of day
+	if (daysOffset < 0) {
+		date.setHours(0, 0, 0, 0)
+	} else {
+		date.setHours(23, 59, 59, 999)
+	}
+	return date.toISOString()
+}
+
 // Create a flexible date schema for query parameters
+// Uses .default() to ensure dates are always provided to the API
 const flexibleDateSchema = (daysOffset: number, description: string) =>
 	z
 		.preprocess((val) => {
 			// Handle empty strings and undefined
 			if (val === '' || val === undefined || val === null) {
-				// Generate default date in full ISO format
-				const date = new Date()
-				date.setDate(date.getDate() + daysOffset)
-				// For start dates, set to beginning of day; for end dates, set to end of day
-				if (daysOffset < 0) {
-					// Start date - beginning of day
-					date.setHours(0, 0, 0, 0)
-				} else {
-					// End date - end of day
-					date.setHours(23, 59, 59, 999)
-				}
-				return date.toISOString()
+				return generateDefaultDate(daysOffset)
 			}
 			// Handle YYYY-MM-DD format - convert to full ISO datetime
 			if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
@@ -32,7 +35,7 @@ const flexibleDateSchema = (daysOffset: number, description: string) =>
 			}
 			return val
 		}, z.string().describe(description))
-		.optional()
+		.default(() => generateDefaultDate(daysOffset))
 
 const session = z.enum(['NORMAL', 'AM', 'PM', 'SEAMLESS'])
 const duration = z.enum([
@@ -288,7 +291,7 @@ const ExecutionLeg = z.object({
 	quantity: z.number(),
 	mismarkedQuantity: z.number(),
 	instrumentId: z.number().int(), // Assuming instrumentId is an int based on context
-	time: z.string().datetime(),
+	time: z.string(), // Relaxed - Schwab datetime format varies
 })
 
 const OrderActivity = z.object({
@@ -299,53 +302,95 @@ const OrderActivity = z.object({
 	executionLegs: z.array(ExecutionLeg),
 })
 
+/**
+ * OrderLegCollection for placing new orders (input).
+ * orderLegType and legId are optional - they are assigned/inferred by Schwab.
+ */
+const OrderLegCollectionInput = z.object({
+	orderLegType: orderLegType.optional().describe('Type of order leg - typically inferred from instrument'),
+	legId: z.number().int().optional().describe('Leg ID - assigned by Schwab, not needed for new orders'),
+	instrument: z.lazy(() => AccountsInstrument).describe('Instrument to trade - requires symbol and assetType'),
+	instruction: instruction.describe('BUY, SELL, BUY_TO_OPEN, SELL_TO_CLOSE, etc.'),
+	positionEffect: positionEffect.optional().describe('OPENING, CLOSING, or AUTOMATIC'),
+	quantity: z.number().describe('Number of shares/contracts'),
+	quantityType: quantityType.optional().describe('ALL_SHARES, DOLLARS, or SHARES'),
+	divCapGains: divCapGains.optional(),
+	toSymbol: z.string().optional(),
+})
+
+/**
+ * OrderLegCollection for reading existing orders (output).
+ * All fields are present in API responses.
+ */
 const OrderLegCollection = z.object({
 	orderLegType: orderLegType,
 	legId: z.number().int(),
-	instrument: z.lazy(() => AccountsInstrument), // Use lazy for potential circular dependency
+	instrument: z.lazy(() => AccountsInstrument),
 	instruction: instruction,
-	positionEffect: positionEffect.optional(), // May not be present
+	positionEffect: positionEffect.optional(),
 	quantity: z.number(),
-	quantityType: quantityType.optional(), // May not be present
-	divCapGains: divCapGains.optional(), // May not be present
-	toSymbol: z.string().optional(), // May not be present
+	quantityType: quantityType.optional(),
+	divCapGains: divCapGains.optional(),
+	toSymbol: z.string().optional(),
 })
 
+/**
+ * OrderRequest schema for placing new orders.
+ * Only includes fields that are valid inputs to the Schwab API.
+ *
+ * REQUIRED fields:
+ * - session: Trading session (NORMAL, AM, PM, SEAMLESS)
+ * - duration: Order duration (DAY, GOOD_TILL_CANCEL, etc.)
+ * - orderType: Type of order (MARKET, LIMIT, STOP, STOP_LIMIT, etc.)
+ * - orderStrategyType: Strategy type (SINGLE for simple orders)
+ * - orderLegCollection: Array of order legs with instrument and quantity
+ *
+ * CONDITIONAL fields:
+ * - price: REQUIRED for LIMIT orders, omit for MARKET orders
+ * - stopPrice: REQUIRED for STOP and STOP_LIMIT orders
+ * - quantity: Order quantity (can also be specified in orderLegCollection)
+ *
+ * OPTIONAL fields:
+ * - complexOrderStrategyType: For multi-leg option strategies
+ * - specialInstruction: ALL_OR_NONE, DO_NOT_REDUCE, etc.
+ * - taxLotMethod: FIFO, LIFO, etc. for sells
+ * - childOrderStrategies: For OCO/TRIGGER strategies (accepts any array)
+ */
 const OrderRequest = z.object({
-	session: session,
-	duration: duration,
-	orderType: orderTypeRequest,
-	cancelTime: z.string().datetime(),
-	complexOrderStrategyType: complexOrderStrategyType,
-	quantity: z.number(),
-	filledQuantity: z.number(), // Typically not part of a request, but included per spec
-	remainingQuantity: z.number(), // Typically not part of a request, but included per spec
-	destinationLinkName: z.string(),
-	releaseTime: z.string().datetime(),
-	stopPrice: z.number(),
-	stopPriceLinkBasis: stopPriceLinkBasis,
-	stopPriceLinkType: stopPriceLinkType,
-	stopPriceOffset: z.number(),
-	stopType: stopType,
-	priceLinkBasis: priceLinkBasis,
-	priceLinkType: priceLinkType,
-	price: z.number(),
-	taxLotMethod: taxLotMethod,
-	orderLegCollection: z.array(OrderLegCollection),
-	activationPrice: z.number(),
-	specialInstruction: specialInstruction,
-	orderStrategyType: orderStrategyType,
-	orderId: z.number().int(), // Optional for new orders
-	cancelable: z.boolean().default(false), // Typically not part of a request
-	editable: z.boolean().default(false), // Typically not part of a request
-	status: status, // Typically not part of a request
-	enteredTime: z.string().datetime(), // Typically set by server
-	closeTime: z.string().datetime(), // Typically set by server
-	accountNumber: z.string(), // Must match path param, but often optional in body?
-	orderActivityCollection: z.array(OrderActivity), // Typically not part of a request
-	replacingOrderCollection: z.array(z.object({})), // Placeholder
-	childOrderStrategies: z.array(z.object({})), // Placeholder
-	statusDescription: z.string(), // Typically not part of a request
+	// REQUIRED - Core order fields
+	session: session.describe('Trading session: NORMAL (regular hours), AM (pre-market), PM (after-hours), SEAMLESS'),
+	duration: duration.describe('Order duration: DAY, GOOD_TILL_CANCEL, FILL_OR_KILL, IMMEDIATE_OR_CANCEL'),
+	orderType: orderTypeRequest.describe('Order type: MARKET (no price needed), LIMIT (price required), STOP, STOP_LIMIT'),
+	orderStrategyType: orderStrategyType.describe('Use SINGLE for simple orders, OCO/TRIGGER for complex strategies'),
+	orderLegCollection: z.array(OrderLegCollectionInput).describe('Order legs - each leg needs instruction (BUY/SELL), quantity, and instrument'),
+
+	// CONDITIONAL - Required for certain order types
+	price: z.number().optional().describe('REQUIRED for LIMIT orders. The limit price.'),
+	stopPrice: z.number().optional().describe('REQUIRED for STOP and STOP_LIMIT orders. The stop trigger price.'),
+	quantity: z.number().optional().describe('Order quantity. Can also be specified per leg in orderLegCollection.'),
+
+	// OPTIONAL - Additional order parameters
+	complexOrderStrategyType: complexOrderStrategyType.optional().describe('For multi-leg strategies: VERTICAL, STRADDLE, etc.'),
+	specialInstruction: specialInstruction.optional().describe('Special handling: ALL_OR_NONE, DO_NOT_REDUCE'),
+	taxLotMethod: taxLotMethod.optional().describe('Tax lot selection for sells: FIFO, LIFO, HIGH_COST, LOW_COST'),
+	activationPrice: z.number().optional().describe('Price that activates a conditional order'),
+	cancelTime: z.string().optional().describe('Cancel time for GTD orders (ISO datetime)'),
+	releaseTime: z.string().optional().describe('Release time for scheduled orders (ISO datetime)'),
+	destinationLinkName: z.string().optional().describe('Specific exchange routing'),
+
+	// STOP order parameters (only used when orderType is STOP or STOP_LIMIT)
+	stopPriceLinkBasis: stopPriceLinkBasis.optional().describe('Price basis for stop: LAST, BID, ASK'),
+	stopPriceLinkType: stopPriceLinkType.optional().describe('Stop price link type: VALUE, PERCENT, TICK'),
+	stopPriceOffset: z.number().optional().describe('Offset from link price for trailing stops'),
+	stopType: stopType.optional().describe('Stop type: STANDARD, BID, ASK, LAST, MARK'),
+
+	// Price link parameters (for complex order types)
+	priceLinkBasis: priceLinkBasis.optional(),
+	priceLinkType: priceLinkType.optional(),
+
+	// Child orders (for complex strategies like OCO/TRIGGER)
+	// Uses z.array(z.any()) to avoid recursive type issues - child orders follow same structure
+	childOrderStrategies: z.array(z.any()).optional().describe('Child orders for OCO/TRIGGER strategies'),
 })
 
 const Order = z.object({
