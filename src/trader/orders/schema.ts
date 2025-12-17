@@ -239,10 +239,11 @@ const AccountMutualFund = AccountsBaseInstrument.extend({
 
 const AccountOption = AccountsBaseInstrument.extend({
 	assetType: z.literal('OPTION'),
-	optionDeliverables: z.array(z.lazy(() => AccountAPIOptionDeliverable)),
-	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']),
-	optionMultiplier: z.number().int(),
-	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']),
+	optionDeliverables: z.array(z.lazy(() => AccountAPIOptionDeliverable)).optional(),
+	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']).optional(),
+	optionMultiplier: z.number().int().optional(),
+	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']).optional(),
+	underlyingSymbol: z.string().optional(),
 })
 
 const AccountFuture = AccountsBaseInstrument.extend({
