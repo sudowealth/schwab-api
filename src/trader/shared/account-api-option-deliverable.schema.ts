@@ -5,8 +5,8 @@ import { assetType } from './asset-type.schema.js'
 export const AccountAPIOptionDeliverable = z.object({
 	symbol: z.string(),
 	deliverableUnits: z.number(),
-	apiCurrencyType: ApiCurrencyType,
-	assetType: assetType,
+	apiCurrencyType: ApiCurrencyType.optional(),
+	assetType: assetType.optional(),
 })
 export type AccountAPIOptionDeliverable = z.infer<
 	typeof AccountAPIOptionDeliverable
