@@ -6,6 +6,7 @@ import {
 	SchwabApiError,
 	isSchwabApiError,
 	SchwabAuthError,
+	isAuthError,
 	SchwabError,
 	isSchwabError,
 	AuthErrorCode,
@@ -42,6 +43,7 @@ export {
 	SchwabApiError,
 	isSchwabApiError,
 	SchwabAuthError,
+	isAuthError,
 	type SchwabApiLogger,
 }
 
