@@ -415,11 +415,20 @@ async function schwabFetchWithContext<
 						'... (truncated)'
 					: validationErrors
 
-			throw createSchwabApiError(
-				500,
-				parsedResponse.error.format(),
-				`Invalid response data structure for ${method} ${endpointTemplate}. Validation errors: ${truncatedErrors}`,
-			)
+			if(config.ignoreResponseValidationErrors) {
+				log(
+					context,
+					'debug',
+					`Response validation failed for ${method} ${endpointTemplate}, but ignoring errors according to configuration. Validation errors: ${truncatedErrors}`,
+				)
+				return responseData as R
+			} else {
+				throw createSchwabApiError(
+					500,
+					parsedResponse.error.format(),
+					`Invalid response data structure for ${method} ${endpointTemplate}. Validation errors: ${truncatedErrors}`,
+				)
+			}
 		}
 
 		return parsedResponse.data as R
