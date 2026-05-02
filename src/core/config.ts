@@ -59,6 +59,13 @@ export interface SchwabApiConfig {
 	timeout: number
 
 	/**
+	 * Ignore response validation errors and return raw response instead of throwing an error
+	 * This can be useful for debugging or when working with endpoints that have inconsistent response formats
+	 * @default false
+	 */
+	ignoreResponseValidationErrors: boolean
+
+	/**
 	 * Custom logger implementation
 	 * If not provided, a default console logger will be used
 	 * @default undefined
@@ -84,6 +91,7 @@ const DEFAULT_API_CONFIG: SchwabApiConfig = {
 	logLevel: 'info',
 	apiVersion: 'v1',
 	timeout: TIMEOUTS.DEFAULT_REQUEST,
+	ignoreResponseValidationErrors: false,
 	// Default logger not set here, will be added in getSchwabApiConfigDefaults
 }
 
