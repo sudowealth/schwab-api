@@ -33,17 +33,18 @@ export interface AccountScrubberOptions {
  * Type for unknown data after scrubbing
  * Removes accountNumber and hashValue fields, adds accountDisplay
  */
-type UnknownScrubbed<T> = T extends Array<infer U>
-	? UnknownScrubbed<U>[]
-	: T extends object
-		? {
-				[K in keyof T as K extends 'accountNumber' | 'hashValue'
-					? never
-					: K]: UnknownScrubbed<T[K]>
-			} & {
-				accountDisplay?: string
-			}
-		: T
+type UnknownScrubbed<T> =
+	T extends Array<infer U>
+		? UnknownScrubbed<U>[]
+		: T extends object
+			? {
+					[K in keyof T as K extends 'accountNumber' | 'hashValue'
+						? never
+						: K]: UnknownScrubbed<T[K]>
+				} & {
+					accountDisplay?: string
+				}
+			: T
 
 /**
  * Default fields to scrub from responses

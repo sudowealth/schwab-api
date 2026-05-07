@@ -61,7 +61,7 @@ export function withRateLimit(options?: Partial<RateLimitOptions>): Middleware {
 
 	const maxRequests = config.maxRequests
 	const windowDuration = config.windowMs
-	const applyToRetries = config.advanced?.applyToRetries!
+	const applyToRetries = config.advanced?.applyToRetries ?? true
 
 	let requestCount = 0
 	let windowStart = Date.now()
