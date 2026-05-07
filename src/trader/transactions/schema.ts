@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { isoDateTimeSchema } from '../../utils/date-utils.js'
 import { mergeShapes } from '../../utils/schema-utils.js'
 import { assetType } from '../shared/index.js'
 
@@ -57,13 +56,15 @@ const flexibleDateSchema = (daysOffset: number, description: string) =>
 const UserDetails = z.object({
 	cdDomainId: z.string().optional(), // May not be present
 	login: z.string().optional(), // May not be present
-	type: z.enum([
-		'ADVISOR_USER',
-		'BROKER_USER',
-		'CLIENT_USER',
-		'SYSTEM_USER',
-		'UNKNOWN',
-	]).optional(),
+	type: z
+		.enum([
+			'ADVISOR_USER',
+			'BROKER_USER',
+			'CLIENT_USER',
+			'SYSTEM_USER',
+			'UNKNOWN',
+		])
+		.optional(),
 	userId: z.number().int().optional(), // ($int64) May not be present
 	systemUserName: z.string().optional(), // May not be present
 	firstName: z.string().optional(), // May not be present
@@ -86,7 +87,9 @@ const TransactionCashEquivalent = TransactionBaseInstrument.extend({
 	assetType: z.literal('CASH_EQUIVALENT'),
 	symbol: z.string().optional(), // May not be present
 	description: z.string().optional(), // May not be present
-	type: z.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN']).optional(),
+	type: z
+		.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN'])
+		.optional(),
 })
 
 const CollectiveInvestment = TransactionBaseInstrument.extend({
@@ -106,48 +109,52 @@ const TransactionEquity = TransactionBaseInstrument.extend({
 	assetType: z.literal('EQUITY'),
 	cusip: z.string().optional(), // May not be present
 	symbol: z.string().optional(), // May not be present
-	type: z.enum([
-		'COMMON_STOCK',
-		'PREFERRED_STOCK',
-		'DEPOSITORY_RECEIPT',
-		'PREFERRED_DEPOSITORY_RECEIPT',
-		'RESTRICTED_STOCK',
-		'COMPONENT_UNIT',
-		'RIGHT',
-		'WARRANT',
-		'CONVERTIBLE_PREFERRED_STOCK',
-		'CONVERTIBLE_STOCK',
-		'LIMITED_PARTNERSHIP',
-		'WHEN_ISSUED',
-		'UNKNOWN',
-	]).optional(),
+	type: z
+		.enum([
+			'COMMON_STOCK',
+			'PREFERRED_STOCK',
+			'DEPOSITORY_RECEIPT',
+			'PREFERRED_DEPOSITORY_RECEIPT',
+			'RESTRICTED_STOCK',
+			'COMPONENT_UNIT',
+			'RIGHT',
+			'WARRANT',
+			'CONVERTIBLE_PREFERRED_STOCK',
+			'CONVERTIBLE_STOCK',
+			'LIMITED_PARTNERSHIP',
+			'WHEN_ISSUED',
+			'UNKNOWN',
+		])
+		.optional(),
 })
 
 const TransactionFixedIncome = TransactionBaseInstrument.extend({
 	assetType: z.literal('FIXED_INCOME'),
 	cusip: z.string().optional(), // May not be present
 	symbol: z.string().optional(), // May not be present
-	type: z.enum([
-		'BOND_UNIT',
-		'CERTIFICATE_OF_DEPOSIT',
-		'CONVERTIBLE_BOND',
-		'COLLATERALIZED_MORTGAGE_OBLIGATION',
-		'CORPORATE_BOND',
-		'GOVERNMENT_MORTGAGE',
-		'GNMA_BONDS',
-		'MUNICIPAL_ASSESSMENT_DISTRICT',
-		'MUNICIPAL_BOND',
-		'OTHER_GOVERNMENT',
-		'SHORT_TERM_PAPER',
-		'US_TREASURY_BOND',
-		'US_TREASURY_BILL',
-		'US_TREASURY_NOTE',
-		'US_TREASURY_ZERO_COUPON',
-		'AGENCY_BOND',
-		'WHEN_AS_AND_IF_ISSUED_BOND',
-		'ASSET_BACKED_SECURITY',
-		'UNKNOWN',
-	]).optional(),
+	type: z
+		.enum([
+			'BOND_UNIT',
+			'CERTIFICATE_OF_DEPOSIT',
+			'CONVERTIBLE_BOND',
+			'COLLATERALIZED_MORTGAGE_OBLIGATION',
+			'CORPORATE_BOND',
+			'GOVERNMENT_MORTGAGE',
+			'GNMA_BONDS',
+			'MUNICIPAL_ASSESSMENT_DISTRICT',
+			'MUNICIPAL_BOND',
+			'OTHER_GOVERNMENT',
+			'SHORT_TERM_PAPER',
+			'US_TREASURY_BOND',
+			'US_TREASURY_BILL',
+			'US_TREASURY_NOTE',
+			'US_TREASURY_ZERO_COUPON',
+			'AGENCY_BOND',
+			'WHEN_AS_AND_IF_ISSUED_BOND',
+			'ASSET_BACKED_SECURITY',
+			'UNKNOWN',
+		])
+		.optional(),
 	maturityDate: z.string().optional(), // Relaxed - may not be present
 	factor: z.number().optional(),
 	multiplier: z.number().optional(),
@@ -188,14 +195,16 @@ const TransactionMutualFund = TransactionBaseInstrument.extend({
 	fundFamilyName: z.string().optional(),
 	fundFamilySymbol: z.string().optional(),
 	fundGroup: z.string().optional(),
-	type: z.enum([
-		'NOT_APPLICABLE',
-		'OPEN_END_NON_TAXABLE',
-		'OPEN_END_TAXABLE',
-		'NO_LOAD_NON_TAXABLE',
-		'NO_LOAD_TAXABLE',
-		'UNKNOWN',
-	]).optional(),
+	type: z
+		.enum([
+			'NOT_APPLICABLE',
+			'OPEN_END_NON_TAXABLE',
+			'OPEN_END_TAXABLE',
+			'NO_LOAD_NON_TAXABLE',
+			'NO_LOAD_TAXABLE',
+			'UNKNOWN',
+		])
+		.optional(),
 	exchangeCutoffTime: z.string().optional(), // Relaxed
 	purchaseCutoffTime: z.string().optional(), // Relaxed
 	redemptionCutoffTime: z.string().optional(), // Relaxed
@@ -254,25 +263,29 @@ const TransferItem = z.object({
 	amount: z.number().optional(), // May not be present
 	cost: z.number().optional(), // May not be present
 	price: z.number().optional(), // May not be present
-	feeType: z.enum([
-		'COMMISSION',
-		'SEC_FEE',
-		'STR_FEE',
-		'R_FEE',
-		'CDSC_FEE',
-		'OPT_REG_FEE',
-		'ADDITIONAL_FEE',
-		'MISCELLANEOUS_FEE',
-		'FUTURES_EXCHANGE_FEE',
-		'LOW_PROCEEDS_COMMISSION',
-		'BASE_CHARGE',
-		'GENERAL_CHARGE',
-		'GST_FEE',
-		'TAF_FEE',
-		'INDEX_OPTION_FEE',
-		'UNKNOWN',
-	]).optional(), // May not be present
-	positionEffect: z.enum(['OPENING', 'CLOSING', 'AUTOMATIC', 'UNKNOWN']).optional(), // May not be present
+	feeType: z
+		.enum([
+			'COMMISSION',
+			'SEC_FEE',
+			'STR_FEE',
+			'R_FEE',
+			'CDSC_FEE',
+			'OPT_REG_FEE',
+			'ADDITIONAL_FEE',
+			'MISCELLANEOUS_FEE',
+			'FUTURES_EXCHANGE_FEE',
+			'LOW_PROCEEDS_COMMISSION',
+			'BASE_CHARGE',
+			'GENERAL_CHARGE',
+			'GST_FEE',
+			'TAF_FEE',
+			'INDEX_OPTION_FEE',
+			'UNKNOWN',
+		])
+		.optional(), // May not be present
+	positionEffect: z
+		.enum(['OPENING', 'CLOSING', 'AUTOMATIC', 'UNKNOWN'])
+		.optional(), // May not be present
 })
 
 // Define Transaction after its dependencies UserDetails and TransferItem
@@ -284,19 +297,23 @@ const Transaction = z.object({
 	accountNumber: z.string(),
 	type: TransactionType,
 	status: z.enum(['VALID', 'INVALID', 'PENDING', 'UNKNOWN']).optional(), // May not be present
-	subAccount: z.enum(['CASH', 'MARGIN', 'SHORT', 'DIV', 'INCOME', 'UNKNOWN']).optional(), // May not be present
+	subAccount: z
+		.enum(['CASH', 'MARGIN', 'SHORT', 'DIV', 'INCOME', 'UNKNOWN'])
+		.optional(), // May not be present
 	tradeDate: z.string().optional(), // Relaxed - May not be present for non-trade transactions
 	settlementDate: z.string().optional(), // Relaxed - May not be present
 	positionId: z.number().int().optional(), // May not be present
 	orderId: z.number().int().optional(), // May not be present for non-trade transactions
 	netAmount: z.number(),
-	activityType: z.enum([
-		'ACTIVITY_CORRECTION',
-		'EXECUTION',
-		'ORDER_ACTION',
-		'TRANSFER',
-		'UNKNOWN',
-	]).optional(), // May not be present
+	activityType: z
+		.enum([
+			'ACTIVITY_CORRECTION',
+			'EXECUTION',
+			'ORDER_ACTION',
+			'TRANSFER',
+			'UNKNOWN',
+		])
+		.optional(), // May not be present
 	transferItems: z.array(TransferItem).optional(), // May be empty/absent
 })
 

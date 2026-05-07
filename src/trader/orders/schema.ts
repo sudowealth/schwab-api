@@ -239,7 +239,9 @@ const AccountMutualFund = AccountsBaseInstrument.extend({
 
 const AccountOption = AccountsBaseInstrument.extend({
 	assetType: z.literal('OPTION'),
-	optionDeliverables: z.array(z.lazy(() => AccountAPIOptionDeliverable)).optional(),
+	optionDeliverables: z
+		.array(z.lazy(() => AccountAPIOptionDeliverable))
+		.optional(),
 	putCall: z.enum(['PUT', 'CALL', 'UNKNOWN']).optional(),
 	optionMultiplier: z.number().int().optional(),
 	type: z.enum(['VANILLA', 'BINARY', 'BARRIER', 'UNKNOWN']).optional(),
@@ -308,13 +310,27 @@ const OrderActivity = z.object({
  * orderLegType and legId are optional - they are assigned/inferred by Schwab.
  */
 const OrderLegCollectionInput = z.object({
-	orderLegType: orderLegType.optional().describe('Type of order leg - typically inferred from instrument'),
-	legId: z.number().int().optional().describe('Leg ID - assigned by Schwab, not needed for new orders'),
-	instrument: z.lazy(() => AccountsInstrument).describe('Instrument to trade - requires symbol and assetType'),
-	instruction: instruction.describe('BUY, SELL, BUY_TO_OPEN, SELL_TO_CLOSE, etc.'),
-	positionEffect: positionEffect.optional().describe('OPENING, CLOSING, or AUTOMATIC'),
+	orderLegType: orderLegType
+		.optional()
+		.describe('Type of order leg - typically inferred from instrument'),
+	legId: z
+		.number()
+		.int()
+		.optional()
+		.describe('Leg ID - assigned by Schwab, not needed for new orders'),
+	instrument: z
+		.lazy(() => AccountsInstrument)
+		.describe('Instrument to trade - requires symbol and assetType'),
+	instruction: instruction.describe(
+		'BUY, SELL, BUY_TO_OPEN, SELL_TO_CLOSE, etc.',
+	),
+	positionEffect: positionEffect
+		.optional()
+		.describe('OPENING, CLOSING, or AUTOMATIC'),
 	quantity: z.number().describe('Number of shares/contracts'),
-	quantityType: quantityType.optional().describe('ALL_SHARES, DOLLARS, or SHARES'),
+	quantityType: quantityType
+		.optional()
+		.describe('ALL_SHARES, DOLLARS, or SHARES'),
 	divCapGains: divCapGains.optional(),
 	toSymbol: z.string().optional(),
 })
@@ -359,31 +375,83 @@ const OrderLegCollection = z.object({
  */
 const OrderRequest = z.object({
 	// REQUIRED - Core order fields
-	session: session.describe('Trading session: NORMAL (regular hours), AM (pre-market), PM (after-hours), SEAMLESS'),
-	duration: duration.describe('Order duration: DAY, GOOD_TILL_CANCEL, FILL_OR_KILL, IMMEDIATE_OR_CANCEL'),
-	orderType: orderTypeRequest.describe('Order type: MARKET (no price needed), LIMIT (price required), STOP, STOP_LIMIT'),
-	orderStrategyType: orderStrategyType.describe('Use SINGLE for simple orders, OCO/TRIGGER for complex strategies'),
-	orderLegCollection: z.array(OrderLegCollectionInput).describe('Order legs - each leg needs instruction (BUY/SELL), quantity, and instrument'),
+	session: session.describe(
+		'Trading session: NORMAL (regular hours), AM (pre-market), PM (after-hours), SEAMLESS',
+	),
+	duration: duration.describe(
+		'Order duration: DAY, GOOD_TILL_CANCEL, FILL_OR_KILL, IMMEDIATE_OR_CANCEL',
+	),
+	orderType: orderTypeRequest.describe(
+		'Order type: MARKET (no price needed), LIMIT (price required), STOP, STOP_LIMIT',
+	),
+	orderStrategyType: orderStrategyType.describe(
+		'Use SINGLE for simple orders, OCO/TRIGGER for complex strategies',
+	),
+	orderLegCollection: z
+		.array(OrderLegCollectionInput)
+		.describe(
+			'Order legs - each leg needs instruction (BUY/SELL), quantity, and instrument',
+		),
 
 	// CONDITIONAL - Required for certain order types
-	price: z.number().optional().describe('REQUIRED for LIMIT orders. The limit price.'),
-	stopPrice: z.number().optional().describe('REQUIRED for STOP and STOP_LIMIT orders. The stop trigger price.'),
-	quantity: z.number().optional().describe('Order quantity. Can also be specified per leg in orderLegCollection.'),
+	price: z
+		.number()
+		.optional()
+		.describe('REQUIRED for LIMIT orders. The limit price.'),
+	stopPrice: z
+		.number()
+		.optional()
+		.describe(
+			'REQUIRED for STOP and STOP_LIMIT orders. The stop trigger price.',
+		),
+	quantity: z
+		.number()
+		.optional()
+		.describe(
+			'Order quantity. Can also be specified per leg in orderLegCollection.',
+		),
 
 	// OPTIONAL - Additional order parameters
-	complexOrderStrategyType: complexOrderStrategyType.optional().describe('For multi-leg strategies: VERTICAL, STRADDLE, etc.'),
-	specialInstruction: specialInstruction.optional().describe('Special handling: ALL_OR_NONE, DO_NOT_REDUCE'),
-	taxLotMethod: taxLotMethod.optional().describe('Tax lot selection for sells: FIFO, LIFO, HIGH_COST, LOW_COST'),
-	activationPrice: z.number().optional().describe('Price that activates a conditional order'),
-	cancelTime: z.string().optional().describe('Cancel time for GTD orders (ISO datetime)'),
-	releaseTime: z.string().optional().describe('Release time for scheduled orders (ISO datetime)'),
-	destinationLinkName: z.string().optional().describe('Specific exchange routing'),
+	complexOrderStrategyType: complexOrderStrategyType
+		.optional()
+		.describe('For multi-leg strategies: VERTICAL, STRADDLE, etc.'),
+	specialInstruction: specialInstruction
+		.optional()
+		.describe('Special handling: ALL_OR_NONE, DO_NOT_REDUCE'),
+	taxLotMethod: taxLotMethod
+		.optional()
+		.describe('Tax lot selection for sells: FIFO, LIFO, HIGH_COST, LOW_COST'),
+	activationPrice: z
+		.number()
+		.optional()
+		.describe('Price that activates a conditional order'),
+	cancelTime: z
+		.string()
+		.optional()
+		.describe('Cancel time for GTD orders (ISO datetime)'),
+	releaseTime: z
+		.string()
+		.optional()
+		.describe('Release time for scheduled orders (ISO datetime)'),
+	destinationLinkName: z
+		.string()
+		.optional()
+		.describe('Specific exchange routing'),
 
 	// STOP order parameters (only used when orderType is STOP or STOP_LIMIT)
-	stopPriceLinkBasis: stopPriceLinkBasis.optional().describe('Price basis for stop: LAST, BID, ASK'),
-	stopPriceLinkType: stopPriceLinkType.optional().describe('Stop price link type: VALUE, PERCENT, TICK'),
-	stopPriceOffset: z.number().optional().describe('Offset from link price for trailing stops'),
-	stopType: stopType.optional().describe('Stop type: STANDARD, BID, ASK, LAST, MARK'),
+	stopPriceLinkBasis: stopPriceLinkBasis
+		.optional()
+		.describe('Price basis for stop: LAST, BID, ASK'),
+	stopPriceLinkType: stopPriceLinkType
+		.optional()
+		.describe('Stop price link type: VALUE, PERCENT, TICK'),
+	stopPriceOffset: z
+		.number()
+		.optional()
+		.describe('Offset from link price for trailing stops'),
+	stopType: stopType
+		.optional()
+		.describe('Stop type: STANDARD, BID, ASK, LAST, MARK'),
 
 	// Price link parameters (for complex order types)
 	priceLinkBasis: priceLinkBasis.optional(),
@@ -391,7 +459,10 @@ const OrderRequest = z.object({
 
 	// Child orders (for complex strategies like OCO/TRIGGER)
 	// Uses z.array(z.any()) to avoid recursive type issues - child orders follow same structure
-	childOrderStrategies: z.array(z.any()).optional().describe('Child orders for OCO/TRIGGER strategies'),
+	childOrderStrategies: z
+		.array(z.any())
+		.optional()
+		.describe('Child orders for OCO/TRIGGER strategies'),
 })
 
 const Order = z.object({
