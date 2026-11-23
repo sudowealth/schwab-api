@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 
 // Enum for symbol_id path parameter
-export const MoversSymbolIdEnum = z.enum([
+export const MoversSymbolIdEnum = sdkEnum([
 	'$DJI',
 	'$COMPX',
 	'$SPX',
@@ -18,7 +18,7 @@ export const MoversSymbolIdEnum = z.enum([
 export type MoversSymbolIdEnum = z.infer<typeof MoversSymbolIdEnum>
 
 // Enum for sort query parameter
-export const MoversSortEnum = z.enum([
+export const MoversSortEnum = sdkEnum([
 	'VOLUME',
 	'TRADES',
 	'PERCENT_CHANGE_UP',
@@ -40,7 +40,7 @@ export const MoversFrequencyEnum = z
 export type MoversFrequencyEnum = z.infer<typeof MoversFrequencyEnum>
 
 // Enum for direction field in ScreenerSchema
-export const MoversDirectionEnum = z.enum(['up', 'down'])
+export const MoversDirectionEnum = sdkEnum(['up', 'down'])
 export type MoversDirectionEnum = z.infer<typeof MoversDirectionEnum>
 
 // Schema for a single Screener item in the response

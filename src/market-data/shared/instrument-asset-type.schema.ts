@@ -1,6 +1,7 @@
 import { z } from 'zod'
+import { sdkEnum } from '../../utils/schema-utils.js'
 
-export const InstrumentAssetTypeEnum = z.enum([
+export const InstrumentAssetTypeEnum = sdkEnum([
 	'BOND',
 	'EQUITY',
 	'ETF',

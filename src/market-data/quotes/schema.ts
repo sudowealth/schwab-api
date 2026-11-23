@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import { epochMillisSchema, isoDateTimeSchema } from '../../utils/date-utils.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 import { InstrumentAssetTypeEnum } from '../shared/index.js'
 
 // Enum for the 'fields' query parameter
-export const QuoteFieldsEnum = z.enum([
+export const QuoteFieldsEnum = sdkEnum([
 	'quote',
 	'fundamental',
 	'extended',
@@ -15,7 +15,7 @@ export const QuoteFieldsEnum = z.enum([
 export type QuoteFieldsEnum = z.infer<typeof QuoteFieldsEnum>
 
 // Enum for assetMainType
-export const QuotesAssetMainTypeEnum = z.enum([
+export const QuotesAssetMainTypeEnum = sdkEnum([
 	'EQUITY',
 	'ETF',
 	'OPTION',
@@ -30,7 +30,7 @@ export const QuotesAssetMainTypeEnum = z.enum([
 export type QuotesAssetMainTypeEnum = z.infer<typeof QuotesAssetMainTypeEnum>
 
 // Enum for assetSubType - this is a very long list, partial for brevity here, expand as needed
-export const QuotesAssetSubTypeEnum = z.enum([
+export const QuotesAssetSubTypeEnum = sdkEnum([
 	'COMMON_STOCK',
 	'PREFERRED_STOCK',
 	'WARRANT',
@@ -46,7 +46,7 @@ export const QuotesAssetSubTypeEnum = z.enum([
 export type QuotesAssetSubTypeEnum = z.infer<typeof QuotesAssetSubTypeEnum>
 
 // Enum for assetSubType for Mutual Funds
-export const MutualFundAssetSubTypeEnum = z.enum([
+export const MutualFundAssetSubTypeEnum = sdkEnum([
 	'OEF', // Open-End Fund
 	'CEF', // Closed-End Fund
 	'MMF', // Money Market Fund

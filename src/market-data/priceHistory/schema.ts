@@ -4,10 +4,10 @@ import {
 	epochMillisSchema,
 	createQueryDateSchema,
 } from '../../utils/date-utils.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 
 // Enum for periodType query parameter
-export const PriceHistoryPeriodTypeEnum = z.enum([
+export const PriceHistoryPeriodTypeEnum = sdkEnum([
 	'day',
 	'month',
 	'year',
@@ -18,7 +18,7 @@ export type PriceHistoryPeriodTypeEnum = z.infer<
 >
 
 // Enum for frequencyType query parameter
-export const PriceHistoryFrequencyTypeEnum = z.enum([
+export const PriceHistoryFrequencyTypeEnum = sdkEnum([
 	'minute',
 	'daily',
 	'weekly',

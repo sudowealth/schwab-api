@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 
 // Enum for projection parameter
-export const InstrumentProjectionEnum = z.enum([
+export const InstrumentProjectionEnum = sdkEnum([
 	'symbol-search',
 	'symbol-regex',
 	'desc-search',
@@ -14,7 +14,7 @@ export const InstrumentProjectionEnum = z.enum([
 export type InstrumentProjectionEnum = z.infer<typeof InstrumentProjectionEnum>
 
 // Enum for AssetType specifically used in market-data/instruments
-export const InstrumentAssetTypeEnum = z.enum([
+export const InstrumentAssetTypeEnum = sdkEnum([
 	'BOND',
 	'EQUITY',
 	'ETF',

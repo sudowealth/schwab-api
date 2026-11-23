@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { isoDateTimeSchema } from '../../utils/date-utils.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 import { assetType } from '../shared/index.js'
 
-export const TransactionType = z.enum([
+export const TransactionType = sdkEnum([
 	'TRADE',
 	'RECEIVE_AND_DELIVER',
 	'DIVIDEND_OR_INTEREST',
