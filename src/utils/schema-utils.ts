@@ -15,9 +15,10 @@ export function sdkEnum<const Value extends string>(
 	values: readonly Value[],
 ): SdkEnum<Value> {
 	const schema = z.enum(values)
-	return Object.defineProperty(schema, 'Enum', {
-		get: () => schema.enum,
-	}) as SdkEnum<Value>
+	if (!Reflect.has(schema, 'Enum')) {
+		Object.defineProperty(schema, 'Enum', { get: () => schema.enum })
+	}
+	return schema as SdkEnum<Value>
 }
 
 export function mergeShapes<T extends z.ZodRawShape, U extends z.ZodRawShape>(
