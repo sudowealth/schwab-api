@@ -82,7 +82,6 @@ export const GetMoversQueryParams = z.object({
 	frequency: z
 		.number()
 		.int()
-		.default(0)
 		.optional()
 		.describe(
 			'Frequency of the data. 0 = real-time, 1 = 1 minute delayed, 5 = 5 minute delayed',

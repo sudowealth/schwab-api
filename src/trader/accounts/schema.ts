@@ -13,7 +13,7 @@ export const AccountsBaseInstrument = z.object({
 export type AccountsBaseInstrument = z.infer<typeof AccountsBaseInstrument>
 
 const AccountCashEquivalent = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.CASH_EQUIVALENT),
+	assetType: z.literal(assetType.enum.CASH_EQUIVALENT),
 	type: z
 		.enum(['SWEEP_VEHICLE', 'SAVINGS', 'MONEY_MARKET_FUND', 'UNKNOWN'])
 		.optional(),
@@ -22,12 +22,12 @@ const AccountCashEquivalent = AccountsBaseInstrument.extend({
 export type AccountCashEquivalent = z.infer<typeof AccountCashEquivalent>
 
 const AccountEquity = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.EQUITY),
+	assetType: z.literal(assetType.enum.EQUITY),
 })
 export type AccountEquity = z.infer<typeof AccountEquity>
 
 const AccountFixedIncome = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.FIXED_INCOME),
+	assetType: z.literal(assetType.enum.FIXED_INCOME),
 	maturityDate: z.string().datetime().optional(),
 	factor: z.number().optional(),
 	variableRate: z.number().optional(),
@@ -35,12 +35,12 @@ const AccountFixedIncome = AccountsBaseInstrument.extend({
 export type AccountFixedIncome = z.infer<typeof AccountFixedIncome>
 
 const AccountMutualFund = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.MUTUAL_FUND),
+	assetType: z.literal(assetType.enum.MUTUAL_FUND),
 })
 export type AccountMutualFund = z.infer<typeof AccountMutualFund>
 
 const AccountOption = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.OPTION),
+	assetType: z.literal(assetType.enum.OPTION),
 	optionDeliverables: z
 		.array(z.lazy(() => AccountAPIOptionDeliverable))
 		.optional(),
@@ -52,34 +52,34 @@ const AccountOption = AccountsBaseInstrument.extend({
 export type AccountOption = z.infer<typeof AccountOption>
 
 const AccountFuture = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.FUTURE),
+	assetType: z.literal(assetType.enum.FUTURE),
 	expirationDate: z.string().datetime().optional(),
-	activeContract: z.boolean().default(false).optional(),
+	activeContract: z.boolean().optional(),
 })
 export type AccountFuture = z.infer<typeof AccountFuture>
 
 const AccountForex = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.FOREX),
+	assetType: z.literal(assetType.enum.FOREX),
 })
 export type AccountForex = z.infer<typeof AccountForex>
 
 const AccountIndex = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.INDEX),
+	assetType: z.literal(assetType.enum.INDEX),
 })
 export type AccountIndex = z.infer<typeof AccountIndex>
 
 const AccountProduct = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.PRODUCT), // Assuming PRODUCT is in AssetType enum
+	assetType: z.literal(assetType.enum.PRODUCT), // Assuming PRODUCT is in AssetType enum
 })
 export type AccountProduct = z.infer<typeof AccountProduct>
 
 const AccountCurrency = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.CURRENCY),
+	assetType: z.literal(assetType.enum.CURRENCY),
 })
 export type AccountCurrency = z.infer<typeof AccountCurrency>
 
 const AccountCollectiveInvestment = AccountsBaseInstrument.extend({
-	assetType: z.literal(assetType.Enum.COLLECTIVE_INVESTMENT),
+	assetType: z.literal(assetType.enum.COLLECTIVE_INVESTMENT),
 })
 export type AccountCollectiveInvestment = z.infer<
 	typeof AccountCollectiveInvestment
@@ -237,10 +237,10 @@ const SecuritiesAccountBase = z.object({
 	type: z.string(), // Will be 'MARGIN' or 'CASH' in extending types
 	accountNumber: z.string(),
 	roundTrips: z.number().int().optional(),
-	isDayTrader: z.boolean().default(false).optional(),
-	isClosingOnlyRestricted: z.boolean().default(false).optional(),
-	pfcbFlag: z.boolean().default(false).optional(),
-	positions: z.array(Position).default([]).optional(),
+	isDayTrader: z.boolean().optional(),
+	isClosingOnlyRestricted: z.boolean().optional(),
+	pfcbFlag: z.boolean().optional(),
+	positions: z.array(Position).optional(),
 })
 export type SecuritiesAccountBase = z.infer<typeof SecuritiesAccountBase>
 
