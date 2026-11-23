@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { BaseInstrumentSchema } from '../../schemas/base-instrument.schema.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 
 // Enum for projection parameter
-export const InstrumentProjectionEnum = z.enum([
+export const InstrumentProjectionEnum = sdkEnum([
 	'symbol-search',
 	'symbol-regex',
 	'desc-search',
@@ -14,7 +14,7 @@ export const InstrumentProjectionEnum = z.enum([
 export type InstrumentProjectionEnum = z.infer<typeof InstrumentProjectionEnum>
 
 // Enum for AssetType specifically used in market-data/instruments
-export const InstrumentAssetTypeEnum = z.enum([
+export const InstrumentAssetTypeEnum = sdkEnum([
 	'BOND',
 	'EQUITY',
 	'ETF',
@@ -130,7 +130,7 @@ export type FundamentalDataSchema = z.infer<typeof FundamentalDataSchema>
 
 // Specific Instrument Types
 const FundamentalInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FUNDAMENTAL),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.FUNDAMENTAL),
 	fundamental: FundamentalDataSchema,
 })
 export type FundamentalInstrumentSchema = z.infer<
@@ -138,7 +138,7 @@ export type FundamentalInstrumentSchema = z.infer<
 >
 
 const BondInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.BOND),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.BOND),
 	bondFactor: z.string().optional(),
 	bondMultiplier: z.string().optional(),
 	bondPrice: z.number().optional(),
@@ -146,63 +146,63 @@ const BondInstrumentSchema = InstrumentInfoSchema.extend({
 export type BondInstrumentSchema = z.infer<typeof BondInstrumentSchema>
 
 const EquityInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.EQUITY),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.EQUITY),
 })
 export type EquityInstrumentSchema = z.infer<typeof EquityInstrumentSchema>
 
 const ETFInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.ETF),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.ETF),
 })
 export type ETFInstrumentSchema = z.infer<typeof ETFInstrumentSchema>
 
 const ForexInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FOREX),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.FOREX),
 })
 export type ForexInstrumentSchema = z.infer<typeof ForexInstrumentSchema>
 
 const FutureInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FUTURE),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.FUTURE),
 })
 export type FutureInstrumentSchema = z.infer<typeof FutureInstrumentSchema>
 
 const FutureOptionInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.FUTURE_OPTION),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.FUTURE_OPTION),
 })
 export type FutureOptionInstrumentSchema = z.infer<
 	typeof FutureOptionInstrumentSchema
 >
 
 const IndexInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.INDEX),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.INDEX),
 })
 export type IndexInstrumentSchema = z.infer<typeof IndexInstrumentSchema>
 
 const IndicatorInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.INDICATOR),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.INDICATOR),
 })
 export type IndicatorInstrumentSchema = z.infer<
 	typeof IndicatorInstrumentSchema
 >
 
 const MutualFundInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.MUTUAL_FUND),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.MUTUAL_FUND),
 })
 export type MutualFundInstrumentSchema = z.infer<
 	typeof MutualFundInstrumentSchema
 >
 
 const OptionInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.OPTION),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.OPTION),
 })
 export type OptionInstrumentSchema = z.infer<typeof OptionInstrumentSchema>
 
 const UnknownInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.UNKNOWN),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.UNKNOWN),
 })
 export type UnknownInstrumentSchema = z.infer<typeof UnknownInstrumentSchema>
 
 const ExtendedInstrumentSchema = InstrumentInfoSchema.extend({
-	assetType: z.literal(InstrumentAssetTypeEnum.Enum.EXTENDED),
+	assetType: z.literal(InstrumentAssetTypeEnum.enum.EXTENDED),
 })
 export type ExtendedInstrumentSchema = z.infer<typeof ExtendedInstrumentSchema>
 

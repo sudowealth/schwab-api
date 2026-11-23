@@ -4,10 +4,10 @@ import {
 	epochMillisSchema,
 	createQueryDateSchema,
 } from '../../utils/date-utils.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 
 // Enum for periodType query parameter
-export const PriceHistoryPeriodTypeEnum = z.enum([
+export const PriceHistoryPeriodTypeEnum = sdkEnum([
 	'day',
 	'month',
 	'year',
@@ -18,7 +18,7 @@ export type PriceHistoryPeriodTypeEnum = z.infer<
 >
 
 // Enum for frequencyType query parameter
-export const PriceHistoryFrequencyTypeEnum = z.enum([
+export const PriceHistoryFrequencyTypeEnum = sdkEnum([
 	'minute',
 	'daily',
 	'weekly',
@@ -74,15 +74,13 @@ export const GetPriceHistoryQueryParams = z.object({
 	periodType: PriceHistoryPeriodTypeEnum.optional().describe(
 		'The chart period being requested. Available values: day, month, year, ytd',
 	),
-	period: PeriodEnum.default(1)
-		.optional()
-		.describe(
-			'The number of chart period types. \n' +
-				'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
-				'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
-				'- If periodType is year - valid values are 1, 2, 3, 5, 10, 15, 20 (default 1). \n' +
-				'- If periodType is ytd - valid values are 1 (default 1).',
-		),
+	period: PeriodEnum.optional().describe(
+		'The number of chart period types. \n' +
+			'- If periodType is day - valid values are 1, 2, 3, 4, 5, 10 (default 10). \n' +
+			'- If periodType is month - valid values are 1, 2, 3, 6 (default 1). \n' +
+			'- If periodType is year - valid values are 1, 2, 3, 5, 10, 15, 20 (default 1). \n' +
+			'- If periodType is ytd - valid values are 1 (default 1).',
+	),
 	frequencyType: PriceHistoryFrequencyTypeEnum.optional().describe(
 		'The time frequencyType. \n' +
 			'- If periodType is day - default is minute. \n' +

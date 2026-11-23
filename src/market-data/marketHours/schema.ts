@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import { dateStringSchema } from '../../utils/date-utils.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 import { InstrumentAssetTypeEnum } from '../shared/index.js'
 
 // Enum for the 'markets' query parameter
-export const MarketHoursMarketQueryEnum = z.enum([
+export const MarketHoursMarketQueryEnum = sdkEnum([
 	'equity',
 	'option',
 	'bond',
@@ -90,7 +90,7 @@ export type GetMarketHoursParams = z.infer<typeof GetMarketHoursParams>
 // Schema for Response Body of GET /markets
 // The response is a nested structure with market type as the top level key,
 // then product code as second level, containing the market hours data
-export const GetMarketHoursResponse = z.record(
+export const GetMarketHoursResponse = z.partialRecord(
 	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
 	z.record(
 		z.string(), // Second level key (e.g., "EQ") - product code
@@ -122,7 +122,7 @@ export type GetMarketHoursByMarketIdQueryParams = z.infer<
 // Response Body Schema for GET /markets/{market_id}
 // This endpoint returns a nested structure with market type as the top level key,
 // then product code as second level, containing the market hours data
-export const GetMarketHoursByMarketIdResponse = z.record(
+export const GetMarketHoursByMarketIdResponse = z.partialRecord(
 	MarketHoursMarketQueryEnum, // Top level key (e.g., "equity")
 	z.record(
 		z.string(), // Second level key (e.g., "EQ") - product code

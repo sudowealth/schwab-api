@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 
 // --- Enums ---
 
-export const UnderlyingExchangeEnum = z.enum([
+export const UnderlyingExchangeEnum = sdkEnum([
 	'IND',
 	'ASE',
 	'NYS',
@@ -15,7 +15,7 @@ export const UnderlyingExchangeEnum = z.enum([
 ])
 export type UnderlyingExchangeEnum = z.infer<typeof UnderlyingExchangeEnum>
 
-export const OptionStrategyEnum = z.enum([
+export const OptionStrategyEnum = sdkEnum([
 	'SINGLE',
 	'ANALYTICAL',
 	'COVERED',
@@ -31,13 +31,13 @@ export const OptionStrategyEnum = z.enum([
 ])
 export type OptionStrategyEnum = z.infer<typeof OptionStrategyEnum>
 
-export const PutCallEnum = z.enum(['PUT', 'CALL'])
+export const PutCallEnum = sdkEnum(['PUT', 'CALL'])
 export type PutCallEnum = z.infer<typeof PutCallEnum>
 
-export const ExpirationTypeEnum = z.enum(['M', 'Q', 'S', 'W'])
+export const ExpirationTypeEnum = sdkEnum(['M', 'Q', 'S', 'W'])
 export type ExpirationTypeEnum = z.infer<typeof ExpirationTypeEnum>
 
-export const SettlementTypeEnum = z.enum(['A', 'P']) // AM or PM
+export const SettlementTypeEnum = sdkEnum(['A', 'P']) // AM or PM
 export type SettlementTypeEnum = z.infer<typeof SettlementTypeEnum>
 
 // --- Nested Schemas ---
@@ -331,12 +331,12 @@ export type OptionChainSchema = z.infer<typeof OptionChainSchema>
 // --- Schemas for GET /chains endpoint ---
 
 // Enums for Query Parameters
-export const OptionContractTypeQueryEnum = z.enum(['CALL', 'PUT', 'ALL'])
+export const OptionContractTypeQueryEnum = sdkEnum(['CALL', 'PUT', 'ALL'])
 export type OptionContractTypeQueryEnum = z.infer<
 	typeof OptionContractTypeQueryEnum
 >
 
-export const OptionRangeQueryEnum = z.enum([
+export const OptionRangeQueryEnum = sdkEnum([
 	'ITM', // In-the-money
 	'NTM', // Near-the-money
 	'OTM', // Out-of-the-money
@@ -347,7 +347,7 @@ export const OptionRangeQueryEnum = z.enum([
 ])
 export type OptionRangeQueryEnum = z.infer<typeof OptionRangeQueryEnum>
 
-export const OptionExpMonthQueryEnum = z.enum([
+export const OptionExpMonthQueryEnum = sdkEnum([
 	'JAN',
 	'FEB',
 	'MAR',
@@ -364,10 +364,10 @@ export const OptionExpMonthQueryEnum = z.enum([
 ])
 export type OptionExpMonthQueryEnum = z.infer<typeof OptionExpMonthQueryEnum>
 
-export const OptionTypeQueryEnum = z.enum(['S', 'NS', 'ALL']) // Standard, Non-Standard, All
+export const OptionTypeQueryEnum = sdkEnum(['S', 'NS', 'ALL']) // Standard, Non-Standard, All
 export type OptionTypeQueryEnum = z.infer<typeof OptionTypeQueryEnum>
 
-export const OptionEntitlementQueryEnum = z.enum(['PN', 'NP', 'PP']) // PP-PayingPro, NP-NonPro, PN-NonPayingPro
+export const OptionEntitlementQueryEnum = sdkEnum(['PN', 'NP', 'PP']) // PP-PayingPro, NP-NonPro, PN-NonPayingPro
 export type OptionEntitlementQueryEnum = z.infer<
 	typeof OptionEntitlementQueryEnum
 >

@@ -1,10 +1,11 @@
 import { z } from 'zod'
+import { sdkEnum } from '../utils/schema-utils.js'
 
 /**
  * Comprehensive asset type enum combining all possible asset types
  * used across the API
  */
-export const AssetTypeEnum = z.enum([
+export const AssetTypeEnum = sdkEnum([
 	'BOND',
 	'EQUITY',
 	'ETF',

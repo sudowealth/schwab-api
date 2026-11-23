@@ -40,6 +40,20 @@ Available on [npm](https://www.npmjs.com/package/@sudowealth/schwab-api):
 npm install @sudowealth/schwab-api
 ```
 
+### Upgrading from Zod 3
+
+The SDK now uses Zod 4 for request and response validation. If your application
+only calls client endpoints, the SDK installs Zod as a dependency. If you
+compose the SDK's exported schemas with your own or pass a schema to
+`validateOAuthState`, update your application's Zod dependency with
+`npm install zod@^4.6.7` and import `z` from `zod`.
+
+SDK-exported enum schemas keep the deprecated `.Enum` alias, so existing code
+such as `schemas.AssetTypeEnum.Enum.EQUITY` continues to work. For new code,
+use the Zod 4 spelling, `schemas.AssetTypeEnum.enum.EQUITY`.
+If you inspect a `ZodError` directly, read its `issues` array in place of
+`errors`. See the [Zod 4 migration guide](https://zod.dev/v4/changelog).
+
 ## Quick Start
 
 > **Prerequisites**:

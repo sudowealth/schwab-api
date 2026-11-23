@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { isoDateTimeSchema } from '../../utils/date-utils.js'
-import { mergeShapes } from '../../utils/schema-utils.js'
+import { mergeShapes, sdkEnum } from '../../utils/schema-utils.js'
 import { assetType } from '../shared/index.js'
 
-export const TransactionType = z.enum([
+export const TransactionType = sdkEnum([
 	'TRADE',
 	'RECEIVE_AND_DELIVER',
 	'DIVIDEND_OR_INTEREST',
@@ -93,8 +93,8 @@ const CollectiveInvestment = TransactionBaseInstrument.extend({
 	assetType: z.literal('COLLECTIVE_INVESTMENT'),
 	cusip: z.string().optional(), // May not be present
 	symbol: z.string().optional(), // May not be present
-	instrumentId: z.any(), // [...] definition unclear
-	type: z.any(), // [...] definition unclear
+	instrumentId: z.any().optional(), // [...] definition unclear
+	type: z.any().optional(), // [...] definition unclear
 })
 
 const Currency = TransactionBaseInstrument.extend({
@@ -206,7 +206,7 @@ const TransactionAPIOptionDeliverable = z.object({
 	strikePercent: z.number().int(),
 	deliverableNumber: z.number().int(),
 	deliverableUnits: z.number(),
-	deliverable: z.any(), // Changed to z.any() for now
+	deliverable: z.any().optional(), // Changed to z.any() for now
 	assetType: assetType,
 })
 
